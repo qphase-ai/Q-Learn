@@ -25,9 +25,6 @@ dist/
 !.env.example
 !backend/.env.example
 
-# Alembic
-alembic/versions/*.py
-!alembic/versions/.gitkeep
 
 # Testing
 .pytest_cache/
