@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-base: #0d0d0d;
+  --bg-surface: #141414;
+  --bg-elevated: #1a1a1a;
+  --border: #2a2a2a;
+
+  --quantum: #00d4ff;
+  --quantum-dim: #00d4ff26;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+
+  --success: #3fb950;
+  --warning: #d29922;
+  --error: #f85149;
+
+  --gate-H: #8b5cf6;
+  --gate-X: #f85149;
+  --gate-CX: #3b82f6;
+  --gate-M: #00d4ff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  margin: 0;
+}
