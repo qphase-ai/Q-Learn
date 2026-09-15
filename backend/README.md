@@ -238,9 +238,13 @@ pytest --cov=app --cov-report=term-missing     # with coverage
 | `VERCEL_TOKEN` | Yes | Vercel API token (Sandbox) |
 | `RAZORPAY_KEY_ID` | Yes | Razorpay key ID |
 | `RAZORPAY_KEY_SECRET` | Yes | Razorpay key secret |
-| `LLM_PROVIDER` | No | `ollama` (default) \| `openai` \| `anthropic` \| `gemini` |
-| `OPENAI_API_KEY` | If using OpenAI | — |
-| `ANTHROPIC_API_KEY` | If using Anthropic | — |
+| `LLM_PRIMARY_MODEL` | No | LiteLLM model string, default `gpt-4o-mini` |
+| `LLM_FALLBACK_MODELS` | No | JSON list of fallback model strings |
+| `LLM_TEMPERATURE` | No | Default `0.7` |
+| `LLM_MAX_TOKENS` | No | Default `2048` |
+| `OPENAI_API_KEY` | If using OpenAI models | — |
+| `ANTHROPIC_API_KEY` | If using Anthropic models | — |
+| `GEMINI_API_KEY` | If using Gemini models | — |
 
 Full reference: `../docs/infrastructure.md`
 

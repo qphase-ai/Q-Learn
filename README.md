@@ -78,7 +78,7 @@ cd qlearn
 
 cp .env.example .env
 # fill in: SUPABASE_URL, SUPABASE_SERVICE_KEY, DATABASE_URL,
-#          VERCEL_TOKEN, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, LLM_PROVIDER
+#          VERCEL_TOKEN, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, LLM_PRIMARY_MODEL
 
 docker compose up --build
 # Frontend  →  http://localhost:3000

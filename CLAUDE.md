@@ -114,7 +114,7 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 |----------|--------|
 | Vercel Sandbox | `AsyncSandbox.fork("qlearn-python-base")` — isolated microVM, deny-all network, 512 MB RAM, 30s timeout |
 | Supabase Realtime | FastAPI publishes events; frontend subscribes via `@supabase/supabase-js` |
-| LLM provider | Abstracted — supports GPT / Claude / Gemini / Ollama; never hardcode a provider |
+| LLM provider | ChatLiteLLM (`app/agents/llm.py`) — `get_llm()` returns primary + `.with_fallbacks()`; model strings via LiteLLM format |
 | Razorpay | Freemium + Pro subscriptions; AI Tutor + circuit execution gated behind Pro |
 | pgvector | dim=384 embeddings in `knowledge_embeddings` table |
 
@@ -146,6 +146,6 @@ See `docs/quantum-execution.md`, `docs/rag-pipeline.md`, `docs/agents.md`, `docs
 
 ## Environment
 
-Copy `.env.example` → `.env` (root), `backend/.env`, `frontend/.env.local`. Required variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `VERCEL_TOKEN`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `LLM_PROVIDER`. Full reference: `docs/infrastructure.md`.
+Copy `.env.example` → `.env` (root), `backend/.env`, `frontend/.env.local`. Required variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `VERCEL_TOKEN`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `LLM_PRIMARY_MODEL`. LLM uses ChatLiteLLM — set `LLM_FALLBACK_MODELS` and the relevant provider API keys. Full reference: `docs/infrastructure.md`.
 
 Local dev database: `postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn` (Docker Compose).

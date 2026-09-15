@@ -188,7 +188,7 @@ flowchart TD
         end
 
         subgraph External["External"]
-            LLM["LLM Provider\nGPT / Claude / Gemini / Ollama"]
+            LLM["LLM Provider\nChatLiteLLM — primary + fallbacks\nOpenAI · Anthropic · Gemini · Ollama"]
             KnowledgeBase["Knowledge Sources\nDocs • Papers • Course Material"]
         end
     end
@@ -230,7 +230,7 @@ Six primary layers:
 
 4. **Code Execution Sandbox** — Vercel Sandbox (managed microVM) for **all compute-heavy execution** — both student code and quantum circuit simulation. Network policy: `deny-all`. Resource limits: 512 MB RAM, 1 vCPU, 30s timeout. Qiskit Aer pre-installed via persistent `qlearn-python-base` snapshot; fork per execution avoids cold-start. FastAPI remains I/O-bound throughout — no CPU work in-process.
 
-5. **External AI & Knowledge Sources** — LLM provider (GPT/Claude/Gemini/Ollama), official SDK documentation, academic papers, trusted educational resources.
+5. **External AI & Knowledge Sources** — LLM via ChatLiteLLM with smart routing and fallback (primary + ordered fallbacks via `get_llm()`; any LiteLLM-supported provider), official SDK documentation, academic papers, trusted educational resources.
 
 6. **Data Storage & Infrastructure** — Supabase (Auth, PostgreSQL + pgvector, Storage, Realtime), Vercel Sandbox (isolated microVM execution), Docker Compose for local development.
    - **Supabase** → Auth, PostgreSQL + pgvector, Storage, Realtime pub/sub (production)
@@ -283,7 +283,7 @@ sequenceDiagram
 - **Alembic** — database migrations
 
 ### AI / ML
-- **LLM Provider** abstraction (OpenAI GPT, Claude, Gemini, or Ollama locally)
+- **ChatLiteLLM** (`langchain-community`) + **LiteLLM** — smart model routing with ordered fallbacks via `get_llm()` in `app/agents/llm.py`; supports any LiteLLM model string (OpenAI, Anthropic, Gemini, Ollama, etc.)
 - **LangChain** — agent orchestration (LCEL RunnableGraph)
 - **LlamaIndex** — document ingestion, chunking, indexing, retrieval
 - **pgvector** — vector storage inside PostgreSQL
