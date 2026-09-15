@@ -1,0 +1,456 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1380 850" width="1380" height="850">
+  <defs>
+    <marker id="a"   markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#475569"/></marker>
+    <marker id="a-g" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#16A34A"/></marker>
+    <marker id="a-r" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#EF4444"/></marker>
+    <marker id="a-i" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#4F46E5"/></marker>
+    <marker id="a-b" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#0284C7"/></marker>
+    <marker id="a-e" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#10B981"/></marker>
+    <marker id="a-am" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#D97706"/></marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1380" height="850" fill="#F8FAFC"/>
+
+  <!-- Title -->
+  <text x="690" y="34" text-anchor="middle"
+    font-family="Inter,system-ui,-apple-system,sans-serif"
+    font-size="18" font-weight="700" fill="#0F172A">
+    Q-Learn — Low-Level Backend Architecture
+  </text>
+
+  <!-- ══════════════════════════════════════════════════════════
+       LEFT PANEL  x=18  w=318  — API Entry Layer
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="18" y="48" width="318" height="672" rx="8" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1.5"/>
+  <!-- header -->
+  <rect x="18" y="48" width="318" height="26" rx="8" fill="#475569"/>
+  <rect x="18" y="61"  width="318" height="13" fill="#475569"/>
+  <text x="177" y="65" text-anchor="middle"
+    font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">
+    API Entry Layer
+  </text>
+
+  <!-- HTTP Request -->
+  <rect x="90" y="83" width="174" height="38" rx="7" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="177" y="98" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#1D4ED8">HTTP Request</text>
+  <text x="177" y="113" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#3B82F6">GET · POST · PUT · DELETE</text>
+
+  <line x1="177" y1="121" x2="177" y2="135" stroke="#475569" stroke-width="1.2" marker-end="url(#a)"/>
+
+  <!-- FastAPI App -->
+  <rect x="72" y="137" width="210" height="34" rx="6" fill="#CBD5E1" stroke="#64748B" stroke-width="1.2"/>
+  <text x="177" y="152" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#1E293B">app/main.py — create_app()</text>
+  <text x="177" y="165" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#475569">FastAPI app factory · lifespan hooks</text>
+
+  <line x1="177" y1="171" x2="177" y2="184" stroke="#475569" stroke-width="1.2" marker-end="url(#a)"/>
+
+  <!-- Middleware stack -->
+  <rect x="36" y="186" width="276" height="152" rx="7" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.2"/>
+  <text x="174" y="202" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#334155">Middleware Stack</text>
+
+  <rect x="50" y="208" width="248" height="22" rx="4" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+  <text x="174" y="222" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#1E293B">JWT Auth Check (app/dependencies.py)</text>
+
+  <rect x="50" y="234" width="248" height="22" rx="4" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+  <text x="174" y="248" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#1E293B">Rate Limiting — slowapi (100 req/min)</text>
+
+  <rect x="50" y="260" width="248" height="22" rx="4" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+  <text x="174" y="274" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#1E293B">Pydantic Request Validation</text>
+
+  <rect x="50" y="286" width="248" height="22" rx="4" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+  <text x="174" y="300" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#1E293B">CORS + Structlog Middleware</text>
+
+  <rect x="50" y="312" width="248" height="22" rx="4" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1"/>
+  <text x="174" y="326" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#1E293B">Global QlearnError Exception Handler</text>
+
+  <line x1="177" y1="338" x2="177" y2="352" stroke="#475569" stroke-width="1.2" marker-end="url(#a)"/>
+
+  <!-- Routers section -->
+  <rect x="36" y="354" width="276" height="352" rx="7" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.2"/>
+  <text x="174" y="371" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#0C4A6E">app/routers/ — API Routers</text>
+
+  <!-- Router rows -->
+  <rect x="50" y="378" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="392" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">auth.py</text>
+  <text x="230" y="392" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">POST /auth/register · /login · /refresh</text>
+
+  <rect x="50" y="402" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="416" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">users.py</text>
+  <text x="230" y="416" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /users/{id}/progress · /mastery</text>
+
+  <rect x="50" y="426" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="440" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">learning.py</text>
+  <text x="230" y="440" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /courses · /modules · /lessons</text>
+
+  <rect x="50" y="450" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="464" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">circuits.py</text>
+  <text x="230" y="464" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">CRUD /circuits · /execute · /export</text>
+
+  <rect x="50" y="474" width="248" height="20" rx="3" fill="#FEF3C7" stroke="#D97706" stroke-width="0.8"/>
+  <text x="80"  y="488" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#78350F">simulations.py</text>
+  <text x="230" y="488" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#92400E">POST /simulations/execute · /statevector</text>
+
+  <rect x="50" y="498" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="512" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">quizzes.py</text>
+  <text x="230" y="512" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /quizzes · POST /start · /submit</text>
+
+  <rect x="50" y="522" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="536" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">challenges.py</text>
+  <text x="230" y="536" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">POST /challenges/{id}/submit</text>
+
+  <rect x="50" y="546" width="248" height="20" rx="3" fill="#EDE9FE" stroke="#7C3AED" stroke-width="0.8"/>
+  <text x="80"  y="560" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#4C1D95">agents.py</text>
+  <text x="230" y="560" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#4C1D95">POST /agents/chat · /circuit-explain</text>
+
+  <rect x="50" y="570" width="248" height="20" rx="3" fill="#DCFCE7" stroke="#16A34A" stroke-width="0.8"/>
+  <text x="80"  y="584" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#14532D">knowledge.py</text>
+  <text x="230" y="584" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#14532D">GET /knowledge/search · POST /documents</text>
+
+  <rect x="50" y="594" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="608" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">analytics.py</text>
+  <text x="230" y="608" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /analytics/learning · /user/{id}</text>
+
+  <rect x="50" y="618" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="632" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">instructor.py</text>
+  <text x="230" y="632" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /instructor/classes · /students</text>
+
+  <rect x="50" y="642" width="248" height="20" rx="3" fill="#BAE6FD" stroke="#0284C7" stroke-width="0.8"/>
+  <text x="80"  y="656" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">admin.py</text>
+  <text x="230" y="656" text-anchor="end" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#075985">GET /admin/users · /system</text>
+
+  <!-- Response schema note -->
+  <rect x="50" y="670" width="248" height="22" rx="4" fill="#DCFCE7" stroke="#16A34A" stroke-width="1"/>
+  <text x="174" y="684" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#065F46">All responses → StandardResponse[T] schema</text>
+
+  <!-- Arrow Left → Center -->
+  <line x1="337" y1="400" x2="358" y2="400" stroke="#475569" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- ══════════════════════════════════════════════════════════
+       CENTER PANEL  x=360  w=295  — Service Layer
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="360" y="48" width="295" height="672" rx="8" fill="#F0FDF4" stroke="#16A34A" stroke-width="1.5"/>
+  <rect x="360" y="48" width="295" height="26" rx="8" fill="#16A34A"/>
+  <rect x="360" y="61"  width="295" height="13" fill="#16A34A"/>
+  <text x="507" y="65" text-anchor="middle"
+    font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">
+    Service Layer  (app/services/)
+  </text>
+
+  <!-- Service cards -->
+  <!-- Auth Service -->
+  <rect x="376" y="82" width="263" height="48" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="97" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">auth_service.py</text>
+  <text x="396" y="111" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">JWT issue/verify · bcrypt hash · RBAC</text>
+  <text x="396" y="124" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">5 attempts / 15 min lockout</text>
+
+  <!-- User Service -->
+  <rect x="376" y="136" width="263" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="151" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">user_service.py</text>
+  <text x="396" y="166" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Profile management · role updates</text>
+
+  <!-- Learning Service -->
+  <rect x="376" y="180" width="263" height="48" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="195" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">learning_service.py</text>
+  <text x="396" y="209" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Course/module/lesson progress</text>
+  <text x="396" y="222" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Skill mastery (BKT) · learning paths</text>
+
+  <!-- Circuit Service -->
+  <rect x="376" y="234" width="263" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="249" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">circuit_service.py</text>
+  <text x="396" y="264" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">CRUD · validate · export OpenQASM</text>
+
+  <!-- Quantum Exec Service — highlighted -->
+  <rect x="376" y="278" width="263" height="52" rx="5" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="396" y="293" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#92400E">quantum_execution_service.py</text>
+  <text x="396" y="307" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#B45309">Backend adapter registry (qiskit / pennylane)</text>
+  <text x="396" y="321" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#B45309">Delegates to QiskitAerAdapter → Sandbox</text>
+  <!-- arrow to quantum path -->
+  <line x1="639" y1="304" x2="663" y2="148" stroke="#D97706" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-am)"/>
+
+  <!-- Assessment Service -->
+  <rect x="376" y="336" width="263" height="48" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="351" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">assessment_service.py</text>
+  <text x="396" y="365" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Quiz generation via LLM</text>
+  <text x="396" y="379" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Answer evaluation · feedback · scoring</text>
+
+  <!-- Agent Orchestrator — highlighted -->
+  <rect x="376" y="390" width="263" height="62" rx="5" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="396" y="405" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#312E81">agent_orchestrator_service.py</text>
+  <text x="396" y="419" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#4338CA">LangGraph StateGraph · 6 agent nodes</text>
+  <text x="396" y="433" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#4338CA">Conditional routing · tool calling</text>
+  <text x="396" y="447" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#4338CA">AsyncPostgresSaver checkpoints</text>
+  <!-- arrow to langgraph path -->
+  <line x1="639" y1="421" x2="663" y2="370" stroke="#4F46E5" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-i)"/>
+
+  <!-- RAG Service — highlighted -->
+  <rect x="376" y="458" width="263" height="62" rx="5" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5"/>
+  <text x="396" y="473" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#0C4A6E">rag_service.py</text>
+  <text x="396" y="487" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0369A1">BM25 + pgvector hybrid retrieval</text>
+  <text x="396" y="501" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0369A1">RRF fusion · cross-encoder rerank</text>
+  <text x="396" y="515" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0369A1">LLM synthesis + citations</text>
+  <!-- arrow to RAG path -->
+  <line x1="639" y1="489" x2="663" y2="577" stroke="#0284C7" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-b)"/>
+
+  <!-- Recommendation Service -->
+  <rect x="376" y="526" width="263" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="541" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">recommendation_service.py</text>
+  <text x="396" y="556" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Skill gap analysis · next activity</text>
+
+  <!-- Analytics Service -->
+  <rect x="376" y="570" width="263" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="396" y="585" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">analytics_service.py</text>
+  <text x="396" y="600" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">Learning metrics · class analytics</text>
+
+  <!-- Content + Notification -->
+  <rect x="376" y="614" width="125" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="439" y="629" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">content_service</text>
+  <text x="439" y="644" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">File mgmt · versioning</text>
+
+  <rect x="513" y="614" width="126" height="38" rx="5" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="576" y="629" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="700" fill="#14532D">notification_service</text>
+  <text x="576" y="644" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#15803D">In-app · Realtime events</text>
+
+  <!-- Repository bar -->
+  <rect x="376" y="658" width="263" height="22" rx="4" fill="#A7F3D0" stroke="#059669" stroke-width="1"/>
+  <text x="507" y="673" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#065F46">Repository Layer → app/repositories/</text>
+  <rect x="376" y="684" width="263" height="20" rx="4" fill="#A7F3D0" stroke="#059669" stroke-width="1"/>
+  <text x="507" y="698" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#065F46">AsyncSession (SQLAlchemy) · asyncpg driver</text>
+
+  <!-- Arrow Center → Right -->
+  <line x1="656" y1="400" x2="672" y2="400" stroke="#475569" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <!-- ══════════════════════════════════════════════════════════
+       RIGHT PANEL  x=674  w=692  — Execution Paths + External
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="674" y="48" width="692" height="672" rx="8" fill="#FAFAFA" stroke="#94A3B8" stroke-width="1.5"/>
+  <rect x="674" y="48" width="692" height="26" rx="8" fill="#334155"/>
+  <rect x="674" y="61"  width="692" height="13" fill="#334155"/>
+  <text x="1020" y="65" text-anchor="middle"
+    font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">
+    Execution Paths  +  External Integrations
+  </text>
+
+  <!-- ─── QUANTUM EXECUTION PATH ─── y=82 h=210 -->
+  <rect x="690" y="80" width="320" height="210" rx="7" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5"/>
+  <rect x="690" y="80" width="320" height="24" rx="7" fill="#EF4444"/>
+  <rect x="690" y="92"  width="320" height="12" fill="#EF4444"/>
+  <text x="850" y="96" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">Quantum Execution Path</text>
+
+  <rect x="706" y="111" width="288" height="22" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="850" y="126" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">QiskitAerAdapter.execute(circuit, shots)</text>
+
+  <line x1="850" y1="133" x2="850" y2="143" stroke="#EF4444" stroke-width="1" marker-end="url(#a-r)"/>
+
+  <rect x="706" y="145" width="288" height="22" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="850" y="160" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">_compile_to_qasm() · _render_qiskit_script()</text>
+
+  <line x1="850" y1="167" x2="850" y2="177" stroke="#EF4444" stroke-width="1" marker-end="url(#a-r)"/>
+
+  <rect x="706" y="179" width="288" height="22" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="850" y="194" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">AsyncSandbox.fork(source="qlearn-python-base")</text>
+
+  <line x1="850" y1="201" x2="850" y2="211" stroke="#EF4444" stroke-width="1" marker-end="url(#a-r)"/>
+
+  <rect x="706" y="213" width="288" height="22" rx="4" fill="#FCA5A5" stroke="#DC2626" stroke-width="1.2"/>
+  <text x="850" y="228" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#7F1D1D">microVM: python -c script  →  Qiskit Aer runs</text>
+
+  <line x1="850" y1="235" x2="850" y2="245" stroke="#EF4444" stroke-width="1" marker-end="url(#a-r)"/>
+
+  <rect x="706" y="247" width="288" height="22" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="850" y="262" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">_parse_result(stdout) → ExecutionResult</text>
+
+  <!-- ─── LANGGRAPH AGENT PATH ─── y=302 h=245 -->
+  <rect x="690" y="302" width="320" height="245" rx="7" fill="#EEF2FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <rect x="690" y="302" width="320" height="24" rx="7" fill="#4F46E5"/>
+  <rect x="690" y="315"  width="320" height="11" fill="#4F46E5"/>
+  <text x="850" y="319" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">LangGraph Agent Orchestration</text>
+
+  <!-- Orchestrator node -->
+  <rect x="740" y="334" width="220" height="22" rx="11" fill="#A5B4FC" stroke="#4F46E5" stroke-width="1.2"/>
+  <text x="850" y="349" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#312E81">Orchestrator Node (route decision)</text>
+
+  <!-- Fan out arrows -->
+  <line x1="780" y1="356" x2="730" y2="376" stroke="#4F46E5" stroke-width="1" marker-end="url(#a-i)"/>
+  <line x1="810" y1="356" x2="790" y2="376" stroke="#4F46E5" stroke-width="1" marker-end="url(#a-i)"/>
+  <line x1="850" y1="356" x2="850" y2="376" stroke="#4F46E5" stroke-width="1" marker-end="url(#a-i)"/>
+  <line x1="890" y1="356" x2="910" y2="376" stroke="#4F46E5" stroke-width="1" marker-end="url(#a-i)"/>
+  <line x1="920" y1="356" x2="970" y2="376" stroke="#4F46E5" stroke-width="1" marker-end="url(#a-i)"/>
+
+  <!-- Agent nodes -->
+  <rect x="697" y="378" width="78" height="22" rx="5" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="736" y="393" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">Tutor</text>
+
+  <rect x="783" y="378" width="78" height="22" rx="5" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="822" y="393" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">Circuit</text>
+
+  <rect x="820" y="403" width="60" height="22" rx="5" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="850" y="418" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">Eval</text>
+
+  <rect x="870" y="378" width="78" height="22" rx="5" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="909" y="393" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">Rec</text>
+
+  <rect x="956" y="378" width="78" height="22" rx="5" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="995" y="393" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">Research</text>
+
+  <!-- Convergence to output -->
+  <line x1="736" y1="400" x2="770" y2="432" stroke="#4F46E5" stroke-width="1"/>
+  <line x1="822" y1="400" x2="810" y2="432" stroke="#4F46E5" stroke-width="1"/>
+  <line x1="850" y1="425" x2="850" y2="432" stroke="#4F46E5" stroke-width="1"/>
+  <line x1="909" y1="400" x2="890" y2="432" stroke="#4F46E5" stroke-width="1"/>
+  <line x1="995" y1="400" x2="930" y2="432" stroke="#4F46E5" stroke-width="1"/>
+  <line x1="850" y1="432" x2="850" y2="444" stroke="#4F46E5" stroke-width="1.2" marker-end="url(#a-i)"/>
+
+  <rect x="740" y="446" width="220" height="22" rx="4" fill="#C7D2FE" stroke="#4F46E5" stroke-width="1"/>
+  <text x="850" y="461" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#312E81">AgentResponse (content · sources · recs)</text>
+
+  <!-- PostgresSaver note -->
+  <rect x="706" y="476" width="288" height="28" rx="4" fill="#A5B4FC" stroke="#4F46E5" stroke-width="1"/>
+  <text x="850" y="488" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#1E1B4B">AsyncPostgresSaver (LangGraph checkpointer)</text>
+  <text x="850" y="500" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#3730A3">persists state → Supabase PostgreSQL · survives restarts · multi-replica safe</text>
+
+  <!-- Prompts note -->
+  <rect x="706" y="512" width="288" height="22" rx="4" fill="#E0E7FF" stroke="#6366F1" stroke-width="0.8"/>
+  <text x="850" y="527" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#4338CA">All prompts centralised in app/agents/prompts.py</text>
+
+  <!-- ─── RAG PIPELINE ─── y=562 h=185 -->
+  <rect x="690" y="558" width="320" height="185" rx="7" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5"/>
+  <rect x="690" y="558" width="320" height="24" rx="7" fill="#0284C7"/>
+  <rect x="690" y="571"  width="320" height="11" fill="#0284C7"/>
+  <text x="850" y="575" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">RAG Pipeline</text>
+
+  <rect x="706" y="590" width="288" height="20" rx="4" fill="#BAE6FD" stroke="#0284C7" stroke-width="1"/>
+  <text x="850" y="604" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">User Query → Query Rewriting (if context)</text>
+
+  <line x1="850" y1="610" x2="850" y2="620" stroke="#0284C7" stroke-width="1" marker-end="url(#a-b)"/>
+
+  <rect x="706" y="622" width="136" height="20" rx="4" fill="#BAE6FD" stroke="#0284C7" stroke-width="1"/>
+  <text x="774" y="636" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0C4A6E">BM25 Search</text>
+  <rect x="852" y="622" width="142" height="20" rx="4" fill="#BAE6FD" stroke="#0284C7" stroke-width="1"/>
+  <text x="923" y="636" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0C4A6E">pgvector (dense k=12)</text>
+
+  <line x1="850" y1="642" x2="850" y2="652" stroke="#0284C7" stroke-width="1" marker-end="url(#a-b)"/>
+
+  <rect x="706" y="654" width="288" height="20" rx="4" fill="#BAE6FD" stroke="#0284C7" stroke-width="1"/>
+  <text x="850" y="668" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">RRF Fusion → Cross-Encoder Rerank (top-5)</text>
+
+  <line x1="850" y1="674" x2="850" y2="684" stroke="#0284C7" stroke-width="1" marker-end="url(#a-b)"/>
+
+  <rect x="706" y="686" width="288" height="20" rx="4" fill="#BAE6FD" stroke="#0284C7" stroke-width="1"/>
+  <text x="850" y="700" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#0C4A6E">LLM Synthesis → RAGResponse + citations</text>
+
+  <text x="850" y="730" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#0369A1">Embedding model: sentence-transformers/all-MiniLM-L6-v2 (dim=384)</text>
+
+  <!-- ─── SUPABASE REALTIME PUBLISH ─── x=1024 y=80 -->
+  <rect x="1028" y="80" width="322" height="150" rx="7" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
+  <rect x="1028" y="80" width="322" height="24" rx="7" fill="#10B981"/>
+  <rect x="1028" y="92"  width="322" height="12" fill="#10B981"/>
+  <text x="1189" y="96" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">Supabase Realtime — Publish</text>
+
+  <rect x="1044" y="112" width="290" height="22" rx="4" fill="#A7F3D0" stroke="#10B981" stroke-width="1"/>
+  <text x="1189" y="127" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#065F46">circuit:{id}  →  broadcast event "result"</text>
+
+  <rect x="1044" y="138" width="290" height="22" rx="4" fill="#A7F3D0" stroke="#10B981" stroke-width="1"/>
+  <text x="1189" y="153" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#065F46">tutor:{session_id}  →  broadcast event "token"</text>
+
+  <rect x="1044" y="164" width="290" height="22" rx="4" fill="#A7F3D0" stroke="#10B981" stroke-width="1"/>
+  <text x="1189" y="179" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#065F46">progress:{user_id}  →  broadcast event "mastery"</text>
+
+  <text x="1189" y="216" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#059669">No FastAPI ws:// endpoints needed.</text>
+  <text x="1189" y="228" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#059669">Frontend subscribes via Supabase JS SDK.</text>
+
+  <!-- ─── VERCEL SANDBOX (external) ─── x=1028 y=248 -->
+  <rect x="1028" y="248" width="322" height="140" rx="7" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+  <rect x="1028" y="248" width="322" height="24" rx="7" fill="#DC2626"/>
+  <rect x="1028" y="260"  width="322" height="12" fill="#DC2626"/>
+  <text x="1189" y="264" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">▲  Vercel Sandbox microVM</text>
+
+  <rect x="1044" y="280" width="290" height="20" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="1189" y="294" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#7F1D1D">deny-all network · 512 MB · 1 vCPU · 30s</text>
+
+  <rect x="1044" y="304" width="138" height="20" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="1113" y="318" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">Qiskit Aer sim</text>
+
+  <rect x="1196" y="304" width="138" height="20" rx="4" fill="#FECACA" stroke="#EF4444" stroke-width="1"/>
+  <text x="1265" y="318" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#7F1D1D">Student Python</text>
+
+  <text x="1189" y="358" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#991B1B">pre-built snapshot: qlearn-python-base</text>
+  <text x="1189" y="374" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#991B1B">prints JSON result to stdout</text>
+
+  <!-- ─── LLM Provider (external) ─── x=1028 y=402 -->
+  <rect x="1028" y="402" width="322" height="135" rx="7" fill="#F3E8FF" stroke="#9333EA" stroke-width="1.5"/>
+  <rect x="1028" y="402" width="322" height="24" rx="7" fill="#9333EA"/>
+  <rect x="1028" y="414"  width="322" height="12" fill="#9333EA"/>
+  <text x="1189" y="418" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="white">LLM Provider (pluggable)</text>
+
+  <rect x="1044" y="434" width="138" height="20" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="1113" y="448" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#4C1D95">Claude (Anthropic)</text>
+  <rect x="1196" y="434" width="138" height="20" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="1265" y="448" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#4C1D95">GPT-4 (OpenAI)</text>
+
+  <rect x="1044" y="458" width="138" height="20" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="1113" y="472" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#4C1D95">Gemini</text>
+  <rect x="1196" y="458" width="138" height="20" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="1265" y="472" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="600" fill="#4C1D95">Ollama (local dev)</text>
+
+  <text x="1189" y="502" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#7E22CE">Selected via LLM_PROVIDER env var</text>
+  <text x="1189" y="516" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" fill="#7E22CE">Used by: RAG, Agent, Assessment services</text>
+
+  <!-- Connecting arrows: execution paths → external boxes -->
+  <line x1="1011" y1="195" x2="1026" y2="152" stroke="#10B981" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-e)"/>
+  <line x1="1011" y1="220" x2="1026" y2="285" stroke="#EF4444" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-r)"/>
+  <line x1="1011" y1="490" x2="1026" y2="460" stroke="#9333EA" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)"/>
+  <line x1="1011" y1="695" x2="1026" y2="475" stroke="#9333EA" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a)"/>
+
+  <!-- ══════════════════════════════════════════════════════════
+       BOTTOM STRIP — Supabase PostgreSQL Tables  y=732
+  ══════════════════════════════════════════════════════════ -->
+  <rect x="18" y="735" width="1348" height="100" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5"/>
+  <rect x="18" y="735" width="1348" height="24" rx="8" fill="#D97706"/>
+  <rect x="18" y="748"  width="1348" height="11" fill="#D97706"/>
+  <text x="692" y="752" text-anchor="middle"
+    font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">
+    Supabase PostgreSQL — Database Schema (14+ Tables · pgvector IVFFlat index · Alembic migrations)
+  </text>
+
+  <!-- Table groups -->
+  <rect x="30"  y="766" width="180" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="120" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Users</text>
+  <text x="120" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">users · user_profiles</text>
+  <text x="120" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">roles: student · instructor · admin</text>
+  <text x="120" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">bcrypt hash · JWT session</text>
+
+  <rect x="220" y="766" width="250" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="345" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Learning</text>
+  <text x="345" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">courses · modules · lessons · concepts</text>
+  <text x="345" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">learning_progress · skill_mastery</text>
+  <text x="345" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">BKT mastery_score 0.0–1.0</text>
+
+  <rect x="480" y="766" width="210" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="585" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Circuits</text>
+  <text x="585" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">circuits (JSON definition)</text>
+  <text x="585" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">circuit_executions</text>
+  <text x="585" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">statevector · probabilities · shots</text>
+
+  <rect x="700" y="766" width="240" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="820" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Assessments</text>
+  <text x="820" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">quizzes · quiz_questions · quiz_attempts</text>
+  <text x="820" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">coding_challenges · challenge_attempts</text>
+  <text x="820" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">multiple_choice · prediction · code</text>
+
+  <rect x="950" y="766" width="230" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="1065" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Knowledge (RAG)</text>
+  <text x="1065" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">knowledge_documents · document_chunks</text>
+  <text x="1065" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">knowledge_embeddings (Vector 384)</text>
+  <text x="1065" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">IVFFlat index · chunk_size=800</text>
+
+  <rect x="1190" y="766" width="164" height="60" rx="5" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="1272" y="780" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="9" font-weight="700" fill="#78350F">Agents</text>
+  <text x="1272" y="794" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">agent_sessions</text>
+  <text x="1272" y="806" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">agent_messages</text>
+  <text x="1272" y="818" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="8" fill="#92400E">LangGraph checkpoints</text>
+
+  <!-- Vertical arrows from service layer down to DB -->
+  <line x1="507" y1="720" x2="507" y2="733" stroke="#D97706" stroke-width="1.2" stroke-dasharray="4,2" marker-end="url(#a-am)"/>
+
+</svg>

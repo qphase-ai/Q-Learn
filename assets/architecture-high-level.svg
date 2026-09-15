@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 720" width="1060" height="720">
+  <defs>
+    <marker id="arr"    markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#475569"/></marker>
+    <marker id="arr-b"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3B82F6"/></marker>
+    <marker id="arr-g"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#10B981"/></marker>
+    <marker id="arr-a"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#D97706"/></marker>
+    <marker id="arr-r"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#EF4444"/></marker>
+    <marker id="arr-p"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#9333EA"/></marker>
+  </defs>
+
+  <!-- ── Background ── -->
+  <rect width="1060" height="720" fill="#F8FAFC"/>
+
+  <!-- ── Title ── -->
+  <text x="530" y="36" text-anchor="middle"
+        font-family="Inter,system-ui,-apple-system,sans-serif"
+        font-size="19" font-weight="700" fill="#0F172A">
+    Q-Learn — High-Level Architecture
+  </text>
+
+  <!-- ════════════════════════════════════════════
+       CLIENT
+  ════════════════════════════════════════════ -->
+  <rect x="405" y="55" width="220" height="62" rx="10"
+        fill="#DBEAFE" stroke="#3B82F6" stroke-width="2"/>
+  <text x="515" y="81" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="#1D4ED8">
+    Browser Client
+  </text>
+  <text x="515" y="100" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="11" fill="#3B82F6">
+    Student · Instructor · Admin
+  </text>
+
+  <!-- Arrow: Client → Frontend -->
+  <line x1="515" y1="117" x2="515" y2="152"
+        stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arr-b)"/>
+  <text x="527" y="138" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#3B82F6">HTTPS</text>
+
+  <!-- ════════════════════════════════════════════
+       VERCEL FRONTEND  y=154
+  ════════════════════════════════════════════ -->
+  <rect x="65" y="154" width="930" height="116" rx="10"
+        fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+  <!-- header band -->
+  <rect x="65" y="154" width="930" height="30" rx="10" fill="#7C3AED"/>
+  <rect x="65" y="170" width="930" height="14" fill="#7C3AED"/>
+  <text x="530" y="174" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="white">
+    ▲  Vercel — Next.js 14 Frontend
+  </text>
+  <!-- page chips -->
+  <rect x="82"  y="193" width="108" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="136" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Auth Pages</text>
+
+  <rect x="200" y="193" width="120" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="260" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Dashboard</text>
+
+  <rect x="330" y="193" width="140" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="400" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Circuit Builder</text>
+
+  <rect x="480" y="193" width="130" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="545" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Lesson Reader</text>
+
+  <rect x="620" y="193" width="130" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="685" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">AI Tutor Chat</text>
+
+  <rect x="760" y="193" width="220" height="26" rx="5" fill="#C4B5FD" stroke="#7C3AED" stroke-width="1"/>
+  <text x="870" y="210" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Instructor / Admin Panel</text>
+
+  <text x="530" y="255" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="10" fill="#6D28D9">
+    Supabase JS SDK — subscribes to Realtime channels (circuit results · AI tutor token stream · progress updates)
+  </text>
+
+  <!-- Arrow: Frontend → FastAPI -->
+  <line x1="515" y1="272" x2="515" y2="310"
+        stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="527" y="294" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#475569">REST /api/v1/</text>
+
+  <!-- ════════════════════════════════════════════
+       FASTAPI BACKEND  y=312
+  ════════════════════════════════════════════ -->
+  <rect x="65" y="312" width="930" height="148" rx="10"
+        fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+  <!-- header -->
+  <rect x="65" y="312" width="930" height="30" rx="10" fill="#16A34A"/>
+  <rect x="65" y="328" width="930" height="14" fill="#16A34A"/>
+  <text x="530" y="332" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="13" font-weight="700" fill="white">
+    ⚙  Railway — FastAPI Backend (Python 3.11+)
+  </text>
+  <!-- gateway bar -->
+  <rect x="82" y="351" width="896" height="24" rx="4" fill="#BBF7D0" stroke="#16A34A" stroke-width="1"/>
+  <text x="530" y="367" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">
+    API Gateway: JWT Auth · Rate Limiting (slowapi) · Pydantic Validation · Structlog
+  </text>
+  <!-- service chips -->
+  <rect x="82"  y="384" width="98"  height="26" rx="4" fill="#BBF7D0" stroke="#15803D" stroke-width="1"/>
+  <text x="131" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">Auth</text>
+
+  <rect x="188" y="384" width="98" height="26" rx="4" fill="#BBF7D0" stroke="#15803D" stroke-width="1"/>
+  <text x="237" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">Learning</text>
+
+  <rect x="294" y="384" width="98" height="26" rx="4" fill="#BBF7D0" stroke="#15803D" stroke-width="1"/>
+  <text x="343" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">Circuit</text>
+
+  <rect x="400" y="384" width="118" height="26" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+  <text x="459" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#92400E">Quantum Exec</text>
+
+  <rect x="526" y="384" width="120" height="26" rx="4" fill="#E0E7FF" stroke="#4F46E5" stroke-width="1.5"/>
+  <text x="586" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#312E81">Agent/LangGraph</text>
+
+  <rect x="654" y="384" width="98" height="26" rx="4" fill="#E0F2FE" stroke="#0284C7" stroke-width="1.5"/>
+  <text x="703" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#0C4A6E">RAG</text>
+
+  <rect x="760" y="384" width="88" height="26" rx="4" fill="#BBF7D0" stroke="#15803D" stroke-width="1"/>
+  <text x="804" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">Assessment</text>
+
+  <rect x="856" y="384" width="122" height="26" rx="4" fill="#BBF7D0" stroke="#15803D" stroke-width="1"/>
+  <text x="917" y="401" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#14532D">Analytics / Rec</text>
+
+  <!-- repo bar -->
+  <rect x="82" y="419" width="896" height="22" rx="4" fill="#A7F3D0" stroke="#059669" stroke-width="1"/>
+  <text x="530" y="434" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#065F46">
+    Repository Layer · SQLAlchemy 2.x Async · asyncpg driver
+  </text>
+
+  <text x="530" y="453" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="10" fill="#15803D">
+    Publishes events → Supabase Realtime · Forks microVMs → Vercel Sandbox · SDK calls → LLM Provider
+  </text>
+
+  <!-- Arrows: FastAPI → infra (3 arrows) -->
+  <line x1="210" y1="460" x2="195" y2="508" stroke="#D97706" stroke-width="1.5" marker-end="url(#arr-a)"/>
+  <line x1="515" y1="460" x2="515" y2="508" stroke="#EF4444" stroke-width="1.5" marker-end="url(#arr-r)"/>
+  <line x1="820" y1="460" x2="835" y2="508" stroke="#9333EA" stroke-width="1.5" marker-end="url(#arr-p)"/>
+
+  <!-- ════════════════════════════════════════════
+       INFRASTRUCTURE ROW  y=510
+  ════════════════════════════════════════════ -->
+
+  <!-- Supabase -->
+  <rect x="65" y="510" width="290" height="185" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+  <rect x="65" y="510" width="290" height="30" rx="10" fill="#D97706"/>
+  <rect x="65" y="526" width="290" height="14" fill="#D97706"/>
+  <text x="210" y="530" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">Supabase (Managed Cloud)</text>
+
+  <rect x="82"  y="549" width="124" height="24" rx="4" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="144" y="565" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#78350F">PostgreSQL+pgvector</text>
+
+  <rect x="214" y="549" width="124" height="24" rx="4" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="276" y="565" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#78350F">Auth + JWT</text>
+
+  <rect x="82"  y="581" width="124" height="24" rx="4" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="144" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#78350F">Storage (Files)</text>
+
+  <rect x="214" y="581" width="124" height="24" rx="4" fill="#FDE68A" stroke="#D97706" stroke-width="1"/>
+  <text x="276" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#78350F">Realtime (pub/sub)</text>
+
+  <line x1="210" y1="613" x2="210" y2="619" stroke="#D97706" stroke-width="1"/>
+  <text x="210" y="630" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#92400E">LangGraph AsyncPostgresSaver</text>
+  <text x="210" y="646" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#92400E">pgvector embeddings (dim=384)</text>
+  <text x="210" y="662" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#92400E">14+ tables · IVFFlat index</text>
+  <text x="210" y="678" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#92400E">Alembic migrations</text>
+
+  <!-- Vercel Sandbox -->
+  <rect x="385" y="510" width="290" height="185" rx="10" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+  <rect x="385" y="510" width="290" height="30" rx="10" fill="#DC2626"/>
+  <rect x="385" y="526" width="290" height="14" fill="#DC2626"/>
+  <text x="530" y="530" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">▲  Vercel Sandbox (Hobby)</text>
+
+  <rect x="402" y="549" width="256" height="24" rx="4" fill="#FECACA" stroke="#DC2626" stroke-width="1"/>
+  <text x="530" y="565" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#7F1D1D">Isolated microVM · deny-all network</text>
+
+  <rect x="402" y="581" width="122" height="24" rx="4" fill="#FECACA" stroke="#DC2626" stroke-width="1"/>
+  <text x="463" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#7F1D1D">Qiskit Aer</text>
+
+  <rect x="532" y="581" width="126" height="24" rx="4" fill="#FECACA" stroke="#DC2626" stroke-width="1"/>
+  <text x="595" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#7F1D1D">Student Python</text>
+
+  <text x="530" y="628" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#991B1B">CPU-bound work runs here,</text>
+  <text x="530" y="644" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#991B1B">not inside the FastAPI process</text>
+  <text x="530" y="660" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#991B1B">512 MB · 1 vCPU · 30s timeout</text>
+  <text x="530" y="676" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#991B1B">qlearn-python-base snapshot</text>
+
+  <!-- LLM Provider -->
+  <rect x="705" y="510" width="290" height="185" rx="10" fill="#F3E8FF" stroke="#9333EA" stroke-width="2"/>
+  <rect x="705" y="510" width="290" height="30" rx="10" fill="#9333EA"/>
+  <rect x="705" y="526" width="290" height="14" fill="#9333EA"/>
+  <text x="850" y="530" text-anchor="middle"
+        font-family="Inter,system-ui,sans-serif" font-size="12" font-weight="700" fill="white">LLM Provider</text>
+
+  <rect x="722" y="549" width="122" height="24" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="783" y="565" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Claude (Anthropic)</text>
+
+  <rect x="852" y="549" width="126" height="24" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="915" y="565" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">GPT-4 (OpenAI)</text>
+
+  <rect x="722" y="581" width="122" height="24" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="783" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Gemini (Google)</text>
+
+  <rect x="852" y="581" width="126" height="24" rx="4" fill="#E9D5FF" stroke="#9333EA" stroke-width="1"/>
+  <text x="915" y="597" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" font-weight="600" fill="#4C1D95">Ollama (local dev)</text>
+
+  <text x="850" y="628" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#7E22CE">RAG synthesis · Tutor responses</text>
+  <text x="850" y="644" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#7E22CE">Quiz generation · Assessment feedback</text>
+  <text x="850" y="660" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#7E22CE">Circuit explanations</text>
+  <text x="850" y="676" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="10" fill="#7E22CE">LLM_PROVIDER env var selects backend</text>
+
+  <!-- ════════════════════════════════════════════
+       SUPABASE REALTIME feedback arrow (left edge)
+  ════════════════════════════════════════════ -->
+  <path d="M 65 600 Q 28 430 65 269"
+        stroke="#10B981" stroke-width="2" fill="none"
+        stroke-dasharray="6,3" marker-end="url(#arr-g)"/>
+  <!-- rotated label -->
+  <text font-family="Inter,system-ui,sans-serif" font-size="9" fill="#059669"
+        transform="translate(14,490) rotate(-90)">
+    Supabase Realtime (WebSocket)
+  </text>
+
+</svg>
