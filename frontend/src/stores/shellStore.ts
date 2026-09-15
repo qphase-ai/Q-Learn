@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type Workspace = "dashboard" | "learn" | "circuit" | "code" | "quiz" | "settings";
-type BottomPanelTab = "terminal" | "problems" | "output";
+type BottomPanelTab = "probabilities" | "statevector" | "qasm" | "console";
 
 interface ShellStore {
   activeWorkspace: Workspace;
@@ -24,7 +24,7 @@ export const useShellStore = create<ShellStore>()(
       rightPanelOpen: true,
       bottomPanelOpen: false,
       focusMode: false,
-      bottomPanelTab: "output",
+      bottomPanelTab: "probabilities",
       setWorkspace: (activeWorkspace) => set({ activeWorkspace }),
       toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
       toggleBottomPanel: () => set((s) => ({ bottomPanelOpen: !s.bottomPanelOpen })),

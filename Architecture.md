@@ -86,7 +86,7 @@ flowchart TD
         end
 
         subgraph External["External"]
-            LLM["LLM Provider\nGPT / Claude / Gemini / Ollama"]
+            LLM["LLM Provider\nChatLiteLLM — primary + fallbacks\nOpenAI · Anthropic · Gemini · Ollama"]
             KnowledgeBase["Knowledge Sources\nDocs • Papers • Course Material"]
         end
     end
@@ -113,7 +113,7 @@ Six layers — each has its own module doc:
 | **2. Backend Services** | FastAPI microservices — API Gateway + 11 domain services; `API Router → Service → Repository → PostgreSQL` | [`backend/design.md`](backend/design.md) |
 | **3. Quantum Backend** | Adapter pattern — `QiskitAerAdapter` forks Vercel Sandbox microVM; FastAPI stays I/O-bound | [`docs/quantum-execution.md`](docs/quantum-execution.md) |
 | **4. Code Execution Sandbox** | Vercel Sandbox managed microVM — both student code and quantum circuits; deny-all, 512 MB, 30s | [`docs/sandbox.md`](docs/sandbox.md) |
-| **5. AI & Knowledge** | LLM provider abstraction + RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) | [`docs/rag-pipeline.md`](docs/rag-pipeline.md) · [`docs/agents.md`](docs/agents.md) |
+| **5. AI & Knowledge** | ChatLiteLLM (`get_llm()`) with primary + fallback routing + RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) | [`docs/rag-pipeline.md`](docs/rag-pipeline.md) · [`docs/agents.md`](docs/agents.md) |
 | **6. Data Storage** | Supabase (Auth + PostgreSQL + pgvector + Realtime) · Docker Compose for local dev | [`docs/database.md`](docs/database.md) · [`docs/infrastructure.md`](docs/infrastructure.md) |
 
 > Redis is not in the initial stack — deferred to Phase 2 when profiling shows a specific hot path.

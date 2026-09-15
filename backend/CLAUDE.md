@@ -143,7 +143,9 @@ Copy `.env.example` → `.env` in `backend/`. Required keys:
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_ANON_KEY` | Supabase project |
 | `VERCEL_TOKEN` | Sandbox SDK auth |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payment integration |
-| `LLM_PROVIDER` | `ollama` \| `openai` \| `anthropic` \| `gemini` |
+| `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
+| `LLM_FALLBACK_MODELS` | JSON list of fallback model strings |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Set only for providers you use |
 
 Production env var reference: `../docs/infrastructure.md`
 

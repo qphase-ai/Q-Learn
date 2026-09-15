@@ -84,7 +84,7 @@ flowchart TD
 
         subgraph External["External"]
             Quantum["Quantum Backend\nQiskit Aer → PennyLane → Cirq"]
-            LLM["LLM Provider\nGPT / Claude / Gemini / Ollama"]
+            LLM["LLM Provider\nChatLiteLLM — primary + fallbacks\nOpenAI · Anthropic · Gemini · Ollama"]
             KnowledgeBase["Knowledge Sources\nDocs • Papers • Course Material"]
         end
     end
@@ -535,7 +535,7 @@ class Circuit(Base):
     user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     name = Column(String(200))
     definition = Column(JSON, nullable=False)  # Framework-independent JSON
-    backend = Column(String(20), default="qiskit")
+    backend = Column(String(20), default="qiskit_aer")
     is_shared = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -753,7 +753,7 @@ class QiskitAerAdapter(QuantumBackend):
 
     async def compile(self, circuit: CircuitSpec) -> CompiledCircuit:
         qasm = _build_qasm(circuit)  # Pure-Python OpenQASM 2 serialiser, no Qiskit needed locally
-        return CompiledCircuit(circuit=circuit, backend="qiskit", qasm=qasm)
+        return CompiledCircuit(circuit=circuit, backend="qiskit_aer", qasm=qasm)
 
     async def execute(self, circuit: CompiledCircuit, shots: int = 1024) -> ExecutionResult:
         """Fork a Vercel Sandbox microVM and run Qiskit Aer there."""
@@ -787,7 +787,7 @@ class QuantumExecutionService:
     """Service for managing quantum execution across backends."""
 
     BACKENDS = {
-        "qiskit": QiskitAerAdapter,
+        "qiskit_aer": QiskitAerAdapter,
         "pennylane": PennyLaneAdapter,  # Phase 2
         "cirq": CirqAdapter,            # Phase 2
     }
@@ -795,14 +795,14 @@ class QuantumExecutionService:
     def __init__(self):
         self.adapters: dict[str, QuantumBackend] = {}
 
-    async def get_backend(self, name: str = "qiskit") -> QuantumBackend:
+    async def get_backend(self, name: str = "qiskit_aer") -> QuantumBackend:
         """Get or create a backend adapter."""
         if name not in self.adapters:
             adapter_class = self.BACKENDS[name]
             self.adapters[name] = adapter_class()
         return self.adapters[name]
 
-    async def execute(self, circuit_spec: CircuitSpec, backend: str = "qiskit", shots: int = 1024) -> ExecutionResult:
+    async def execute(self, circuit_spec: CircuitSpec, backend: str = "qiskit_aer", shots: int = 1024) -> ExecutionResult:
         """Execute a circuit through the specified backend."""
         adapter = await self.get_backend(backend)
         compiled = await adapter.compile(circuit_spec)
@@ -826,9 +826,9 @@ User Query → Query Rewriting → Hybrid Retrieval → Reranking → LLM Genera
 class RAGService:
     """Service for RAG-powered knowledge retrieval."""
 
-    def __init__(self, vector_store, llm_provider, embedding_model):
+    def __init__(self, vector_store, embedding_model):
         self.vector_store = vector_store  # PGVectorStore
-        self.llm = llm_provider           # LLM client
+        self.llm = get_llm()              # ChatLiteLLM with fallback routing
         self.embed_model = embedding_model # Sentence transformers
 
         # Build query engine at startup
@@ -1315,13 +1315,16 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/qlearn
 DB_POOL_SIZE=20
 
 # Quantum
-QUANTUM_BACKEND=qiskit
+QUANTUM_BACKEND=qiskit_aer
 
-# AI/LLM
-LLM_PROVIDER=ollama
-LLM_MODEL=qwen2.5:7b
+# AI/LLM — ChatLiteLLM model routing
+LLM_PRIMARY_MODEL=gpt-4o-mini
+LLM_FALLBACK_MODELS=["anthropic/claude-haiku-4-5-20251001","gemini/gemini-1.5-flash"]
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=2048
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-...
+GEMINI_API_KEY=
 
 # RAG
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
@@ -1357,8 +1360,10 @@ class Settings(BaseSettings):
     app_env: str = "development"
     secret_key: str
     database_url: str
-    llm_provider: str = "ollama"
-    llm_model: str = "qwen2.5:7b"
+    llm_primary_model: str = "gpt-4o-mini"
+    llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-1.5-flash"]
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 2048
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dim: int = 384
     chunk_size: int = 800
@@ -1407,7 +1412,8 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://qlearn:${DB_PASSWORD}@postgres:5432/qlearn
-      LLM_MODEL: ${LLM_MODEL}
+      LLM_PRIMARY_MODEL: ${LLM_PRIMARY_MODEL}
+      LLM_FALLBACK_MODELS: ${LLM_FALLBACK_MODELS}
       VERCEL_TOKEN: ${VERCEL_TOKEN}
     depends_on:
       postgres:

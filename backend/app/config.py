@@ -24,12 +24,18 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
 
-    # LLM
-    llm_provider: str = "ollama"  # ollama | openai | anthropic | gemini
+    # LLM — ChatLiteLLM model routing
+    # Use LiteLLM model strings: "gpt-4o-mini", "anthropic/claude-haiku-4-5-20251001",
+    # "gemini/gemini-1.5-flash", "ollama/llama3.2", etc.
+    llm_primary_model: str = "gpt-4o-mini"
+    llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-1.5-flash"]
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 2048
+
+    # Provider API keys — only set the keys for providers you use
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
-    ollama_base_url: str = "http://localhost:11434"
 
     # Vercel Sandbox
     vercel_token: str = ""

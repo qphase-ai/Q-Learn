@@ -52,8 +52,11 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `SUPABASE_ANON_KEY` | Supabase anon key (frontend) |
 | `SECRET_KEY` | JWT signing key |
 | `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) |
-| `LLM_PROVIDER` | `ollama` / `openai` / `anthropic` / `gemini` |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | LLM provider keys |
+| `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
+| `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-1.5-flash"]` |
+| `LLM_TEMPERATURE` | Default `0.7` |
+| `LLM_MAX_TOKENS` | Default `2048` |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Set only for providers you use |
 | `VERCEL_TOKEN` / `VERCEL_TEAM_ID` | Vercel Sandbox SDK credentials |
 | `SANDBOX_BASE_NAME` | Base snapshot name (`qlearn-python-base`) |
 | `SANDBOX_TIMEOUT` | microVM timeout in ms (default: `30000`) |

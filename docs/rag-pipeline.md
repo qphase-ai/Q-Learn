@@ -46,8 +46,8 @@ flowchart TD
 |-----------|-------|
 | Chunk size | 800 tokens |
 | Chunk overlap | 120 tokens |
-| Similarity top_k | 8–16 |
-| Rerank top_n | 3–5 |
+| Similarity top_k | 12 (configurable 8–16) |
+| Rerank top_n | 5 (configurable 3–5) |
 | Reranker | Cross-Encoder `ms-marco-MiniLM-L-6-v2` |
 | Hybrid fusion | RRF (Reciprocal Rank Fusion) |
 | Embedding model | `sentence-transformers/all-MiniLM-L6-v2` dim=384 |

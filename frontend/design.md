@@ -285,7 +285,7 @@ Six Zustand stores. Each owns one domain. No store imports from another. Cross-d
 **useShellStore**
 ```ts
 {
-  activeWorkspace: 'dashboard' | 'learn' | 'circuit' | 'code' | 'quiz'
+  activeWorkspace: 'dashboard' | 'learn' | 'circuit' | 'code' | 'quiz' | 'settings'
   rightPanelOpen: boolean
   bottomPanelOpen: boolean
   focusMode: boolean
@@ -295,8 +295,7 @@ Six Zustand stores. Each owns one domain. No store imports from another. Cross-d
   toggleRightPanel(): void
   toggleBottomPanel(): void
   setBottomPanelTab(tab): void
-  enterFocusMode(): void
-  exitFocusMode(): void
+  setFocusMode(focus: boolean): void
 }
 ```
 
@@ -316,16 +315,16 @@ Six Zustand stores. Each owns one domain. No store imports from another. Cross-d
 **useLearningStore**
 ```ts
 {
-  currentLevelId: string | null
   currentLessonId: string | null
-  lessonProgress: Record<lessonId, { completed: boolean, lastSection: string }>
-  masteryScores: Record<conceptId, number>   // 0–1, BKT output
+  lessonProgress: Record<string, number>   // lesson completion percentage 0–100
+  masteryScores: Record<string, number>    // 0–1, BKT output
   xp: number
   streak: number
 
-  setLesson(levelId, lessonId): void
-  markSectionRead(lessonId, sectionSlug): void
-  updateMastery(conceptId: string, correct: boolean): void
+  setCurrentLesson(id: string | null): void
+  updateProgress(lessonId: string, pct: number): void
+  updateMastery(conceptId: string, score: number): void
+  addXp(amount: number): void
 }
 ```
 
@@ -354,29 +353,28 @@ Six Zustand stores. Each owns one domain. No store imports from another. Cross-d
 ```ts
 {
   messages: Message[]        // { id, role, content, citations?, timestamp }
-  context: string | null
   isStreaming: boolean
   suggestedPrompts: string[]
 
-  sendMessage(content: string): Promise<void>
-  setContext(ctx: string | null): void
-  clearHistory(): void
+  addMessage(message: Message): void
+  setStreaming(streaming: boolean): void
+  clearMessages(): void
 }
 ```
 
 **useQuizStore**
 ```ts
 {
-  quiz: Quiz | null
+  quiz: QuizQuestion[]    // { id, question_text, question_type, options }
   currentIndex: number
-  answers: Record<questionId, string>
-  submitted: boolean
-  score: number | null
+  answers: Record<string, string>
+  score: number
 
-  loadQuiz(conceptId: string): Promise<void>
-  setAnswer(questionId, answer): void
-  submitQuiz(): Promise<void>
-  resetQuiz(): void
+  setQuiz(quiz: QuizQuestion[]): void
+  setAnswer(questionId: string, answer: string): void
+  nextQuestion(): void
+  setScore(score: number): void
+  reset(): void
 }
 ```
 
@@ -384,11 +382,11 @@ Six Zustand stores. Each owns one domain. No store imports from another. Cross-d
 
 | Trigger | Store updated | Side effect |
 |---|---|---|
-| User switches workspace | `useShellStore.setWorkspace` | Quiz → also calls `enterFocusMode` |
+| User switches workspace | `useShellStore.setWorkspace` | Quiz → also calls `setFocusMode(true)` |
 | Lesson section read | `useLearningStore.markSectionRead` | Persists via API; no other store touched |
 | Circuit simulation run | `useCircuitStore.runSimulation` | On success: opens BottomPanel, sets tab to probabilities |
-| Quiz submitted | `useQuizStore.submitQuiz` | On complete: calls `useLearningStore.updateMastery` |
-| AI tutor message sent | `useTutorStore.sendMessage` | Reads `useLearningStore.currentLessonId` as snapshot at send time |
+| Quiz submitted | `useQuizStore.setScore` | On complete: calls `useLearningStore.updateMastery` |
+| AI tutor message sent | `useTutorStore.addMessage` | Reads `useLearningStore.currentLessonId` as snapshot at send time |
 
 ### Persistence (localStorage via Zustand `persist`)
 
