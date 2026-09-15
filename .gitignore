@@ -36,6 +36,9 @@ htmlcov/
 .nyc_output/
 
 # IDEs
+.claude/
+.opencode/
+.hermes/
 .vscode/settings.json
 .idea/
 *.swp
