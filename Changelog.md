@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Google OAuth sign-in via Supabase Auth — `hooks/useAuth.ts` gains `loginWithGoogle` (`supabase.auth.signInWithOAuth`); new client callback route `app/auth/callback/page.tsx` completes the session; "Continue with Google" button on login and register pages. No backend changes — `_sync_user()` provisions the local user from the Supabase JWT `sub` for any provider
 - Supabase project provisioned (`ap-southeast-1`, ref `gwljzmjsuznwsdnqxxwu`); cloud schema migrated to Alembic head `b2c3d4e5f6a7` with Row Level Security enabled on all `public` tables
 - `SUPABASE_JWT_SECRET` config (`app/config.py`) — verifies Supabase-issued access tokens
 - Backend Realtime publisher — `app/core/supabase.py` (service-role async client) and `app/services/realtime_service.py` (`publish_circuit_result`, `publish_tutor_token`)

@@ -12,7 +12,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
-  const { register, isLoading, error } = useAuth();
+  const { register, loginWithGoogle, isLoading, error } = useAuth();
 
   const displayError = localError ?? error;
 
@@ -101,6 +101,30 @@ export default function RegisterPage() {
           </Button>
         </div>
       </form>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          margin: "1.25rem 0",
+          color: "var(--text-muted)",
+          fontSize: "0.8125rem",
+        }}
+      >
+        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+        or
+        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        loading={isLoading}
+        onClick={() => loginWithGoogle()}
+      >
+        Continue with Google
+      </Button>
 
       <p
         style={{
