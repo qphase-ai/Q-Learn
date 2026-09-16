@@ -8,7 +8,7 @@
 flowchart TD
     Browser["Browser\nHTTPS only"]
     GW["API Gateway\nCORS · Rate Limiting · Pydantic Validation · Structlog"]
-    AUTH["Auth / RBAC\nJWT 15min · Refresh 7d HttpOnly\nstudent / instructor / admin"]
+    AUTH["Auth / RBAC\nSupabase Auth · verify access token (HS256)\nstudent / instructor / admin"]
     SVC["Application Services\nAuth · Learning · Quantum · Agents · RAG · Analytics · ..."]
     PG["PostgreSQL + pgvector\nSQLAlchemy parameterized queries\nAlembic migrations"]
     RT["Supabase Realtime\nWebSocket pub/sub broker"]
@@ -32,7 +32,7 @@ flowchart TD
 
 | Control | Implementation |
 |---------|---------------|
-| Authentication | JWT access tokens (15 min) + refresh tokens (7 days, HttpOnly cookie) |
+| Authentication | Supabase Auth — the client signs in (email/password or Google OAuth) and the backend verifies the Supabase access token (HS256, `SUPABASE_JWT_SECRET`); no credentials or refresh tokens stored by the API |
 | Authorization | Role-Based Access Control — student / instructor / admin |
 | Input validation | Pydantic schemas on all endpoints |
 | Rate limiting | slowapi (100 req/min default; Redis backend deferred to Phase 2) |
@@ -54,16 +54,24 @@ flowchart TD
 
 ## Auth Flow
 
-```
-POST /api/v1/auth/login
-  → verify bcrypt hash
-  → issue access_token (JWT, 15 min, Authorization: Bearer)
-  → issue refresh_token (JWT, 7 days, HttpOnly cookie)
+Sign-in and token lifecycle are owned by **Supabase Auth** on the client
+(`hooks/useAuth.ts`, `@supabase/supabase-js`); the API never issues tokens.
 
-POST /api/v1/auth/refresh
-  → verify refresh_token (one-time use, rotated on each refresh)
-  → issue new access_token + refresh_token
 ```
+Client (email/password or Google OAuth)
+  → supabase.auth.sign-in → Supabase issues access_token (JWT, HS256)
+  → client sends Authorization: Bearer <access_token>
+
+Backend (every authenticated request)
+  → verify access_token with SUPABASE_JWT_SECRET (aud "authenticated")
+  → _sync_user(): upsert public.users row keyed by token `sub`
+    (owns role / subscription_status; provisions on first request, any provider)
+
+GET /api/v1/auth/me   → returns the synced local profile
+```
+
+Only `GET /api/v1/auth/me` remains — there are no `login` / `register` /
+`refresh` API endpoints.
 
 ## RBAC Roles
 

@@ -8,7 +8,7 @@
 
 | Prefix | Domain |
 |--------|--------|
-| `/api/v1/auth/*` | Register, login, logout, token refresh, profile |
+| `/api/v1/auth/*` | Current-user profile (`GET /me`). Sign-up / sign-in / refresh are handled by Supabase Auth on the client, not the API |
 | `/api/v1/users/*` | Profile management, role management |
 | `/api/v1/courses/*` | Course CRUD, listing, enrollment |
 | `/api/v1/lessons/*` | Lesson access, progress tracking |
