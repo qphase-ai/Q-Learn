@@ -3,15 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import type { User } from "@/types";
 
-interface TokenPair {
-  access_token: string;
-  refresh_token: string;
-}
-
 function setAuthCookie() {
+  // Lightweight flag cookie read by middleware.ts for route gating.
+  // The real session lives in Supabase's own client storage.
   document.cookie = "qlearn-auth=1; path=/; max-age=604800; SameSite=Lax";
 }
 
@@ -28,21 +26,24 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  async function completeSession(accessToken: string) {
+    setJwt(accessToken);
+    setAuthCookie();
+    const profile = await apiFetch<User>("/api/v1/auth/me", { token: accessToken });
+    setUser(profile);
+    router.push("/dashboard");
+  }
+
   async function login(email: string, password: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const tokens = await apiFetch<TokenPair>("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      setJwt(tokens.access_token);
-      setAuthCookie();
-      const profile = await apiFetch<User>("/api/v1/auth/me", {
-        token: tokens.access_token,
-      });
-      setUser(profile);
-      router.push("/dashboard");
+      if (authError) throw authError;
+      await completeSession(data.session.access_token);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");
     } finally {
@@ -50,29 +51,23 @@ export function useAuth() {
     }
   }
 
-  async function register(
-    email: string,
-    password: string,
-    displayName?: string
-  ) {
+  async function register(email: string, password: string, displayName?: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const tokens = await apiFetch<TokenPair>("/api/v1/auth/register", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          ...(displayName ? { display_name: displayName } : {}),
-        }),
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: displayName ? { data: { display_name: displayName } } : undefined,
       });
-      setJwt(tokens.access_token);
-      setAuthCookie();
-      const profile = await apiFetch<User>("/api/v1/auth/me", {
-        token: tokens.access_token,
-      });
-      setUser(profile);
-      router.push("/dashboard");
+      if (authError) throw authError;
+      // With email confirmation enabled, signUp returns no session until the
+      // user confirms — surface that instead of silently failing.
+      if (!data.session) {
+        setError("Account created — check your email to confirm, then log in.");
+        return;
+      }
+      await completeSession(data.session.access_token);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Registration failed");
     } finally {
@@ -80,7 +75,8 @@ export function useAuth() {
     }
   }
 
-  function logout() {
+  async function logout() {
+    await supabase.auth.signOut();
     storeLogout();
     clearAuthCookie();
     router.push("/auth/login");

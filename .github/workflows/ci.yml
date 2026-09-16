@@ -45,6 +45,7 @@ jobs:
           SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_SERVICE_KEY: placeholder
           SUPABASE_ANON_KEY: placeholder
+          SUPABASE_JWT_SECRET: placeholder-jwt-secret
         run: alembic upgrade head
 
       - name: Run tests
@@ -55,6 +56,7 @@ jobs:
           SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_SERVICE_KEY: placeholder
           SUPABASE_ANON_KEY: placeholder
+          SUPABASE_JWT_SECRET: placeholder-jwt-secret
         run: pytest tests/ -v --cov=app --cov-report=term-missing
 
   frontend:

@@ -20,8 +20,7 @@ dist/
 
 # Environment files
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 !backend/.env.example
 

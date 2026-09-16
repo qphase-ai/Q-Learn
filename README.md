@@ -77,8 +77,9 @@ git clone <repo-url>
 cd qlearn
 
 cp .env.example .env
-# fill in: SUPABASE_URL, SUPABASE_SERVICE_KEY, DATABASE_URL,
+# fill in: SUPABASE_URL, SUPABASE_SERVICE_KEY, SUPABASE_JWT_SECRET, DATABASE_URL,
 #          VERCEL_TOKEN, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, LLM_PRIMARY_MODEL
+# Team members: see docs/onboarding.md for which values are shared vs. local.
 
 docker compose up --build
 # Frontend  →  http://localhost:3000
@@ -92,7 +93,7 @@ cd backend
 alembic upgrade head
 ```
 
-See [`docs/infrastructure.md`](docs/infrastructure.md) for the full environment variable reference and production deployment guide.
+New to the team? See [`docs/onboarding.md`](docs/onboarding.md) for the shared-Supabase setup. See [`docs/infrastructure.md`](docs/infrastructure.md) for the full environment variable reference and production deployment guide.
 
 ---
 
