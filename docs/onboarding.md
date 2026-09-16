@@ -70,13 +70,31 @@ Docker DB.
 
 Auth is **Supabase Auth**, not custom JWT:
 
-- The frontend signs in with `@supabase/supabase-js` (`hooks/useAuth.ts`) and
-  sends the Supabase access token as `Authorization: Bearer <token>`.
+- The frontend signs in with `@supabase/supabase-js` (`hooks/useAuth.ts`) —
+  email/password **or** Google — and sends the Supabase access token as
+  `Authorization: Bearer <token>`.
 - The backend **verifies** that token and syncs a `public.users` row that owns
   `role` / `subscription_status`. Only `GET /api/v1/auth/me` remains — there are
-  no `register` / `login` / `refresh` API endpoints.
+  no `register` / `login` / `refresh` API endpoints. `_sync_user()` provisions
+  the local user from the token `sub`, so **any** provider works with no backend
+  change.
 - If `SUPABASE_JWT_SECRET` is wrong or missing, every authenticated request
   fails with 401. It must be the project's real JWT secret.
+
+### Google sign-in (OAuth)
+
+`loginWithGoogle` (`hooks/useAuth.ts`) calls `supabase.auth.signInWithOAuth`,
+Google redirects back to `app/auth/callback/page.tsx`, and that page finishes the
+session (stores the JWT, sets the `qlearn-auth` cookie, fetches `/api/v1/auth/me`,
+redirects to `/dashboard`). This needs no local env vars, but the shared Supabase
+project must have it configured (already done for the team):
+
+- **Auth → Providers → Google** enabled with a Google Cloud OAuth Client ID +
+  Secret (Google's authorized redirect URI is the Supabase callback
+  `https://gwljzmjsuznwsdnqxxwu.supabase.co/auth/v1/callback`).
+- **Auth → URL Configuration → Redirect URLs** allow-lists both
+  `http://localhost:3000/auth/callback` and the production
+  `.../auth/callback` — a redirect URL not on this list falls back to the Site URL.
 
 ## Troubleshooting
 
