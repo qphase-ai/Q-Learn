@@ -97,6 +97,20 @@ New to the team? See [`docs/onboarding.md`](docs/onboarding.md) for the shared-S
 
 ---
 
+## Live deployment
+
+| Service | URL |
+|---------|-----|
+| API (Railway, production) | `https://q-learn-api-production.up.railway.app` |
+| Health check | `https://q-learn-api-production.up.railway.app/health` |
+| API docs (Swagger) | `https://q-learn-api-production.up.railway.app/docs` |
+
+Frontend points at the API via `NEXT_PUBLIC_API_URL`.
+
+> **URL won't load? (`DNS_PROBE_POSSIBLE` / "This site can't be reached")** — some ISP/router DNS resolvers fail on `*.up.railway.app` even though the API is healthy. Enable Secure DNS in your browser (Brave/Chrome → *Settings → Privacy & security → Use secure DNS → Cloudflare 1.1.1.1*) and reload. Full steps + verification commands: [`docs/infrastructure.md`](docs/infrastructure.md#troubleshooting-dns_probe_possible--this-site-cant-be-reached).
+
+---
+
 ## Curriculum
 
 12 levels from quantum intuition to Shor's algorithm. Each concept follows:

@@ -254,6 +254,9 @@ Full reference: `../docs/infrastructure.md`
 
 The FastAPI service runs in a Docker container and is deployed to **Railway** (Free → paid). Architecture is portable — move to Fly.io or any VPS without redesigning Q-Learn.
 
+**Live API:** `https://q-learn-api-production.up.railway.app` — health: `/health` · docs: `/docs`
+The frontend reaches it via `NEXT_PUBLIC_API_URL`.
+
 Production services:
 
 | Service | Platform |

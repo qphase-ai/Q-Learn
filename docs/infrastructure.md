@@ -1,5 +1,7 @@
 # Infrastructure & Deployment
 
+![Q-Learn infrastructure & data flow](infrastructure-diagram.svg)
+
 ---
 
 ## Production Stack
@@ -11,6 +13,37 @@
 | **Frontend** | Vercel | Deploy & host Next.js application |
 | **Vercel Sandbox** | Vercel (Hobby plan) | Isolated microVM for student code **and** quantum circuit simulation |
 | **CI/CD** | GitHub Actions | Automated test + deploy pipeline |
+
+### Live endpoints
+
+| Service | URL |
+|---------|-----|
+| **API (Railway, production)** | `https://q-learn-api-production.up.railway.app` |
+| **API health check** | `https://q-learn-api-production.up.railway.app/health` |
+| **API docs (Swagger)** | `https://q-learn-api-production.up.railway.app/docs` |
+
+Frontend must point at this via `NEXT_PUBLIC_API_URL` in Vercel.
+
+#### Troubleshooting: `DNS_PROBE_POSSIBLE` / "This site can't be reached"
+
+Some ISP/router DNS resolvers fail to resolve `*.up.railway.app`, so the URL won't load in the browser **even though the API is healthy**. This is a local DNS issue, not a deployment problem. Verify the server is actually up (bypassing local DNS):
+
+```bash
+# Local resolver fails, but a public resolver works:
+nslookup q-learn-api-production.up.railway.app 1.1.1.1     # → 69.46.46.x
+
+# Server responds fine when you skip the broken resolver:
+curl --resolve q-learn-api-production.up.railway.app:443:69.46.46.101 \
+  https://q-learn-api-production.up.railway.app/health       # → {"status":"ok",...}
+```
+
+**Fix (quickest):** enable Secure DNS in your browser — Brave/Chrome → `Settings → Privacy & security → Use secure DNS → With: Cloudflare (1.1.1.1)`, then reload.
+
+**Fix (system-wide, Windows, elevated PowerShell):**
+```powershell
+Set-DnsClientServerAddress -InterfaceAlias "Wi-Fi" -ServerAddresses 1.1.1.1,8.8.8.8
+Clear-DnsClientCache
+```
 
 ---
 
