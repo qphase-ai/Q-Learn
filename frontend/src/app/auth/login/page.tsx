@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isLoading, error } = useAuth();
+  const { login, loginWithGoogle, isLoading, error } = useAuth();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -69,6 +69,30 @@ export default function LoginPage() {
           </Button>
         </div>
       </form>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.75rem",
+          margin: "1.25rem 0",
+          color: "var(--text-muted)",
+          fontSize: "0.8125rem",
+        }}
+      >
+        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+        or
+        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        loading={isLoading}
+        onClick={() => loginWithGoogle()}
+      >
+        Continue with Google
+      </Button>
 
       <p
         style={{

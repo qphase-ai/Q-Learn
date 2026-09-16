@@ -75,6 +75,22 @@ export function useAuth() {
     }
   }
 
+  async function loginWithGoogle() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (authError) throw authError;
+      // Browser redirects to Google; the session is completed on /auth/callback.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Google sign-in failed");
+      setIsLoading(false);
+    }
+  }
+
   async function logout() {
     await supabase.auth.signOut();
     storeLogout();
@@ -84,8 +100,10 @@ export function useAuth() {
 
   return {
     login,
+    loginWithGoogle,
     register,
     logout,
+    completeSession,
     isLoading,
     error,
     user,
