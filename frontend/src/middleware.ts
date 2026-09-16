@@ -5,6 +5,7 @@ const PROTECTED_ROUTES = [
   "/dashboard",
   "/learn",
   "/circuit",
+  "/code",
   "/quiz",
   "/settings",
 ];
