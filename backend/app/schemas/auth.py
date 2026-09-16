@@ -1,28 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 import uuid
 
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str
-    display_name: str | None = None
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TokenPair(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
+# Sign-in / sign-up are handled by Supabase Auth on the client, so the API no
+# longer defines request/token schemas for them — it only returns the profile.
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str

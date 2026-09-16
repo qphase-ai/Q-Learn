@@ -50,8 +50,9 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | Supabase service role key (backend only) |
 | `SUPABASE_ANON_KEY` | Supabase anon key (frontend) |
-| `SECRET_KEY` | JWT signing key |
-| `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) |
+| `SUPABASE_JWT_SECRET` | Project JWT secret — backend verifies Supabase Auth access tokens (HS256) |
+| `SECRET_KEY` | App secret (misc. signing) |
+| `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) — see the two-URL model below |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
 | `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-1.5-flash"]` |
 | `LLM_TEMPERATURE` | Default `0.7` |
@@ -65,6 +66,24 @@ All configuration via environment variables. See `backend/.env.example` for the 
 > `REDIS_URL` is **not** required in Phase 0–1. Added when profiling shows a specific caching bottleneck.
 
 **Never hardcode environment-specific configuration.**
+
+### `DATABASE_URL` — two-URL model
+
+Supabase exposes two connection endpoints. Use the right one for the job:
+
+| Use | Endpoint | Port | Example host |
+|-----|----------|------|--------------|
+| **App runtime** (Railway) | Transaction pooler (IPv4) | `6543` | `aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>` |
+| **Migrations** | Direct connection | `5432` | `db.<ref>.supabase.co`, user `postgres` |
+
+- Prefix must be `postgresql+asyncpg://` (this backend uses the asyncpg driver).
+- `database.py` auto-detects port `6543` and disables asyncpg prepared statements + server-side pooling (required for pgbouncer transaction mode).
+- Direct (`5432`) is IPv6-only unless the IPv4 add-on is enabled — if unreachable, run migrations through the **session-mode** pooler (port `5432` on the pooler host).
+- Production URLs are kept in `backend/.env.production` (gitignored) and set as Railway env vars. Local dev keeps `DATABASE_URL` on Docker Postgres.
+
+### Row Level Security
+
+RLS is **enabled on all `public` tables** (no policies). The backend connects with the `service_role` key, which bypasses RLS; this blocks direct PostgREST access via the public anon key. Add policies if any table must be reachable by the anon/authenticated roles directly.
 
 ---
 

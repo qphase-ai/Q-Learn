@@ -1,14 +1,20 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from passlib.context import CryptContext
-from jose import jwt, JWTError
-from datetime import datetime, timedelta, timezone
-from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenPair
-from app.exceptions import UnauthorizedError, ConflictError
-from app.config import Settings
+"""Authentication is delegated to Supabase Auth.
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+The frontend signs in directly with Supabase (`@supabase/supabase-js`) and sends
+the resulting access token as `Authorization: Bearer <token>`. This service only
+*verifies* that token (HS256 with the project JWT secret) and syncs a local
+`public.users` row that owns app-specific data — role and subscription status —
+which Supabase does not track.
+"""
+import uuid
+
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import Settings
+from app.exceptions import UnauthorizedError
+from app.models.user import User
 
 
 class AuthService:
@@ -16,56 +22,50 @@ class AuthService:
         self.db = db
         self.settings = settings
 
-    async def register(self, data: RegisterRequest) -> TokenPair:
-        result = await self.db.execute(select(User).where(User.email == data.email))
-        if result.scalar_one_or_none():
-            raise ConflictError("Email already registered")
-
-        user = User(
-            email=data.email,
-            hashed_password=pwd_context.hash(data.password),
-        )
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        return self._issue_tokens(user)
-
-    async def login(self, data: LoginRequest) -> TokenPair:
-        result = await self.db.execute(select(User).where(User.email == data.email))
-        user = result.scalar_one_or_none()
-        if not user or not pwd_context.verify(data.password, user.hashed_password):
-            raise UnauthorizedError("Invalid credentials")
-        return self._issue_tokens(user)
-
-    async def refresh(self, refresh_token: str) -> TokenPair:
-        user = await self.get_user_from_token(refresh_token, token_type="refresh")
-        return self._issue_tokens(user)
-
-    async def get_user_from_token(self, token: str, token_type: str = "access") -> User:
+    async def get_user_from_token(self, token: str) -> User:
+        """Verify a Supabase access token and return the synced local user."""
         try:
-            payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
-            if payload.get("type") != token_type:
-                raise UnauthorizedError("Invalid token type")
-            user_id = payload.get("sub")
+            payload = jwt.decode(
+                token,
+                self.settings.supabase_jwt_secret,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
         except JWTError:
             raise UnauthorizedError("Invalid or expired token")
 
+        subject = payload.get("sub")
+        if not subject:
+            raise UnauthorizedError("Invalid token: missing subject")
+        try:
+            user_id = uuid.UUID(subject)
+        except ValueError:
+            raise UnauthorizedError("Invalid token: subject is not a UUID")
+
+        return await self._sync_user(user_id, payload.get("email"))
+
+    async def _sync_user(self, user_id: uuid.UUID, email: str | None) -> User:
+        """Upsert the local user row keyed by the Supabase user id."""
         result = await self.db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
-        if not user or not user.is_active:
-            raise UnauthorizedError("User not found or inactive")
+
+        if user is None:
+            user = User(
+                id=user_id,
+                email=email or "",
+                role="student",
+                subscription_status="free",
+                is_active=True,
+                is_verified=True,
+            )
+            self.db.add(user)
+            await self.db.commit()
+            await self.db.refresh(user)
+        elif email and user.email != email:
+            user.email = email
+            await self.db.commit()
+            await self.db.refresh(user)
+
+        if not user.is_active:
+            raise UnauthorizedError("User is inactive")
         return user
-
-    def _issue_tokens(self, user: User) -> TokenPair:
-        return TokenPair(
-            access_token=self._create_token(user, "access", self.settings.access_token_expire_minutes),
-            refresh_token=self._create_token(user, "refresh", self.settings.refresh_token_expire_days * 24 * 60),
-        )
-
-    def _create_token(self, user: User, token_type: str, expire_minutes: int) -> str:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=expire_minutes)
-        return jwt.encode(
-            {"sub": str(user.id), "type": token_type, "role": user.role, "exp": expire},
-            self.settings.secret_key,
-            algorithm=self.settings.algorithm,
-        )

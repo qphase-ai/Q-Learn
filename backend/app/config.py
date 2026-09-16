@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_service_key: str
     supabase_anon_key: str
+    # Supabase Auth JWT secret (HS256) — used to verify Supabase-issued access tokens
+    supabase_jwt_secret: str = ""
 
     # JWT
     access_token_expire_minutes: int = 15

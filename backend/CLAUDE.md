@@ -141,6 +141,7 @@ Copy `.env.example` → `.env` in `backend/`. Required keys:
 | `SECRET_KEY` | JWT signing |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn` (Docker) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_ANON_KEY` | Supabase project |
+| `SUPABASE_JWT_SECRET` | Verifies Supabase Auth access tokens (HS256) — required for `/me` and all authed routes |
 | `VERCEL_TOKEN` | Sandbox SDK auth |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payment integration |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
