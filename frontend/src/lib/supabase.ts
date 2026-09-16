@@ -1,10 +1,34 @@
-import { createClient, type RealtimeChannel } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type RealtimeChannel } from "@supabase/supabase-js";
 
-// Browser client — uses the public anon key. Never import the service key here.
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazily create the browser client. `NEXT_PUBLIC_*` vars are inlined at build
+// time; instantiating at module load would crash `next build` prerendering of
+// client pages (e.g. /auth/login) whenever the vars are absent. Deferring to
+// first use keeps the build green and only touches env at runtime in the browser.
+let _client: SupabaseClient | null = null;
+
+function getClient(): SupabaseClient {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anonKey) {
+      throw new Error(
+        "Supabase env vars missing: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      );
+    }
+    _client = createClient(url, anonKey);
+  }
+  return _client;
+}
+
+// Proxy so callers keep using `supabase.auth...` / `supabase.channel(...)` while
+// the underlying client is created on first property access, never at import.
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client as object, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
 /**
  * Realtime subscription helpers.
