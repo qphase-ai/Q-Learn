@@ -54,7 +54,7 @@ flowchart TD
 
     subgraph APPLICATION["⚙️ APPLICATION LAYER — Railway (FastAPI + Python)"]
         direction TB
-        GW["API Gateway\nAuth • Rate Limit • Validation • Routing • Logging"]
+        GW["API Gateway\nVerify Supabase JWT • Rate Limit • Validation • Routing • Logging"]
 
         subgraph SERVICES["Services"]
             direction LR
@@ -91,7 +91,8 @@ flowchart TD
         end
     end
 
-    PRESENTATION -- "HTTPS / REST" --> APPLICATION
+    PRESENTATION -- "HTTPS / REST\n(Authorization: Bearer <Supabase JWT>)" --> APPLICATION
+    Auth -- "Supabase Auth SDK\n(email/password · Google OAuth)" --> SupaAuth
     APPLICATION -- "Supabase Realtime pub/sub\n(circuit results · tutor tokens · progress)" --> PRESENTATION
     APPLICATION --> DATA
     AgentSvc -- "SDK fork" --> MicroVM
