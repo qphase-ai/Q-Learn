@@ -98,12 +98,26 @@ export function useAuth() {
     router.push("/auth/login");
   }
 
+  async function hydrate() {
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session) return;
+    if (useAuthStore.getState().user) return;
+    setJwt(session.access_token);
+    setAuthCookie();
+    const profile = await apiFetch<User>("/api/v1/auth/me", {
+      token: session.access_token,
+    });
+    setUser(profile);
+  }
+
   return {
     login,
     loginWithGoogle,
     register,
     logout,
     completeSession,
+    hydrate,
     isLoading,
     error,
     user,

@@ -11,6 +11,11 @@ const config: Config = {
         "qlearn-accent": "#58a6ff",
         "qlearn-pro": "#f78166",
       },
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "monospace"],
+        code: ["var(--font-code)", "monospace"],
+      },
     },
   },
   plugins: [],

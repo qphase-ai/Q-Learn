@@ -23,6 +23,11 @@
   --gate-X: #f85149;
   --gate-CX: #3b82f6;
   --gate-M: #00d4ff;
+
+  --bg-hover: #242424;
+  --gate-Y: #f97316;
+  --gate-Z: #3fb950;
+  --wire: #8b8b8b;
 }
 
 *,
