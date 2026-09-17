@@ -90,9 +90,10 @@ async def test_execute_circuit_success(
     monkeypatch.setattr(circuits_router_module, "run_and_publish", mock_run_and_publish)
 
     circuit_id = uuid.uuid4()
+    payload = _valid_body()
     response = await client.post(
         f"/api/v1/circuits/{circuit_id}/execute",
-        json=_valid_body(),
+        json=payload,
     )
 
     assert response.status_code == 202
@@ -101,6 +102,15 @@ async def test_execute_circuit_success(
     assert body["data"]["status"] == "pending"
     assert "execution_id" in body["data"]
     assert uuid.UUID(body["data"]["execution_id"])  # valid UUID
+
+    # Background task must be scheduled (ASGITransport runs it in-process).
+    # This is the load-bearing check that qasm + shots flow through correctly.
+    mock_run_and_publish.assert_called_once()
+    call = mock_run_and_publish.call_args
+    assert call.args[0] == circuit_id
+    assert call.args[1] == execution_id
+    assert call.args[3] == payload["shots"]  # shots from the request body
+    assert call.args[4] == returned_qasm     # qasm returned by start_execution
 
 
 async def test_execute_circuit_requires_auth(
@@ -154,3 +164,6 @@ async def test_execute_circuit_validation_error(
     body = response.json()
     assert body["success"] is False
     assert body["error"]["code"] == "VALIDATION_ERROR"
+
+    # No background task when validation fails before any DB write.
+    mock_run_and_publish.assert_not_called()
