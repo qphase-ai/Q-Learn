@@ -37,6 +37,17 @@ class ExecutionRequest(BaseModel):
     shots: int = 1024
 
 
+class ExecuteCircuitRequest(BaseModel):
+    circuit: CircuitSpec
+    shots: int = 1024
+    name: str = "Untitled"
+
+
+class ExecutionAccepted(BaseModel):
+    execution_id: uuid.UUID
+    status: str
+
+
 class ExecutionResult(BaseModel):
     id: uuid.UUID
     status: str
