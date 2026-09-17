@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -8,15 +8,23 @@ import { supabase } from "@/lib/supabase";
 export default function AuthCallbackPage() {
   const { completeSession, error } = useAuth();
 
+  const done = useRef(false);
+
   useEffect(() => {
+    // The listener and the getSession() fallback can both resolve; run once.
+    const run = (token: string) => {
+      if (done.current) return;
+      done.current = true;
+      void completeSession(token);
+    };
     // supabase-js (PKCE, detectSessionInUrl) exchanges the `?code=` for a
     // session on load. Complete our sign-in as soon as that session appears.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) completeSession(session.access_token);
+      if (session) run(session.access_token);
     });
     // Fallback: the session may already exist before the listener attaches.
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) completeSession(data.session.access_token);
+      if (data.session) run(data.session.access_token);
     });
     return () => sub.subscription.unsubscribe();
     // completeSession is recreated each render; the effect must run once.
