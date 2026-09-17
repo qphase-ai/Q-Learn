@@ -14,7 +14,11 @@ function gateBackground(type: GateType): string {
     case "Y":   return "var(--gate-Y)";
     case "Z":   return "var(--gate-Z)";
     case "CX":
-    case "CZ":  return "var(--gate-CX)";
+    case "CZ":
+    case "SWAP": return "var(--gate-CX)";
+    case "S":   return "var(--gate-S)";
+    case "T":   return "var(--gate-T)";
+    case "I":   return "var(--gate-I)";
     case "M":   return "var(--gate-M)";
     default:    return "var(--bg-elevated)";
   }

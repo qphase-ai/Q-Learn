@@ -14,6 +14,9 @@ function gateColor(type: GateType): string {
     case "CX":
     case "CZ":
     case "SWAP": return "var(--gate-CX)";
+    case "S":   return "var(--gate-S)";
+    case "T":   return "var(--gate-T)";
+    case "I":   return "var(--gate-I)";
     case "M":   return "var(--gate-M)";
     default:    return "var(--bg-elevated)";
   }

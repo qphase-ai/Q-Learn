@@ -125,4 +125,12 @@ describe("CircuitToolbar", () => {
     render(<CircuitToolbar />);
     expect(screen.getByRole("button", { name: /export/i })).toBeInTheDocument();
   });
+
+  it("clicking Export JSON triggers a Blob download via URL.createObjectURL", async () => {
+    const user = userEvent.setup();
+    vi.mocked(URL.createObjectURL).mockClear();
+    render(<CircuitToolbar />);
+    await user.click(screen.getByRole("button", { name: /export/i }));
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+  });
 });

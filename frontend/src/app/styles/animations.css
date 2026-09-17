@@ -23,11 +23,27 @@
   }
 }
 
+/* Running-state pulse for circuit gate nodes. */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shell-panel-transition,
   .shell-fade,
   .shell-active-border {
     transition: none;
     animation: none;
+  }
+
+  /* Disable the gate pulse; the inline opacity fallback remains. */
+  [style*="pulse"] {
+    animation: none !important;
   }
 }
