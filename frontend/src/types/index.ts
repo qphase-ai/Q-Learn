@@ -66,3 +66,55 @@ export interface Plan {
   billing_cycle: string | null;
   features: Record<string, boolean>;
 }
+
+// ---------------------------------------------------------------------------
+// Learning API types (match backend Pydantic schemas exactly)
+// ---------------------------------------------------------------------------
+
+export interface CourseSummary {
+  id: string;
+  title: string;
+  description: string | null;
+  difficulty: string;
+}
+
+export interface LessonSummary {
+  id: string;
+  title: string;
+  lesson_type: "text" | "circuit" | "code" | "quiz";
+  is_pro: boolean;
+  order_index: number;
+}
+
+export interface ModuleWithLessons {
+  id: string;
+  title: string;
+  order_index: number;
+  lessons: LessonSummary[];
+}
+
+export interface CourseDetail extends CourseSummary {
+  modules: ModuleWithLessons[];
+}
+
+export interface ConceptOut {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface LessonDetail {
+  id: string;
+  module_id: string;
+  title: string;
+  content: string | null;
+  lesson_type: "text" | "circuit" | "code" | "quiz";
+  is_pro: boolean;
+  concepts: ConceptOut[];
+}
+
+export interface ProgressItem {
+  lesson_id: string;
+  status: string;
+  completion_pct: number;
+}
