@@ -25,8 +25,9 @@ const GATE_TOKEN_MAP: Record<string, string> = {
   M: "var(--gate-M)",
 };
 
-function gateColor(type: string): string {
-  return GATE_TOKEN_MAP[type.toUpperCase()] ?? "var(--quantum)";
+function gateColor(type: string | undefined): string {
+  const key = String(type ?? "").toUpperCase();
+  return GATE_TOKEN_MAP[key] ?? "var(--quantum)";
 }
 
 // Layout constants

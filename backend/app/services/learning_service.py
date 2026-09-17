@@ -39,7 +39,7 @@ class LearningService:
             .where(Course.is_published == True)  # noqa: E712
             .order_by(Course.order_index)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_course_detail(self, course_id: uuid.UUID) -> Course:
         """Return a single published course with eager-loaded modules and lessons.
@@ -86,7 +86,7 @@ class LearningService:
         result = await self.db.execute(
             select(LearningProgress).where(LearningProgress.user_id == user_id)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def upsert_progress(
         self,

@@ -52,4 +52,23 @@ describe("CircuitPreview", () => {
     expect(screen.getByTestId("circuit-preview")).toBeInTheDocument();
     expect(screen.getAllByTestId(/^wire-/)).toHaveLength(1);
   });
+
+  it("renders seed Bell-state circuit shape without throwing (regression: {type, targets} contract)", () => {
+    // Exact JSON from the seed migration for the Bell State lesson circuit fence.
+    // If the seed shape drifts from {type, targets[]}, this test will fail first.
+    const seedBellSpec = {
+      qubits: 2,
+      gates: [
+        { type: "H", targets: [0] },
+        { type: "CNOT", control: 0, targets: [1] },
+      ],
+    };
+    render(<CircuitPreview spec={seedBellSpec} />);
+    expect(screen.getByTestId("circuit-preview")).toBeInTheDocument();
+    // 2 wires
+    expect(screen.getAllByTestId(/^wire-/)).toHaveLength(2);
+    // H and CNOT gate labels rendered
+    expect(screen.getByText("H")).toBeInTheDocument();
+    expect(screen.getByText("CNOT")).toBeInTheDocument();
+  });
 });

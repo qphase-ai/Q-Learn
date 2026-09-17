@@ -179,8 +179,8 @@ The circuit is:
 {
   "qubits": 2,
   "gates": [
-    {"gate": "H",    "target": 0},
-    {"gate": "CNOT", "control": 0, "target": 1}
+    {"type": "H",    "targets": [0]},
+    {"type": "CNOT", "control": 0, "targets": [1]}
   ]
 }
 ```
@@ -231,9 +231,9 @@ $$\text{CNOT} = \begin{pmatrix}1&0&0&0\\0&1&0&0\\0&0&0&1\\0&0&1&0\end{pmatrix}$$
 {
   "qubits": 2,
   "gates": [
-    {"gate": "X",    "target": 0},
-    {"gate": "H",    "target": 1},
-    {"gate": "CNOT", "control": 1, "target": 0}
+    {"type": "X",    "targets": [0]},
+    {"type": "H",    "targets": [1]},
+    {"type": "CNOT", "control": 1, "targets": [0]}
   ]
 }
 ```
@@ -255,6 +255,10 @@ $|1\rangle$ with probabilities $|\alpha|^2$ and $|\beta|^2$ respectively.
 # ---------------------------------------------------------------------------
 
 def upgrade() -> None:
+    # NOTE: This is a one-shot forward seed. Re-running will fail with a
+    # UniqueViolation on concepts.name (UNIQUE constraint). To re-seed, run
+    # `alembic downgrade b2c3d4e5f6a7` first, then `alembic upgrade head`.
+
     # 1. Course
     op.bulk_insert(courses_t, [
         {

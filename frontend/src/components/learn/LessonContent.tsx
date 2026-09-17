@@ -38,6 +38,7 @@ const components: Components = {
 
 export default function LessonContent() {
   const activeLesson = useLearningStore((s) => s.activeLesson);
+  const lessonProgress = useLearningStore((s) => s.lessonProgress);
 
   if (!activeLesson || !activeLesson.content) {
     return (
@@ -53,6 +54,8 @@ export default function LessonContent() {
       </div>
     );
   }
+
+  const isCompleted = (lessonProgress[activeLesson.id] ?? 0) >= 100;
 
   return (
     <article
@@ -72,6 +75,45 @@ export default function LessonContent() {
       >
         {activeLesson.content}
       </ReactMarkdown>
+
+      <footer
+        style={{
+          marginTop: "2rem",
+          paddingTop: "1rem",
+          borderTop: "1px solid var(--border)",
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        {isCompleted ? (
+          <span
+            style={{
+              color: "var(--success)",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+            }}
+          >
+            ✓ Completed
+          </span>
+        ) : (
+          <button
+            onClick={() =>
+              useLearningStore.getState().markProgress(activeLesson.id, 100)
+            }
+            style={{
+              background: "none",
+              border: "1px solid var(--quantum)",
+              color: "var(--quantum)",
+              borderRadius: "4px",
+              padding: "0.375rem 0.875rem",
+              fontSize: "0.875rem",
+              cursor: "pointer",
+            }}
+          >
+            Mark complete
+          </button>
+        )}
+      </footer>
     </article>
   );
 }

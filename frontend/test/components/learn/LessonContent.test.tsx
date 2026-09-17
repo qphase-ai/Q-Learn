@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi, type Mock } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { useLearningStore } from "@/stores/learningStore";
 import type { LessonDetail } from "@/types";
 
@@ -78,6 +78,31 @@ describe("LessonContent", () => {
     });
     render(<LessonContent />);
     expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
+  });
+
+  it("clicking 'Mark complete' calls markProgress with (lesson.id, 100)", async () => {
+    const markProgressMock = vi.fn().mockResolvedValue(undefined);
+    useLearningStore.setState({
+      activeLesson: fakeLesson,
+      lessonProgress: {},
+      markProgress: markProgressMock as unknown as (lessonId: string, pct: number) => Promise<void>,
+    });
+    render(<LessonContent />);
+    await screen.findByRole("heading", { name: /superposition/i });
+    const btn = screen.getByRole("button", { name: /mark complete/i });
+    fireEvent.click(btn);
+    expect(markProgressMock).toHaveBeenCalledWith(fakeLesson.id, 100);
+  });
+
+  it("shows 'Completed' state when lessonProgress is 100 for active lesson", async () => {
+    useLearningStore.setState({
+      activeLesson: fakeLesson,
+      lessonProgress: { [fakeLesson.id]: 100 },
+    });
+    render(<LessonContent />);
+    await screen.findByRole("heading", { name: /superposition/i });
+    expect(screen.getByText(/completed/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark complete/i })).toBeNull();
   });
 
   it("falls back to a code block on invalid circuit JSON", async () => {
