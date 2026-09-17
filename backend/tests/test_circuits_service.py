@@ -88,7 +88,7 @@ class TestStartExecution:
             yield
 
     @pytest.mark.asyncio
-    async def test_returns_uuid(self):
+    async def test_returns_uuid_and_qasm(self):
         from app.services.circuits_service import CircuitsService
 
         db = _make_mock_db()
@@ -96,9 +96,10 @@ class TestStartExecution:
         circuit_id = uuid.uuid4()
         body = _make_request()
 
-        exec_id = await svc.start_execution(circuit_id, body, user_id=uuid.uuid4())
+        exec_id, qasm = await svc.start_execution(circuit_id, body, user_id=uuid.uuid4())
 
         assert isinstance(exec_id, uuid.UUID)
+        assert qasm == "OPENQASM 2.0; fake;"
 
     @pytest.mark.asyncio
     async def test_adds_circuit_and_execution_rows(self):
@@ -214,35 +215,6 @@ def _make_session_cm(mock_db):
 class TestRunAndPublish:
     """Tests for the module-level run_and_publish function."""
 
-    def _patch_all(self, mock_db, exec_result, execute_side_effect=None):
-        """Return a context manager that patches AsyncSessionLocal, QES, compile, and publisher."""
-        compiled = MagicMock()
-        compiled.qasm = "OPENQASM 2.0; fake;"
-
-        session_factory = MagicMock(return_value=_make_session_cm(mock_db)())
-
-        mock_execute = AsyncMock(
-            return_value=exec_result,
-            side_effect=execute_side_effect,
-        )
-        mock_compile = AsyncMock(return_value=compiled)
-        spy_publish = AsyncMock()
-
-        patches = [
-            patch("app.services.circuits_service.AsyncSessionLocal", session_factory),
-            patch.object(
-                __import__("app.quantum.execution_service", fromlist=["QuantumExecutionService"]).QuantumExecutionService,
-                "execute",
-                mock_execute,
-            ),
-            patch(
-                "app.services.circuits_service.QiskitAerAdapter",
-                autospec=True,
-            ),
-            patch("app.services.circuits_service.publish_circuit_result", spy_publish),
-        ]
-        return patches, spy_publish, mock_execute, mock_compile, compiled
-
     @pytest.mark.asyncio
     async def test_run_and_publish_success(self):
         from app.services.circuits_service import run_and_publish
@@ -259,9 +231,6 @@ class TestRunAndPublish:
         mock_db.get = AsyncMock(return_value=fake_exec_row)
         mock_db.commit = AsyncMock()
 
-        compiled = MagicMock()
-        compiled.qasm = "OPENQASM 2.0; fake;"
-
         spy_publish = AsyncMock()
 
         with (
@@ -273,18 +242,15 @@ class TestRunAndPublish:
                 "app.services.circuits_service.QuantumExecutionService",
             ) as MockQES,
             patch(
-                "app.services.circuits_service.QiskitAerAdapter",
-                autospec=True,
-            ) as MockAdapter,
-            patch(
                 "app.services.circuits_service.publish_circuit_result",
                 spy_publish,
             ),
         ):
             MockQES.return_value.execute = AsyncMock(return_value=exec_result)
-            MockAdapter.return_value.compile = AsyncMock(return_value=compiled)
 
-            await run_and_publish(circuit_id, execution_id, spec, shots=512)
+            await run_and_publish(
+                circuit_id, execution_id, spec, shots=512, qasm="OPENQASM 2.0; fake;"
+            )
 
         spy_publish.assert_awaited_once()
         call_args = spy_publish.call_args
@@ -293,6 +259,8 @@ class TestRunAndPublish:
         assert payload["status"] == "completed"
         assert payload["probabilities"] == {"00": 0.5, "11": 0.5}
         assert payload["measurements"] == {"00": 256, "11": 256}
+        # qasm comes from the passed-in argument (no recompile in background task)
+        assert payload["qasm"] == "OPENQASM 2.0; fake;"
 
     @pytest.mark.asyncio
     async def test_run_and_publish_sets_row_completed(self):
@@ -309,9 +277,6 @@ class TestRunAndPublish:
         mock_db.get = AsyncMock(return_value=fake_exec_row)
         mock_db.commit = AsyncMock()
 
-        compiled = MagicMock()
-        compiled.qasm = "OPENQASM 2.0; fake;"
-
         with (
             patch(
                 "app.services.circuits_service.AsyncSessionLocal",
@@ -320,16 +285,13 @@ class TestRunAndPublish:
             patch(
                 "app.services.circuits_service.QuantumExecutionService",
             ) as MockQES,
-            patch(
-                "app.services.circuits_service.QiskitAerAdapter",
-                autospec=True,
-            ) as MockAdapter,
             patch("app.services.circuits_service.publish_circuit_result", AsyncMock()),
         ):
             MockQES.return_value.execute = AsyncMock(return_value=exec_result)
-            MockAdapter.return_value.compile = AsyncMock(return_value=compiled)
 
-            await run_and_publish(circuit_id, execution_id, spec, shots=512)
+            await run_and_publish(
+                circuit_id, execution_id, spec, shots=512, qasm="OPENQASM 2.0; fake;"
+            )
 
         assert fake_exec_row.status == "completed"
         assert fake_exec_row.execution_time_ms == 42
@@ -360,10 +322,6 @@ class TestRunAndPublish:
                 "app.services.circuits_service.QuantumExecutionService",
             ) as MockQES,
             patch(
-                "app.services.circuits_service.QiskitAerAdapter",
-                autospec=True,
-            ) as MockAdapter,
-            patch(
                 "app.services.circuits_service.publish_circuit_result",
                 spy_publish,
             ),
@@ -371,12 +329,11 @@ class TestRunAndPublish:
             MockQES.return_value.execute = AsyncMock(
                 side_effect=RuntimeError("sandbox timeout")
             )
-            compiled = MagicMock()
-            compiled.qasm = "OPENQASM 2.0; fake;"
-            MockAdapter.return_value.compile = AsyncMock(return_value=compiled)
 
             # Must NOT raise — background task swallows exceptions
-            await run_and_publish(circuit_id, execution_id, spec, shots=512)
+            await run_and_publish(
+                circuit_id, execution_id, spec, shots=512, qasm="OPENQASM 2.0; fake;"
+            )
 
         assert fake_exec_row.status == "failed"
         assert "sandbox timeout" in fake_exec_row.error_message
@@ -411,10 +368,6 @@ class TestRunAndPublish:
                 "app.services.circuits_service.QuantumExecutionService",
             ) as MockQES,
             patch(
-                "app.services.circuits_service.QiskitAerAdapter",
-                autospec=True,
-            ) as MockAdapter,
-            patch(
                 "app.services.circuits_service.publish_circuit_result",
                 AsyncMock(side_effect=Exception("supabase down")),
             ),
@@ -422,9 +375,8 @@ class TestRunAndPublish:
             MockQES.return_value.execute = AsyncMock(
                 side_effect=RuntimeError("boom")
             )
-            compiled = MagicMock()
-            compiled.qasm = "OPENQASM 2.0; fake;"
-            MockAdapter.return_value.compile = AsyncMock(return_value=compiled)
 
             # Should complete without raising
-            await run_and_publish(circuit_id, execution_id, spec, shots=512)
+            await run_and_publish(
+                circuit_id, execution_id, spec, shots=512, qasm="OPENQASM 2.0; fake;"
+            )

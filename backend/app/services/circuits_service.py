@@ -61,8 +61,11 @@ class CircuitsService:
         circuit_id: uuid.UUID,
         body: ExecuteCircuitRequest,
         user_id: uuid.UUID,
-    ) -> uuid.UUID:
-        """Validate → upsert Circuit → insert CircuitExecution(pending) → return id.
+    ) -> tuple[uuid.UUID, str]:
+        """Validate → upsert Circuit → insert CircuitExecution(pending) → return (id, qasm).
+
+        Returns the execution id and the compiled QASM so the router can pass the
+        qasm to run_and_publish without recompiling in the background task.
 
         Raises ValidationError before any DB write if the circuit spec is invalid.
         """
@@ -108,7 +111,7 @@ class CircuitsService:
         self.db.add(execution)
 
         await self.db.commit()
-        return execution_id
+        return execution_id, qasm
 
 
 # ---------------------------------------------------------------------------
@@ -120,12 +123,16 @@ async def run_and_publish(
     execution_id: uuid.UUID,
     spec: PydanticCircuitSpec,
     shots: int,
+    qasm: str,
 ) -> None:
     """Execute a circuit in the quantum sandbox and publish the result via Realtime.
 
     Opens its own DB session (the request session is gone by the time this runs
-    as a BackgroundTask). Never raises — any exception is caught, persisted as a
-    failed status, and published so the frontend learns of the failure.
+    as a BackgroundTask). The `qasm` is passed in (already computed by
+    start_execution) so we avoid recompiling — this also keeps QiskitAerAdapter /
+    get_settings() side effects out of the background task. Never raises — any
+    exception is caught, persisted as a failed status, and published so the
+    frontend learns of the failure.
     """
     async with AsyncSessionLocal() as db:
         execution = await db.get(CircuitExecution, execution_id)
@@ -135,9 +142,6 @@ async def run_and_publish(
 
             # Execute in sandbox
             result = await QuantumExecutionService().execute(quantum_spec, shots=shots)
-
-            # Compile to get qasm for the payload
-            compiled = await QiskitAerAdapter().compile(quantum_spec)
 
             # Update execution row
             execution.status = "completed"
@@ -154,7 +158,7 @@ async def run_and_publish(
                 "probabilities": result.probabilities,
                 "measurements": result.measurements,
                 "statevector": result.statevector,
-                "qasm": compiled.qasm,
+                "qasm": qasm,
                 "execution_time_ms": result.execution_time_ms,
                 "error_message": None,
             }
@@ -181,7 +185,7 @@ async def run_and_publish(
                 "probabilities": None,
                 "measurements": None,
                 "statevector": None,
-                "qasm": None,
+                "qasm": qasm,
                 "execution_time_ms": None,
                 "error_message": error_msg,
             }
