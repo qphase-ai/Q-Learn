@@ -29,9 +29,16 @@ export function useAuth() {
   async function completeSession(accessToken: string) {
     setJwt(accessToken);
     setAuthCookie();
-    const profile = await apiFetch<User>("/api/v1/auth/me", { token: accessToken });
-    setUser(profile);
-    router.push("/dashboard");
+    router.replace("/dashboard");
+
+    try {
+      const profile = await apiFetch<User>("/api/v1/auth/me", {
+        token: accessToken,
+      });
+      setUser(profile);
+    } catch {
+      // AppShell.hydrate() retries the profile request after navigation.
+    }
   }
 
   async function login(email: string, password: string) {

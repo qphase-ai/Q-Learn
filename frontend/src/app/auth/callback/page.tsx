@@ -14,11 +14,13 @@ export default function AuthCallbackPage() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         void completeSession(session.access_token);
-      }      if (session) completeSession(session.access_token);
+      }     
     });
     // Fallback: the session may already exist before the listener attaches.
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) completeSession(data.session.access_token);
+      if (data.session) {
+        void completeSession(data.session.access_token);
+      }
     });
     return () => sub.subscription.unsubscribe();
     // completeSession is recreated each render; the effect must run once.
