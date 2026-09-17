@@ -1,5 +1,5 @@
-import WorkspacePlaceholder from "@/components/shell/WorkspacePlaceholder";
+import LearnWorkspace from "@/components/learn/LearnWorkspace";
 
 export default function LearnPage() {
-  return <WorkspacePlaceholder name="Learn" slice={2} />;
+  return <LearnWorkspace />;
 }
