@@ -337,10 +337,10 @@ def upgrade() -> None:
     # Use op.execute with sa.text() so JSON literals render correctly in --sql mode.
     op.execute(sa.text(
         "INSERT INTO concepts (id, lesson_id, name, description, prerequisites) VALUES"
-        " (:id1, :lid1, :n1, :d1, CAST(:p1 AS json)),"
-        " (:id2, :lid2, :n2, :d2, CAST(:p2 AS json)),"
-        " (:id3, :lid3, :n3, :d3, CAST(:p3 AS json)),"
-        " (:id4, :lid4, :n4, :d4, CAST(:p4 AS json))"
+        " (CAST(:id1 AS uuid), CAST(:lid1 AS uuid), :n1, :d1, CAST(:p1 AS json)),"
+        " (CAST(:id2 AS uuid), CAST(:lid2 AS uuid), :n2, :d2, CAST(:p2 AS json)),"
+        " (CAST(:id3 AS uuid), CAST(:lid3 AS uuid), :n3, :d3, CAST(:p3 AS json)),"
+        " (CAST(:id4 AS uuid), CAST(:lid4 AS uuid), :n4, :d4, CAST(:p4 AS json))"
     ).bindparams(
         id1=CONCEPT_SUPERPOS_ID,  lid1=LESSON_SUPERPOS_ID,
         n1="superposition",
