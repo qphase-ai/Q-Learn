@@ -1,6 +1,10 @@
 "use client";
 
 import { useShellStore } from "@/stores/shellStore";
+import ProbabilityChart from "@/components/visualization/ProbabilityChart";
+import StateVectorTable from "@/components/visualization/StateVectorTable";
+import QASMViewer from "@/components/visualization/QASMViewer";
+import ConsoleOutput from "@/components/visualization/ConsoleOutput";
 
 const TABS = [
   { id: "probabilities", label: "Probabilities" },
@@ -38,8 +42,11 @@ export default function BottomPanel() {
           </button>
         ))}
       </div>
-      <div className="flex flex-1 items-center justify-center text-sm text-[var(--text-muted)]">
-        Run a circuit to see results (Slice 1).
+      <div className="flex-1 overflow-auto p-2 text-sm text-[var(--text-primary)]">
+        {activeTab === "probabilities" && <ProbabilityChart />}
+        {activeTab === "statevector" && <StateVectorTable />}
+        {activeTab === "qasm" && <QASMViewer />}
+        {activeTab === "console" && <ConsoleOutput />}
       </div>
     </section>
   );
