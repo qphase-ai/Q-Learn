@@ -12,7 +12,9 @@ export default function AuthCallbackPage() {
     // supabase-js (PKCE, detectSessionInUrl) exchanges the `?code=` for a
     // session on load. Complete our sign-in as soon as that session appears.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) completeSession(session.access_token);
+      if (session) {
+        void completeSession(session.access_token);
+      }      if (session) completeSession(session.access_token);
     });
     // Fallback: the session may already exist before the listener attaches.
     supabase.auth.getSession().then(({ data }) => {
