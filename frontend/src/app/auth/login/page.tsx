@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,17 @@ import { Input } from "@/components/ui/Input";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loginWithGoogle, isLoading, error } = useAuth();
+  const { login, loginWithGoogle, redirectIfAuthenticated, isLoading, error } =
+    useAuth();
+
+  // Send an already-signed-in visitor on to their destination instead of
+  // showing the form. redirectIfAuthenticated verifies a live session and
+  // re-sets the auth cookie, so this can't loop against middleware.
+  useEffect(() => {
+    void redirectIfAuthenticated();
+    // Run once on mount; redirectIfAuthenticated is recreated each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

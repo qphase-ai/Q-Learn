@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { safeRedirectTarget } from "@/lib/redirect";
 import { useAuthStore } from "@/stores/authStore";
 import type { User } from "@/types";
 
@@ -29,7 +30,7 @@ export function useAuth() {
   async function completeSession(accessToken: string) {
     setJwt(accessToken);
     setAuthCookie();
-    router.replace("/dashboard");
+    router.replace(safeRedirectTarget());
 
     try {
       const profile = await apiFetch<User>("/api/v1/auth/me", {
@@ -107,6 +108,23 @@ export function useAuth() {
     router.push("/auth/login");
   }
 
+  async function redirectIfAuthenticated() {
+    // Guard the login/register pages against an already-authenticated visitor on
+    // a client render. Middleware only catches this on fresh HTTP requests via
+    // the qlearn-auth cookie — a client-side navigation or a stale cookie can
+    // leave a logged-in user staring at the sign-in form.
+    //
+    // Gate on a real Supabase session (not just the persisted jwt) and re-set the
+    // cookie before redirecting: redirecting without the cookie would make
+    // middleware bounce the user straight back here — an infinite loop.
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session) return;
+    setJwt(session.access_token);
+    setAuthCookie();
+    router.replace(safeRedirectTarget());
+  }
+
   async function hydrate() {
     const { data } = await supabase.auth.getSession();
     const session = data.session;
@@ -120,11 +138,12 @@ export function useAuth() {
       });
       setUser(profile);
     } catch (e) {
-      // Last line of defense: completeSession already deferred one failure here.
-      // If the retry also fails the session is unusable — re-gate to login.
-      console.warn("hydrate: profile fetch failed after retry, signing out", e);
-      clearAuthCookie();
-      router.replace("/auth/login");
+      // Best-effort, same as completeSession: a transient /me failure (backend
+      // cold start, network blip, a brief 401 window) must not clear the cookie
+      // and boot a validly-signed-in user — that turned an auth-me hiccup into
+      // "bounced back to /auth/login". Keep the session; the profile loads on
+      // the next hydrate.
+      console.warn("hydrate: profile fetch failed, keeping session", e);
     }
   }
 
@@ -134,6 +153,7 @@ export function useAuth() {
     register,
     logout,
     completeSession,
+    redirectIfAuthenticated,
     hydrate,
     isLoading,
     error,
