@@ -26,6 +26,15 @@ export interface Lesson {
   is_pro: boolean;
 }
 
+export type GateType = "H" | "X" | "Y" | "Z" | "S" | "T" | "I" | "CX" | "CZ" | "SWAP" | "M";
+
+export interface GateNodeData extends Record<string, unknown> {
+  type: GateType;
+  qubit: number;
+  column: number;
+  control?: number;
+}
+
 export interface GateSpec {
   type: string;
   targets: number[];
@@ -40,12 +49,14 @@ export interface CircuitSpec {
 }
 
 export interface SimulationResult {
-  id: string;
   status: string;
   probabilities: Record<string, number> | null;
-  statevector: number[] | null;
   measurements: Record<string, number> | null;
+  statevector: [number, number][] | null;
+  qasm?: string | null;
   execution_time_ms: number | null;
+  error_message?: string | null;
+  id?: string;
 }
 
 export interface Plan {

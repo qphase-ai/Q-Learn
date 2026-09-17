@@ -7,14 +7,16 @@ QISKIT_SCRIPT_TEMPLATE = """
 import json, sys
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
+from qiskit.quantum_info import Statevector
 
 qc = QuantumCircuit.from_qasm_str({qasm!r})
 simulator = AerSimulator()
 compiled = transpile(qc, simulator)
 
-# Statevector
-sv_job = simulator.run(compiled, shots=1)
-sv_result = sv_job.result()
+# Statevector on a measurement-free copy: measurement collapse would otherwise
+# zero out the amplitudes the State Vector tab renders.
+qc_sv = qc.remove_final_measurements(inplace=False)
+statevector = [[c.real, c.imag] for c in Statevector.from_instruction(qc_sv).data]
 
 # Shots
 job = simulator.run(compiled, shots={shots})
@@ -25,7 +27,7 @@ total = sum(counts.values())
 output = {{
     "probabilities": {{k: v / total for k, v in counts.items()}},
     "measurements": counts,
-    "statevector": None,
+    "statevector": statevector,
 }}
 print(json.dumps(output))
 """
@@ -85,7 +87,7 @@ class QiskitAerAdapter(QuantumBackend):
         ]
         gate_map = {
             "H": "h", "X": "x", "Y": "y", "Z": "z",
-            "S": "s", "T": "t", "CX": "cx", "CZ": "cz",
+            "S": "s", "T": "t", "I": "id", "CX": "cx", "CZ": "cz",
             "SWAP": "swap", "M": "measure",
         }
         for gate in circuit.gates:

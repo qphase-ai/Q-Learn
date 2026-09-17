@@ -50,3 +50,6 @@ logs/
 
 # Build artifacts
 *.tgz
+
+# Local Superpowers design specs (not tracked)
+docs/superpowers/

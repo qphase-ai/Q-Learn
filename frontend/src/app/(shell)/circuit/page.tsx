@@ -1,5 +1,5 @@
-import WorkspacePlaceholder from "@/components/shell/WorkspacePlaceholder";
+import CircuitBuilderWorkspace from "@/components/circuit/CircuitBuilderWorkspace";
 
 export default function CircuitPage() {
-  return <WorkspacePlaceholder name="Circuit Builder" slice={1} />;
+  return <CircuitBuilderWorkspace />;
 }
