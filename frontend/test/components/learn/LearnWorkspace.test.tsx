@@ -74,4 +74,32 @@ describe("LearnWorkspace", () => {
       expect(loadCourse).toHaveBeenCalledWith("course-1");
     });
   });
+
+  it("does NOT call loadCourse when activeCourse is already set on mount", async () => {
+    const loadCourse = vi.fn().mockResolvedValue(undefined);
+    const loadCourses = vi.fn().mockImplementation(async () => {
+      useLearningStore.setState({
+        courses: [{ id: "course-1", title: "Quantum Foundations", description: null, difficulty: "beginner" }],
+      });
+    });
+    useLearningStore.setState({
+      courses: [],
+      activeCourse: {
+        id: "course-1",
+        title: "Quantum Foundations",
+        description: null,
+        difficulty: "beginner",
+        modules: [],
+      },
+      loadCourses: loadCourses as unknown as () => Promise<void>,
+      loadCourse: loadCourse as unknown as (id: string) => Promise<void>,
+    });
+
+    render(<LearnWorkspace />);
+    // Let loadCourses resolve and the guard run
+    await vi.waitFor(() => {
+      expect(loadCourses).toHaveBeenCalledTimes(1);
+    });
+    expect(loadCourse).not.toHaveBeenCalled();
+  });
 });

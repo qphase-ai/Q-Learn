@@ -7,13 +7,12 @@ import LessonOutline from "@/components/learn/LessonOutline";
 import LessonContent from "@/components/learn/LessonContent";
 
 export default function LearnWorkspace() {
-  const loadCourses = useLearningStore((s) => s.loadCourses);
-  const loadCourse = useLearningStore((s) => s.loadCourse);
   const setFocusMode = useShellStore((s) => s.setFocusMode);
 
   useEffect(() => {
     setFocusMode(false);
 
+    const { loadCourses, loadCourse } = useLearningStore.getState();
     loadCourses().then(() => {
       // After courses load, auto-select the first course if none is active
       const { courses, activeCourse } = useLearningStore.getState();
