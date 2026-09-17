@@ -80,12 +80,17 @@ export const useCircuitStore = create<CircuitStore>((set, get) => ({
 
   removeQubit: (index) =>
     set((s) => {
-      const newCount = Math.max(1, s.qubitCount - 1);
+      if (s.qubitCount <= 1) return {};
       return {
-        qubitCount: newCount,
-        nodes: s.nodes.filter(
-          (n) => ((n.data as unknown) as GateNodeData).qubit < newCount
-        ),
+        qubitCount: s.qubitCount - 1,
+        nodes: s.nodes
+          .filter((n) => ((n.data as unknown) as GateNodeData).qubit !== index)
+          .map((n) => {
+            const d = (n.data as unknown) as GateNodeData;
+            return d.qubit > index
+              ? ({ ...n, data: { ...d, qubit: d.qubit - 1 } } as Node)
+              : n;
+          }),
       };
     }),
 

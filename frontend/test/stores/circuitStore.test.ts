@@ -86,7 +86,7 @@ describe("placeGate", () => {
 // removeQubit
 // ---------------------------------------------------------------------------
 describe("removeQubit", () => {
-  it("decrements qubitCount and drops nodes on the removed qubit", () => {
+  it("decrements qubitCount and drops nodes on the removed top qubit", () => {
     useCircuitStore.setState({ qubitCount: 3 });
     useCircuitStore.getState().placeGate("H", 0, 0);
     useCircuitStore.getState().placeGate("X", 1, 0);
@@ -97,6 +97,22 @@ describe("removeQubit", () => {
     const { qubitCount, nodes } = useCircuitStore.getState();
     expect(qubitCount).toBe(2);
     expect(nodes.every((n) => (n.data as { qubit: number }).qubit < 2)).toBe(true);
+  });
+
+  it("removes the requested qubit and shifts higher-indexed qubits down", () => {
+    useCircuitStore.setState({ qubitCount: 3 });
+    // gate on qubit 0 and gate on qubit 2
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().placeGate("Z", 2, 0);
+
+    useCircuitStore.getState().removeQubit(0);
+
+    const { qubitCount, nodes } = useCircuitStore.getState();
+    expect(qubitCount).toBe(2);
+    // qubit-0 gate removed; qubit-2 gate shifts down to qubit 1
+    expect(nodes).toHaveLength(1);
+    expect((nodes[0].data as { type: string }).type).toBe("Z");
+    expect((nodes[0].data as { qubit: number }).qubit).toBe(1);
   });
 
   it("never drops below qubitCount=1", () => {
@@ -189,6 +205,26 @@ describe("runSimulation", () => {
     expect(useCircuitStore.getState().runState).toBe("success");
     expect(useShellStore.getState().bottomPanelOpen).toBe(true);
     expect(useShellStore.getState().bottomPanelTab).toBe("probabilities");
+  });
+
+  it("onResult with status='failed' sets runState='error' and keeps error_message", async () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    await useCircuitStore.getState().runSimulation();
+
+    expect(capturedOnResult).not.toBeNull();
+
+    capturedOnResult!({
+      status: "failed",
+      probabilities: null,
+      measurements: null,
+      statevector: null,
+      qasm: null,
+      execution_time_ms: null,
+      error_message: "boom",
+    });
+
+    expect(useCircuitStore.getState().runState).toBe("error");
+    expect(useCircuitStore.getState().results?.error_message).toBe("boom");
   });
 
   it("sets runState='error' and captures the message when apiFetch throws", async () => {
