@@ -2,10 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* New design system tokens (HSL triplets, no hsl() wrapper — consumed via
+       hsl(var(--x) / <alpha-value>) in tailwind.config.ts) */
+    --background: 0 0% 2%;
+    --surface: 0 0% 4%;
+    --elevated: 0 0% 7%;
+    --foreground: 0 0% 96%;
+    --muted-foreground: 0 0% 60%;
+
+    --cyber-cyan: 187 100% 50%;
+    --electric-purple: 279 100% 58%;
+    --neon-green: 111 100% 54%;
+
+    /* Suffixed with -ds to avoid colliding with the legacy hex vars of the
+       same conceptual name (--border, --success, --warning, --error) that
+       are still consumed directly (as hex, not HSL) by legacy components
+       below — see the "LEGACY DESIGN TOKENS" block. */
+    --border-ds: 0 0% 100%;
+    --success-ds: 142 71% 45%;
+    --warning-ds: 38 92% 50%;
+    --error-ds: 0 91% 65%;
+  }
+}
+
+/* CIRCUIT PALETTE — DO NOT MODIFY (consumed by circuit builder node components) */
+:root {
+  --gate-H: #8b5cf6;
+  --gate-X: #f85149;
+  --gate-Y: #f97316;
+  --gate-Z: #3fb950;
+  --gate-S: #14b8a6;
+  --gate-T: #6366f1;
+  --gate-I: #6b7280;
+  --gate-CX: #3b82f6;
+  --gate-M: #00d4ff;
+  --wire: #8b8b8b;
+}
+
+/* LEGACY DESIGN TOKENS — kept alive for this wave; consumed directly (as hex)
+   by frontend/src/components/ui/Button.tsx, Input.tsx, and other existing
+   components. A later wave migrates these consumers to the new tokens above
+   and removes this block. Do not repurpose these names for new meanings. */
 :root {
   --bg-base: #0d0d0d;
   --bg-surface: #141414;
   --bg-elevated: #1a1a1a;
+  --bg-hover: #242424;
   --border: #2a2a2a;
 
   --quantum: #00d4ff;
@@ -18,19 +62,6 @@
   --success: #3fb950;
   --warning: #d29922;
   --error: #f85149;
-
-  --gate-H: #8b5cf6;
-  --gate-X: #f85149;
-  --gate-CX: #3b82f6;
-  --gate-M: #00d4ff;
-
-  --bg-hover: #242424;
-  --gate-Y: #f97316;
-  --gate-Z: #3fb950;
-  --gate-S: #14b8a6;
-  --gate-T: #6366f1;
-  --gate-I: #6b7280;
-  --wire: #8b8b8b;
 }
 
 *,
@@ -40,7 +71,39 @@
 }
 
 body {
-  background: var(--bg-base);
-  color: var(--text-primary);
+  @apply bg-background text-foreground font-sans antialiased;
   margin: 0;
+}
+
+/* Thin cyan-accented scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 240, 255, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 240, 255, 0.45);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.25) transparent;
+}
+
+::selection {
+  background-color: rgba(0, 240, 255, 0.3);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #050505,
+    0 0 0 4px rgba(0, 240, 255, 0.6);
+  border-radius: 4px;
 }
