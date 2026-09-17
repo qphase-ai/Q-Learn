@@ -26,6 +26,15 @@ export interface Lesson {
   is_pro: boolean;
 }
 
+export type GateType = "H" | "X" | "Y" | "Z" | "S" | "T" | "I" | "CX" | "CZ" | "SWAP" | "M";
+
+export interface GateNodeData {
+  type: GateType;
+  qubit: number;
+  column: number;
+  control?: number;
+}
+
 export interface GateSpec {
   type: string;
   targets: number[];
