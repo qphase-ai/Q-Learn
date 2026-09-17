@@ -32,9 +32,9 @@ def _valid_body() -> dict:
             "classical_bits": 2,
             "gates": [
                 {"type": "H", "targets": [0]},
-                {"type": "CNOT", "targets": [1], "control": 0},
-                {"type": "MEASURE", "targets": [0], "classical": [0]},
-                {"type": "MEASURE", "targets": [1], "classical": [1]},
+                {"type": "CX", "targets": [1], "control": 0},
+                {"type": "M", "targets": [0], "classical": [0]},
+                {"type": "M", "targets": [1], "classical": [1]},
             ],
         },
         "shots": 1024,
