@@ -14,6 +14,10 @@ pnpm dev
 # Type check
 pnpm type-check          # tsc --noEmit
 
+# Tests (Vitest + RTL + jsdom) — specs live in frontend/test/ mirroring src/
+pnpm test                # run once
+pnpm test:watch          # watch mode
+
 # Lint
 pnpm lint                # next lint
 
@@ -41,6 +45,7 @@ The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once
 | `app/layout.tsx` | Root layout — mounts `AppShell` |
 | `app/auth/` | Login / Register / Forgot-password pages |
 | `app/dashboard/`, `learn/`, `circuit/`, `quiz/`, `pricing/`, `settings/` | Route entry points |
+| `components/shell/` | IDE shell — `AppShell` + zones (`TitleBar`, `ActivityBar`, `RightPanel`, `BottomPanel`, `StatusBar`, `WorkspacePlaceholder`) |
 | `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas` |
 | `components/tutor/` | `AITutorPanel` — streaming chat, citation badges, KaTeX math |
 | `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer` (BottomPanel tabs) |
@@ -190,6 +195,7 @@ All tokens are defined in `src/app/globals.css` as CSS custom properties. **Do n
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay key (client-side, public) |
+| `NEXT_PUBLIC_DEV_NO_AUTH` | Dev-only: `1` opens every page without login (ignored in production; double-gated on `NODE_ENV`) |
 
 Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `../docs/infrastructure.md`.
 

@@ -96,6 +96,23 @@ project must have it configured (already done for the team):
   `http://localhost:3000/auth/callback` and the production
   `.../auth/callback` — a redirect URL not on this list falls back to the Site URL.
 
+### Skipping login during development
+
+To open every page without signing in while building UI, set this in
+`frontend/.env.local` and restart `pnpm dev` (Next.js reads env files only at
+startup):
+
+```
+NEXT_PUBLIC_DEV_NO_AUTH=1
+```
+
+The Edge middleware then skips route protection and `/` lands on `/dashboard`.
+It's **double-gated** — active only when `NODE_ENV != production` **and** the flag
+is `1` — so it can never bypass auth in a production build. Set it back to `0` (or
+remove it) to test the real Supabase login flow. One-off alternative without the
+flag: run `document.cookie = "qlearn-auth=1; path=/"` in the browser console, which
+satisfies the middleware's cookie check.
+
 ## Troubleshooting
 
 - **401 on `/api/v1/auth/me`** → `SUPABASE_JWT_SECRET` is not the project's real
