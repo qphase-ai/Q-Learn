@@ -36,8 +36,10 @@ export function useAuth() {
         token: accessToken,
       });
       setUser(profile);
-    } catch {
-      // AppShell.hydrate() retries the profile request after navigation.
+    } catch (e) {
+      // Transient failures are expected (e.g. backend cold start); AppShell.hydrate()
+      // retries the profile request after navigation.
+      console.warn("completeSession: profile fetch failed, deferring to hydrate", e);
     }
   }
 
@@ -112,10 +114,18 @@ export function useAuth() {
     if (useAuthStore.getState().user) return;
     setJwt(session.access_token);
     setAuthCookie();
-    const profile = await apiFetch<User>("/api/v1/auth/me", {
-      token: session.access_token,
-    });
-    setUser(profile);
+    try {
+      const profile = await apiFetch<User>("/api/v1/auth/me", {
+        token: session.access_token,
+      });
+      setUser(profile);
+    } catch (e) {
+      // Last line of defense: completeSession already deferred one failure here.
+      // If the retry also fails the session is unusable — re-gate to login.
+      console.warn("hydrate: profile fetch failed after retry, signing out", e);
+      clearAuthCookie();
+      router.replace("/auth/login");
+    }
   }
 
   return {
