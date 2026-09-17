@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "./styles/animations.css";
+import { Providers } from "./providers";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -20,9 +21,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${GeistSans.variable} ${GeistMono.variable} ${jetbrainsMono.variable}`}
+      className={`dark bg-[#050505] ${GeistSans.variable} ${GeistMono.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
