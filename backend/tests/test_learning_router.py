@@ -11,7 +11,6 @@ Endpoints covered:
   PUT  /api/v1/lessons/{lesson_id}/progress → ProgressItem
 """
 import uuid
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -73,7 +72,12 @@ def _fake_progress(lesson_id: uuid.UUID | None = None) -> MagicMock:
 
 @pytest.fixture
 async def clean_overrides():
-    """Ensure dependency_overrides are cleared after every test."""
+    """Ensure dependency_overrides are cleared before AND after every test.
+
+    Clearing on entry too prevents a leaked override from a prior test from
+    producing a false green on the auth tests.
+    """
+    app.dependency_overrides.clear()
     yield
     app.dependency_overrides.clear()
 
@@ -211,6 +215,31 @@ async def test_get_lesson_success(
     assert body["success"] is True
     assert body["data"]["id"] == str(lesson_id)
     assert body["data"]["title"] == lesson.title
+
+
+async def test_get_lesson_not_found(
+    client: AsyncClient,
+    clean_overrides,
+    monkeypatch,
+):
+    """Service raises NotFoundError → 404, error.code == 'NOT_FOUND'."""
+    unknown_id = uuid.uuid4()
+
+    app.dependency_overrides[get_db] = lambda: (x for x in [MagicMock()])
+    app.dependency_overrides[get_current_user] = lambda: _fake_user()
+
+    monkeypatch.setattr(
+        svc_module.LearningService,
+        "get_lesson",
+        AsyncMock(side_effect=NotFoundError(f"Lesson {unknown_id} not found")),
+    )
+
+    response = await client.get(f"/api/v1/lessons/{unknown_id}")
+
+    assert response.status_code == 404
+    body = response.json()
+    assert body["success"] is False
+    assert body["error"]["code"] == "NOT_FOUND"
 
 
 # ---------------------------------------------------------------------------
