@@ -64,6 +64,22 @@ describe("LessonContent", () => {
     expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
   });
 
+  it("renders empty-state (no crash) when content is undefined", () => {
+    useLearningStore.setState({
+      activeLesson: { ...fakeLesson, content: undefined as unknown as string },
+    });
+    render(<LessonContent />);
+    expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
+  });
+
+  it("renders empty-state when content is an empty string", () => {
+    useLearningStore.setState({
+      activeLesson: { ...fakeLesson, content: "" },
+    });
+    render(<LessonContent />);
+    expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
+  });
+
   it("falls back to a code block on invalid circuit JSON", async () => {
     useLearningStore.setState({
       activeLesson: {

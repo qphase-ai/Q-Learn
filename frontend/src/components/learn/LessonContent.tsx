@@ -39,7 +39,7 @@ const components: Components = {
 export default function LessonContent() {
   const activeLesson = useLearningStore((s) => s.activeLesson);
 
-  if (!activeLesson || activeLesson.content === null) {
+  if (!activeLesson || !activeLesson.content) {
     return (
       <div
         style={{
