@@ -147,26 +147,45 @@ Unsubscribe on component unmount to avoid leaking channels.
 
 ## Design System Constraints
 
-All tokens are defined in `src/app/globals.css` as CSS custom properties. **Do not hardcode colors.**
+Dark cyberpunk / glassmorphism aesthetic. Core tokens are HSL triplets defined in `src/app/globals.css` (`:root`), consumed via Tailwind's `hsl(var(--x) / <alpha-value>)` pattern in `tailwind.config.ts` and exposed as semantic Tailwind classes. **Do not hardcode colors or read the CSS vars directly — use the Tailwind semantic classes.**
+
+| Token (CSS var) | Approx. value | Tailwind class | When to use |
+|------|------|-----------------|-------------|
+| `--background` | `#050505` (0 0% 2%) | `bg-background` | Root background |
+| `--surface` | 0 0% 4% | `bg-surface` | Panels, cards |
+| `--elevated` | 0 0% 7% | `bg-elevated` | Dropdowns, tooltips, popovers |
+| `--border-ds` | 0 0% 100% (low-alpha) | `border-border` | All borders (use with opacity, e.g. `border-white/10`) |
+| `--foreground` | 0 0% 96% | `text-foreground` | Primary text |
+| `--muted-foreground` | 0 0% 60% | `text-muted-foreground` | Secondary text |
+| `--cyber-cyan` | `#00F0FF` | `text-cyber-cyan` / `bg-cyber-cyan` (+ 50–950 shade ramp) | Primary accent — CTAs, active states, links |
+| `--electric-purple` | `#B026FF` | `text-electric-purple` / `bg-electric-purple` (+ 50–950 shade ramp) | Secondary accent |
+| `--neon-green` | `#39FF14` | `text-neon-green` / `bg-neon-green` (+ 50–950 shade ramp) | Tertiary accent, success highlight |
+| `--success-ds` | 142 71% 45% | `text-success` / `bg-success` | Correct, passed |
+| `--warning-ds` | 38 92% 50% | `text-warning` / `bg-warning` | Partial mastery, hints |
+| `--error-ds` | 0 91% 65% | `text-error` / `bg-error` | Wrong answers, errors |
+
+`globals.css` also keeps a **LEGACY DESIGN TOKENS** block (`--bg-base`, `--quantum`, etc.) alive for old components not yet migrated — don't build new UI against it; it is slated for removal once all consumers move to the tokens above.
+
+Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — unchanged, still consumed directly by circuit builder node components:
 
 | Token | Value | When to use |
 |-------|-------|-------------|
-| `--bg-base` | `#0d0d0d` | Root background |
-| `--bg-surface` | `#141414` | Panels, cards |
-| `--bg-elevated` | `#1a1a1a` | Dropdowns, tooltips |
-| `--border` | `#2a2a2a` | All borders |
-| `--quantum` | `#00d4ff` | Primary accent — active states, CTAs |
-| `--quantum-dim` | `#00d4ff26` | Glow backgrounds, selections |
-| `--success` | `#3fb950` | Correct, passed |
-| `--warning` | `#d29922` | Partial mastery, hints |
-| `--error` | `#f85149` | Wrong answers, errors |
 | `--gate-H` | `#8b5cf6` | Hadamard gate |
 | `--gate-X` | `#f85149` | Pauli-X gate |
 | `--gate-CX` | `#3b82f6` | CNOT gate |
 | `--gate-M` | `#00d4ff` | Measurement gate |
 
-**No `box-shadow`.** Depth via `--border` and `--quantum` glow (`0 0 8px #00d4ff40`) only.  
-**Active nav states:** `--quantum` 2px left border — never background fills.
+**Depth & glow:** `backdrop-blur-md`/`backdrop-blur-xl` + translucent `border-white/10` and `bg-white/[x]` fills for glassmorphic panels; `shadow-glow-{cyan,purple,green}` (and `shadow-glow-cyan-lg`, `shadow-glow-inner`) utilities for accent glows — `box-shadow` is a core technique here, not banned.  
+**Motion:** Framer Motion micro-interactions (`whileHover`/`whileTap`) expected on interactive elements; anything animated must respect `prefers-reduced-motion` (see `useReducedMotion()` usage in `components/ui/button.tsx` and `components/motion/`).
+
+**Component directories:**
+
+| Path | Purpose |
+|------|---------|
+| `components/ui/` | shadcn/Radix + CVA primitives — `button`, `input`, `card`, `dialog`, `sheet`, `dropdown-menu`, `tooltip`, `tabs`, `badge`, `skeleton`, `separator`, `label`, `switch`, `avatar`, `progress`, `sonner` (toasts) |
+| `components/motion/` | Framer Motion wrapper components — `FadeIn`, `SlideUp`, `StaggerChildren`, `PageTransition` |
+| `components/backgrounds/` | Animated background primitives (CSS/SVG/canvas, no WebGL) — `AuroraBackground`, `ParticleNetwork`, `MeshGradient`, `GlowingOrbs`, `GridBackground`, `NoiseOverlay` |
+| `components/effects/` | Composed visual effects built on the primitives above (in progress) |
 
 ---
 
