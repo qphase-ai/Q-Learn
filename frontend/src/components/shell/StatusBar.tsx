@@ -32,26 +32,22 @@ export default function StatusBar() {
   }, []);
 
   const mastery = Math.round(averageMastery(masteryScores) * 100);
-  const dotColor =
+  const dotClass =
     health === "online"
-      ? "var(--success)"
+      ? "bg-success"
       : health === "offline"
-        ? "var(--error)"
-        : "var(--warning)";
+        ? "bg-error"
+        : "bg-warning";
 
   return (
-    <footer className="flex h-6 items-center gap-4 bg-[var(--quantum)] px-3 text-xs text-[var(--bg-base)]">
+    <footer className="flex h-6 items-center gap-4 bg-cyber-cyan px-3 text-xs text-background">
       <span>Level 1</span>
       <span>Mastery {mastery}%</span>
       <span
         className="ml-auto flex items-center gap-1"
         aria-label={`Backend status: ${health}`}
       >
-        <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ backgroundColor: dotColor }}
-          aria-hidden
-        />
+        <span className={`inline-block h-2 w-2 rounded-full ${dotClass}`} aria-hidden />
         {health}
       </span>
     </footer>

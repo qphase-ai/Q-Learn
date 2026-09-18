@@ -13,86 +13,41 @@ export default function LessonOutline() {
 
   if (!activeCourse) {
     return (
-      <aside
-        style={{
-          width: "220px",
-          flexShrink: 0,
-          borderRight: "1px solid var(--border)",
-          overflowY: "auto",
-          padding: "0.75rem 0",
-          color: "var(--text-muted)",
-          fontSize: "0.8125rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <aside className="flex w-[220px] flex-shrink-0 items-center justify-center overflow-y-auto border-r border-border px-0 py-3 text-[0.8125rem] text-muted-foreground">
         No course loaded
       </aside>
     );
   }
 
   return (
-    <aside
-      style={{
-        width: "220px",
-        flexShrink: 0,
-        borderRight: "1px solid var(--border)",
-        overflowY: "auto",
-        padding: "0.75rem 0",
-        fontSize: "0.8125rem",
-      }}
-    >
+    <aside className="w-[220px] flex-shrink-0 overflow-y-auto border-r border-border py-3 text-[0.8125rem]">
       {/* Course header — if multiple courses exist, show selector */}
       {courses.length > 1 ? (
-        <div style={{ padding: "0 0.75rem 0.5rem" }}>
+        <div className="px-3 pb-2">
           {courses.map((c) => (
             <button
               key={c.id}
               onClick={() => loadCourse(c.id)}
-              style={{
-                display: "block",
-                width: "100%",
-                textAlign: "left",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: c.id === activeCourse.id ? "var(--quantum)" : "var(--text-secondary)",
-                padding: "0.25rem 0",
-                fontWeight: c.id === activeCourse.id ? 600 : 400,
-              }}
+              className={`block w-full cursor-pointer border-none bg-transparent py-1 text-left ${
+                c.id === activeCourse.id
+                  ? "font-semibold text-cyber-cyan"
+                  : "font-normal text-muted-foreground"
+              }`}
             >
               {c.title}
             </button>
           ))}
         </div>
       ) : (
-        <div
-          style={{
-            padding: "0 0.75rem 0.5rem",
-            color: "var(--text-secondary)",
-            fontWeight: 600,
-            fontSize: "0.75rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
+        <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {activeCourse.title}
         </div>
       )}
 
       {/* Modules and lessons */}
       {activeCourse.modules.map((mod: ModuleWithLessons) => (
-        <div key={mod.id} style={{ marginBottom: "0.5rem" }}>
-          <div
-            style={{
-              padding: "0.25rem 0.75rem",
-              color: "var(--text-muted)",
-              fontSize: "0.6875rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
+        <div key={mod.id} className="mb-2">
+          <div className="px-3 py-1 text-[0.6875rem] uppercase tracking-wider text-muted-foreground">
             {mod.title}
           </div>
 
@@ -105,32 +60,15 @@ export default function LessonOutline() {
                 key={lesson.id}
                 data-active={isActive ? "true" : "false"}
                 onClick={() => loadLesson(lesson.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0.375rem 0.75rem",
-                  color: isActive ? "var(--quantum)" : "var(--text-primary)",
-                  borderLeft: isActive ? "2px solid var(--quantum)" : "2px solid transparent",
-                  gap: "0.5rem",
-                  fontSize: "0.8125rem",
-                  lineHeight: 1.4,
-                }}
+                className={`flex w-full cursor-pointer items-center gap-2 border-l-2 bg-transparent px-3 py-1.5 text-left text-[0.8125rem] leading-snug outline-none ${
+                  isActive
+                    ? "border-cyber-cyan text-cyber-cyan"
+                    : "border-transparent text-foreground"
+                }`}
               >
-                <span style={{ flex: 1 }}>{lesson.title}</span>
+                <span className="flex-1">{lesson.title}</span>
                 {isCompleted && (
-                  <span
-                    aria-label="completed"
-                    style={{
-                      color: "var(--success)",
-                      fontSize: "0.75rem",
-                      lineHeight: 1,
-                    }}
-                  >
+                  <span aria-label="completed" className="text-xs leading-none text-success">
                     ✓
                   </span>
                 )}

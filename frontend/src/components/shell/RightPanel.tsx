@@ -9,12 +9,12 @@ export default function RightPanel() {
   return (
     <aside
       aria-label="AI Tutor"
-      className="shell-panel-transition flex w-[380px] flex-col border-l border-[var(--border)] bg-[var(--bg-surface)]"
+      className="shell-panel-transition flex w-[380px] flex-col border-l border-border bg-surface"
     >
-      <div className="border-b border-[var(--border)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+      <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">
         AI Tutor
       </div>
-      <div className="flex flex-1 items-center justify-center p-4 text-center text-sm text-[var(--text-muted)]">
+      <div className="flex flex-1 items-center justify-center p-4 text-center text-sm text-muted-foreground">
         The AI Tutor arrives in Slice 2.
       </div>
     </aside>

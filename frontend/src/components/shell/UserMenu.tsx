@@ -9,13 +9,11 @@ export default function UserMenu() {
 
   return (
     <div className="flex items-center gap-3 text-xs">
-      <span className="text-[var(--text-secondary)]">
-        {user?.email ?? "Loading…"}
-      </span>
+      <span className="text-muted-foreground">{user?.email ?? "Loading…"}</span>
       <button
         type="button"
         onClick={() => logout()}
-        className="rounded-sm border border-[var(--border)] px-2 py-1 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+        className="rounded-sm border border-border px-2 py-1 text-muted-foreground hover:bg-elevated hover:text-foreground"
       >
         Sign out
       </button>

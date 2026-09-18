@@ -53,12 +53,13 @@ describe("LessonOutline", () => {
     expect(loadLesson).toHaveBeenCalledWith("lesson-2");
   });
 
-  it("active lesson (currentLessonId) has data-active=true and the --quantum left border inline style", () => {
+  it("active lesson (currentLessonId) has data-active=true and shows the cyan active-border accent", () => {
     render(<LessonOutline />);
     const activeEl = screen.getByText("Intro to Qubits").closest("[data-active='true']") as HTMLElement | null;
     expect(activeEl).not.toBeNull();
-    // jsdom cannot resolve CSS custom properties, so we check the raw inline style string
-    expect(activeEl!.style.borderLeft).toBe("2px solid var(--quantum)");
+    // Active-state styling now comes from a Tailwind class (design-system token)
+    // rather than a raw `var(--quantum)` inline style.
+    expect(activeEl!.className).toContain("border-cyber-cyan");
   });
 
   it("completed lesson shows a tick indicator", () => {

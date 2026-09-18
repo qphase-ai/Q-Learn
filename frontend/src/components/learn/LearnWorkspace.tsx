@@ -25,21 +25,9 @@ export default function LearnWorkspace() {
   }, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100%",
-        width: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <div className="flex h-full w-full overflow-hidden">
       <LessonOutline />
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-        }}
-      >
+      <div className="flex-1 overflow-y-auto">
         <LessonContent />
       </div>
     </div>
