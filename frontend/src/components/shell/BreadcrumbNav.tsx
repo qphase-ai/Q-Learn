@@ -9,8 +9,8 @@ export default function BreadcrumbNav() {
   const label = WORKSPACES.find((w) => w.id === id)?.label ?? "Q-Learn";
 
   return (
-    <nav aria-label="Breadcrumb" className="text-xs text-[var(--text-secondary)]">
-      <span className="text-[var(--text-primary)]">{label}</span>
+    <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
+      <span className="text-foreground">{label}</span>
     </nav>
   );
 }

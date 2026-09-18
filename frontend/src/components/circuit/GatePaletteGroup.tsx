@@ -11,41 +11,15 @@ export default function GatePaletteGroup({ title, children }: GatePaletteGroupPr
   const [open, setOpen] = useState(true);
 
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div className="mb-2">
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "none",
-          border: "none",
-          color: "var(--text-secondary)",
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          cursor: "pointer",
-          padding: "4px 0",
-          outline: "none",
-        }}
+        className="flex w-full items-center justify-between border-none bg-transparent py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground outline-none cursor-pointer"
       >
         <span>{title}</span>
-        <span style={{ fontSize: 10 }}>{open ? "▾" : "▸"}</span>
+        <span className="text-[10px]">{open ? "▾" : "▸"}</span>
       </button>
-      {open && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 6,
-            paddingTop: 6,
-          }}
-        >
-          {children}
-        </div>
-      )}
+      {open && <div className="flex flex-wrap gap-1.5 pt-1.5">{children}</div>}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import "katex/dist/katex.min.css";
 import type { Components } from "react-markdown";
 import CircuitPreview, { type CircuitSpec } from "@/components/learn/CircuitPreview";
 import { useLearningStore } from "@/stores/learningStore";
+import { Button } from "@/components/ui/button";
 
 // Custom code block renderer
 const CodeBlock: Components["code"] = ({ className, children, ...props }) => {
@@ -42,14 +43,7 @@ export default function LessonContent() {
 
   if (!activeLesson || !activeLesson.content) {
     return (
-      <div
-        style={{
-          color: "var(--text-muted)",
-          padding: "2rem",
-          textAlign: "center",
-          fontSize: "0.875rem",
-        }}
-      >
+      <div className="p-8 text-center text-sm text-muted-foreground">
         Select a lesson to begin.
       </div>
     );
@@ -59,14 +53,7 @@ export default function LessonContent() {
 
   return (
     <article
-      className="font-sans"
-      style={{
-        color: "var(--text-primary)",
-        maxWidth: "720px",
-        margin: "0 auto",
-        padding: "1.5rem",
-        lineHeight: 1.7,
-      }}
+      className="mx-auto max-w-[720px] p-6 font-sans leading-[1.7] text-foreground"
     >
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
@@ -76,42 +63,20 @@ export default function LessonContent() {
         {activeLesson.content}
       </ReactMarkdown>
 
-      <footer
-        style={{
-          marginTop: "2rem",
-          paddingTop: "1rem",
-          borderTop: "1px solid var(--border)",
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
+      <footer className="mt-8 flex justify-end border-t border-border pt-4">
         {isCompleted ? (
-          <span
-            style={{
-              color: "var(--success)",
-              fontSize: "0.875rem",
-              fontWeight: 600,
-            }}
-          >
-            ✓ Completed
-          </span>
+          <span className="text-sm font-semibold text-success">✓ Completed</span>
         ) : (
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() =>
               useLearningStore.getState().markProgress(activeLesson.id, 100)
             }
-            style={{
-              background: "none",
-              border: "1px solid var(--quantum)",
-              color: "var(--quantum)",
-              borderRadius: "4px",
-              padding: "0.375rem 0.875rem",
-              fontSize: "0.875rem",
-              cursor: "pointer",
-            }}
           >
             Mark complete
-          </button>
+          </Button>
         )}
       </footer>
     </article>

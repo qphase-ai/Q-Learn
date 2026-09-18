@@ -9,26 +9,12 @@ export default function CircuitBuilderWorkspace() {
   useCircuitShortcuts();
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100%",
-        width: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <div className="flex h-full w-full overflow-hidden">
       <GatePalette />
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div className="flex flex-1 flex-col overflow-hidden">
         <CircuitToolbar />
-        <div style={{ flex: 1, overflow: "hidden" }}>
+        <div className="flex-1 overflow-hidden">
           <CircuitCanvas />
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname, setWorkspace]);
 
   return (
-    <div className="flex h-screen flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="flex h-screen flex-col bg-background text-foreground">
       <TitleBar />
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />

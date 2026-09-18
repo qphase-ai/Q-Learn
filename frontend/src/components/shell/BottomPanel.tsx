@@ -22,9 +22,9 @@ export default function BottomPanel() {
   return (
     <section
       aria-label="Simulation results"
-      className="shell-panel-transition flex h-[250px] flex-col border-t border-[var(--border)] bg-[var(--bg-surface)]"
+      className="shell-panel-transition flex h-[250px] flex-col border-t border-border bg-surface"
     >
-      <div role="tablist" className="flex border-b border-[var(--border)]">
+      <div role="tablist" className="flex border-b border-border">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -34,15 +34,15 @@ export default function BottomPanel() {
             onClick={() => setTab(t.id)}
             className={`px-3 py-1.5 text-xs ${
               activeTab === t.id
-                ? "border-b-2 border-[var(--quantum)] text-[var(--quantum)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "border-b-2 border-cyber-cyan text-cyber-cyan"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-auto p-2 text-sm text-[var(--text-primary)]">
+      <div className="flex-1 overflow-auto p-2 text-sm text-foreground">
         {activeTab === "probabilities" && <ProbabilityChart />}
         {activeTab === "statevector" && <StateVectorTable />}
         {activeTab === "qasm" && <QASMViewer />}

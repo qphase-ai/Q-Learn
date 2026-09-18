@@ -2,6 +2,7 @@
 
 import { useCircuitStore } from "@/stores/circuitStore";
 import { nodesToCircuitSpec } from "@/lib/circuit-spec";
+import { cn } from "@/lib/utils";
 
 export default function CircuitToolbar() {
   const circuitName = useCircuitStore((s) => s.circuitName);
@@ -29,46 +30,13 @@ export default function CircuitToolbar() {
     URL.revokeObjectURL(url);
   }
 
-  const btnBase: React.CSSProperties = {
-    background: "var(--bg-elevated)",
-    border: "1px solid var(--border)",
-    color: "var(--text-primary)",
-    borderRadius: 6,
-    padding: "4px 10px",
-    fontSize: 13,
-    cursor: "pointer",
-    outline: "none",
-    height: 32,
-  };
-
-  const btnPrimary: React.CSSProperties = {
-    ...btnBase,
-    background: isRunning ? "var(--bg-elevated)" : "var(--quantum)",
-    color: isRunning ? "var(--text-secondary)" : "var(--bg-base)",
-    fontWeight: 600,
-    cursor: isRunning ? "not-allowed" : "pointer",
-    opacity: isRunning ? 0.6 : 1,
-  };
-
-  const iconBtn: React.CSSProperties = {
-    ...btnBase,
-    padding: "4px 8px",
-    fontWeight: 700,
-    minWidth: 32,
-  };
+  const btnBase =
+    "h-8 rounded-md border border-border bg-elevated px-2.5 text-[13px] text-foreground outline-none cursor-pointer";
 
   return (
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "6px 12px",
-        background: "var(--bg-surface)",
-        borderBottom: "1px solid var(--border)",
-        height: 44,
-        flexShrink: 0,
-      }}
+      className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-surface px-3"
+      style={{ height: 44 }}
       role="toolbar"
       aria-label="Circuit toolbar"
     >
@@ -77,51 +45,27 @@ export default function CircuitToolbar() {
         type="text"
         value={circuitName}
         onChange={(e) => renameCircuit(e.target.value)}
-        style={{
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
-          borderRadius: 6,
-          padding: "4px 8px",
-          fontSize: 13,
-          height: 32,
-          outline: "none",
-          minWidth: 120,
-        }}
+        className="h-8 min-w-[120px] rounded-md border border-border bg-elevated px-2 text-[13px] text-foreground outline-none"
         aria-label="Circuit name"
       />
 
-      <div
-        style={{
-          width: 1,
-          height: 24,
-          background: "var(--border)",
-          flexShrink: 0,
-        }}
-      />
+      <div className="h-6 w-px flex-shrink-0 bg-border" />
 
       {/* Qubit controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div className="flex items-center gap-1">
         <button
-          style={iconBtn}
+          className={cn(btnBase, "min-w-[32px] px-2 font-bold")}
           onClick={() => removeQubit(qubitCount - 1)}
           aria-label="−"
           title="Remove qubit"
         >
           −
         </button>
-        <span
-          style={{
-            fontSize: 13,
-            color: "var(--text-secondary)",
-            minWidth: 60,
-            textAlign: "center",
-          }}
-        >
+        <span className="min-w-[60px] text-center text-[13px] text-muted-foreground">
           {qubitCount} qubits
         </span>
         <button
-          style={iconBtn}
+          className={cn(btnBase, "min-w-[32px] px-2 font-bold")}
           onClick={addQubit}
           aria-label="+"
           title="Add qubit"
@@ -130,18 +74,16 @@ export default function CircuitToolbar() {
         </button>
       </div>
 
-      <div
-        style={{
-          width: 1,
-          height: 24,
-          background: "var(--border)",
-          flexShrink: 0,
-        }}
-      />
+      <div className="h-6 w-px flex-shrink-0 bg-border" />
 
       {/* Run button */}
       <button
-        style={btnPrimary}
+        className={cn(
+          "h-8 cursor-pointer rounded-md px-2.5 text-[13px] font-semibold outline-none",
+          isRunning
+            ? "cursor-not-allowed bg-elevated text-muted-foreground opacity-60"
+            : "bg-cyber-cyan text-background shadow-glow-cyan hover:brightness-110"
+        )}
         onClick={() => runSimulation()}
         disabled={isRunning}
         aria-label={isRunning ? "Running…" : "Run"}
@@ -150,12 +92,12 @@ export default function CircuitToolbar() {
       </button>
 
       {/* Clear button */}
-      <button style={btnBase} onClick={clearCircuit}>
+      <button className={btnBase} onClick={clearCircuit}>
         Clear
       </button>
 
       {/* Export JSON button */}
-      <button style={btnBase} onClick={handleExport}>
+      <button className={btnBase} onClick={handleExport}>
         Export JSON
       </button>
     </div>

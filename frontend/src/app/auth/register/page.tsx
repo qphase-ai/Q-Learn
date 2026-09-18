@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -34,29 +34,12 @@ export default function RegisterPage() {
 
   return (
     <>
-      <h1
-        style={{
-          fontSize: "1.25rem",
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          margin: "0 0 1.5rem",
-        }}
-      >
-        Create account
-      </h1>
+      <h1 className="mb-6 text-xl font-semibold text-foreground">Create account</h1>
 
       {displayError && (
         <div
           role="alert"
-          style={{
-            padding: "0.625rem 0.75rem",
-            background: "#f8514914",
-            border: "1px solid var(--error)",
-            borderRadius: "6px",
-            color: "var(--error)",
-            fontSize: "0.875rem",
-            marginBottom: "1.25rem",
-          }}
+          className="mb-5 rounded-lg border border-error bg-error/10 px-3 py-2.5 text-sm text-error"
         >
           {displayError}
         </div>
@@ -64,10 +47,9 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} noValidate>
         <Input
-          label="Display name"
+          label="Display name (optional)"
           type="text"
           autoComplete="name"
-          placeholder="Optional"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
         />
@@ -95,51 +77,32 @@ export default function RegisterPage() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
         />
-        <div style={{ marginTop: "1.5rem" }}>
-          <Button type="submit" loading={isLoading}>
+        <div className="mt-6">
+          <Button type="submit" className="w-full" loading={isLoading}>
             Create account
           </Button>
         </div>
       </form>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.75rem",
-          margin: "1.25rem 0",
-          color: "var(--text-muted)",
-          fontSize: "0.8125rem",
-        }}
-      >
-        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+      <div className="my-5 flex items-center gap-3 text-[0.8125rem] text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
         or
-        <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+        <span className="h-px flex-1 bg-border" />
       </div>
 
       <Button
         type="button"
         variant="ghost"
+        className="w-full"
         loading={isLoading}
         onClick={() => loginWithGoogle()}
       >
         Continue with Google
       </Button>
 
-      <p
-        style={{
-          textAlign: "center",
-          fontSize: "0.875rem",
-          color: "var(--text-muted)",
-          marginTop: "1.25rem",
-          marginBottom: 0,
-        }}
-      >
+      <p className="mb-0 mt-5 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link
-          href="/auth/login"
-          style={{ color: "var(--quantum)", textDecoration: "none" }}
-        >
+        <Link href="/auth/login" className="text-cyber-cyan no-underline hover:underline">
           Sign in
         </Link>
       </p>

@@ -29,7 +29,7 @@ export default function ActivityBar() {
   return (
     <nav
       aria-label="Workspaces"
-      className="flex h-full w-12 flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--bg-surface)] py-2"
+      className="flex h-full w-12 flex-col items-center gap-1 border-r border-border bg-surface py-2"
     >
       {WORKSPACES.map((w) => {
         const Icon = ICONS[w.id];
@@ -43,8 +43,8 @@ export default function ActivityBar() {
             title={w.label}
             className={`shell-active-border flex h-10 w-10 items-center justify-center rounded-sm border-l-2 ${
               isActive
-                ? "border-[var(--quantum)] text-[var(--quantum)]"
-                : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                ? "border-cyber-cyan text-cyber-cyan"
+                : "border-transparent text-muted-foreground hover:bg-elevated hover:text-foreground"
             }`}
           >
             <Icon size={20} aria-hidden />
