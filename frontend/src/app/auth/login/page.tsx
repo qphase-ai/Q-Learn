@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TextReveal } from "@/components/effects";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,7 +29,9 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="mb-6 text-xl font-semibold text-foreground">Sign in</h1>
+      <h1 className="mb-6 text-xl font-semibold text-foreground">
+        <TextReveal text="Sign in" />
+      </h1>
 
       {error && (
         <div

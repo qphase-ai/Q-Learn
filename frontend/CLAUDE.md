@@ -185,7 +185,7 @@ Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — un
 | `components/ui/` | shadcn/Radix + CVA primitives — `button`, `input`, `card`, `dialog`, `sheet`, `dropdown-menu`, `tooltip`, `tabs`, `badge`, `skeleton`, `separator`, `label`, `switch`, `avatar`, `progress`, `sonner` (toasts) |
 | `components/motion/` | Framer Motion wrapper components — `FadeIn`, `SlideUp`, `StaggerChildren`, `PageTransition` |
 | `components/backgrounds/` | Animated background primitives (CSS/SVG/canvas, no WebGL) — `AuroraBackground`, `ParticleNetwork`, `MeshGradient`, `GlowingOrbs`, `GridBackground`, `NoiseOverlay` |
-| `components/effects/` | Composed visual effects built on the primitives above (in progress) |
+| `components/effects/` | Composed visual effects built on the primitives above — `SpotlightCard`, `GlowingBorder`, `AnimatedBeam`, `ShimmerText`, `MagneticButton`, `TextReveal` |
 
 ---
 
