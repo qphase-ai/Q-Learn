@@ -3,6 +3,21 @@ from langchain_core.runnables import Runnable
 from app.config import get_settings
 
 
+def _make_llm(model: str, temp: float, settings) -> ChatLiteLLM:
+    """Create a ChatLiteLLM instance with optional OpenRouter extra headers."""
+    kwargs: dict = {
+        "model": model,
+        "temperature": temp,
+        "max_tokens": settings.llm_max_tokens,
+    }
+    if model.startswith("openrouter/"):
+        kwargs["extra_headers"] = {
+            "HTTP-Referer": "https://qlearn.app",
+            "X-Title": "Q-Learn",
+        }
+    return ChatLiteLLM(**kwargs)
+
+
 def get_llm(temperature: float | None = None) -> Runnable:
     """
     Return a ChatLiteLLM instance wired for smart model routing with fallbacks.
@@ -19,17 +34,13 @@ def get_llm(temperature: float | None = None) -> Runnable:
     settings = get_settings()
     temp = temperature if temperature is not None else settings.llm_temperature
 
-    primary = ChatLiteLLM(
-        model=settings.llm_primary_model,
-        temperature=temp,
-        max_tokens=settings.llm_max_tokens,
-    )
+    primary = _make_llm(settings.llm_primary_model, temp, settings)
 
     if not settings.llm_fallback_models:
         return primary
 
     fallbacks = [
-        ChatLiteLLM(model=model, temperature=temp, max_tokens=settings.llm_max_tokens)
+        _make_llm(model, temp, settings)
         for model in settings.llm_fallback_models
     ]
 
