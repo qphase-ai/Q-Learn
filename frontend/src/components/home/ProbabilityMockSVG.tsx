@@ -13,7 +13,7 @@ export function ProbabilityMockSVG() {
       {/* |00⟩ bar background */}
       <rect x="48" y="18" width="200" height="20" rx="4" fill="rgba(255,255,255,0.05)" />
       {/* |00⟩ bar fill */}
-      <rect x="48" y="18" width="100" height="20" rx="4" fill="#00F0FF" opacity="0.7" />
+      <rect x="48" y="18" width="100" height="20" rx="4" fill="#00d4ff" opacity="0.7" />
       {/* |00⟩ percentage */}
       <text x="156" y="32" fill="rgba(255,255,255,0.8)" fontSize="11" fontFamily="monospace">
         50%

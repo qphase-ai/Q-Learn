@@ -39,14 +39,14 @@ export function HeroCircuitSVG() {
       <line x1="166" y1="120" x2="194" y2="120" stroke="#3b82f6" strokeWidth="2" />
 
       {/* Measure gates at x=300 */}
-      <rect x="290" y="40" width="44" height="40" rx="6" fill="#00d4ff" className="animate-pulse" style={{ animationDuration: "2.5s" }} />
+      <rect x="290" y="40" width="44" height="40" rx="6" fill="#00d4ff" className="animate-pulse motion-reduce:animate-none" style={{ animationDuration: "2.5s" }} />
       <text x="312" y="58" textAnchor="middle" fill="#050505" fontSize="11" fontWeight="bold" fontFamily="monospace">
         M
       </text>
       {/* Meter arc inside M gate q0 */}
       <path d="M 297 72 Q 312 60 327 72" stroke="#050505" strokeWidth="1.5" fill="none" />
 
-      <rect x="290" y="100" width="44" height="40" rx="6" fill="#00d4ff" className="animate-pulse" style={{ animationDuration: "2.5s", animationDelay: "0.4s" }} />
+      <rect x="290" y="100" width="44" height="40" rx="6" fill="#00d4ff" className="animate-pulse motion-reduce:animate-none" style={{ animationDuration: "2.5s", animationDelay: "0.4s" }} />
       <text x="312" y="118" textAnchor="middle" fill="#050505" fontSize="11" fontWeight="bold" fontFamily="monospace">
         M
       </text>

@@ -9,20 +9,18 @@ export function HomeFooter() {
         <nav aria-label="Footer navigation">
           <ul className="flex items-center gap-6" role="list">
             <li>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">
+              <Link href="#" className="hover:text-foreground transition-colors">
                 Privacy
               </Link>
             </li>
             <li>
-              <Link href="/terms" className="hover:text-foreground transition-colors">
+              <Link href="#" className="hover:text-foreground transition-colors">
                 Terms
               </Link>
             </li>
             <li>
               <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#"
                 className="hover:text-foreground transition-colors"
               >
                 GitHub
