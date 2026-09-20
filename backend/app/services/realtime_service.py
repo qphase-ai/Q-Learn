@@ -6,8 +6,9 @@ are no WebSocket endpoints on the API — this keeps the API stateless and lets
 events fan out across Railway replicas via Supabase as the shared broker.
 
 Channel / event contract (kept in sync with the frontend subscriber):
-- `circuit:{circuit_id}`  event `result`  payload = execution result dict
-- `tutor:{session_id}`    event `token`   payload = {"token": str}
+- `circuit:{circuit_id}`  event `result`    payload = execution result dict
+- `tutor:{session_id}`    event `token`     payload = {"token": str}
+- `tutor:{session_id}`    event `complete`  payload = {message_id, content, citations} | {error}
 """
 import structlog
 
@@ -41,3 +42,12 @@ async def publish_circuit_result(circuit_id: str, result: dict) -> None:
 async def publish_tutor_token(session_id: str, token: str) -> None:
     """Publish a single streamed tutor token to `tutor:{session_id}`."""
     await _broadcast(f"tutor:{session_id}", "token", {"token": token})
+
+
+async def publish_tutor_complete(session_id: str, payload: dict) -> None:
+    """Publish the terminal tutor event to `tutor:{session_id}`.
+
+    On success `payload` carries {message_id, content, citations}; on failure it
+    carries {error}. Either way the frontend uses `complete` to stop streaming.
+    """
+    await _broadcast(f"tutor:{session_id}", "complete", payload)
