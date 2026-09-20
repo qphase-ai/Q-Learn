@@ -14,13 +14,20 @@ from __future__ import annotations
 import uuid
 
 import structlog
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tutor import stream_tutor_answer
 from app.database import AsyncSessionLocal
+from app.exceptions import NotFoundError
 from app.models.agent import AgentSession, AgentMessage
 from app.rag.retrieval import retrieve
-from app.schemas.tutor import TutorChatRequest
+from app.schemas.tutor import (
+    Citation,
+    MessageOut,
+    TutorChatRequest,
+    TutorSessionResponse,
+)
 from app.services.realtime_service import publish_tutor_token, publish_tutor_complete
 
 logger = structlog.get_logger(__name__)
@@ -51,6 +58,36 @@ async def start_message(
 
     await db.commit()
     return body.session_id
+
+
+async def get_session(
+    db: AsyncSession,
+    session_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> TutorSessionResponse:
+    """Return the session's message history. 404 if missing or not owned."""
+    session = await db.get(AgentSession, session_id)
+    if session is None or session.user_id != user_id:
+        raise NotFoundError("Session not found")
+
+    result = await db.execute(
+        select(AgentMessage)
+        .where(AgentMessage.session_id == session_id)
+        .order_by(AgentMessage.created_at)
+    )
+    messages = result.scalars().all()
+
+    return TutorSessionResponse(
+        session_id=session_id,
+        messages=[
+            MessageOut(
+                role=m.role,
+                content=m.content,
+                citations=[Citation(**c) for c in (m.citations or [])],
+            )
+            for m in messages
+        ],
+    )
 
 
 def _citations_from_chunks(chunks) -> list[dict]:
