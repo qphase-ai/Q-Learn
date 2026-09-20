@@ -9,7 +9,7 @@ Q-Learn is an AI-powered adaptive learning platform for quantum computing. Three
 - [`assets/architecture-low-level.svg`](assets/architecture-low-level.svg) — internal FastAPI layers, execution paths, agent graph, RAG, DB schema
 
 **Design documents (full implementation detail):**
-- [`frontend/design.md`](frontend/design.md) — IDE shell, workspaces, component tree, Zustand stores, Circuit Builder, AI Tutor panel
+- [`frontend/design.md`](frontend/design.md) — marketing landing page, IDE shell, workspaces, component tree, Zustand stores, Circuit Builder, AI Tutor panel
 - [`backend/design.md`](backend/design.md) — API routes, SQLAlchemy models, service layer, auth, error handling, deployment
 
 **Module docs (`docs/`):**
@@ -43,6 +43,7 @@ Three-tier architecture: Presentation Layer → Application Layer → Data & Inf
 flowchart TD
     subgraph PRESENTATION["🖥️ PRESENTATION LAYER — Vercel (Next.js + React)"]
         direction LR
+        Home["Marketing Home\n(public, unauthenticated)"]
         Auth["Auth Pages"]
         Dashboard["Student Dashboard"]
         CircuitUI["Circuit Builder\n(React Flow)"]
@@ -110,7 +111,7 @@ Six layers — each has its own module doc:
 
 | Layer | Summary | Detail |
 |-------|---------|--------|
-| **1. Frontend** | VS Code-style IDE shell — 6 zones, 6 modes, 7 Zustand stores, Supabase Realtime for events | [`docs/frontend-layer.md`](docs/frontend-layer.md) |
+| **1. Frontend** | **Public surface:** marketing landing page at `/` (auth-gated, `components/home/`). **App surface:** VS Code-style IDE shell — 6 zones, 6 modes, 7 Zustand stores, Supabase Realtime for events | [`docs/frontend-layer.md`](docs/frontend-layer.md) |
 | **2. Backend Services** | FastAPI microservices — API Gateway + 11 domain services; `API Router → Service → Repository → PostgreSQL` | [`backend/design.md`](backend/design.md) |
 | **3. Quantum Backend** | Adapter pattern — `QiskitAerAdapter` forks Vercel Sandbox microVM; FastAPI stays I/O-bound | [`docs/quantum-execution.md`](docs/quantum-execution.md) |
 | **4. Code Execution Sandbox** | Vercel Sandbox managed microVM — both student code and quantum circuits; deny-all, 512 MB, 30s | [`docs/sandbox.md`](docs/sandbox.md) |

@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Added — Marketing Home Page (PR #21, 2026-09-21)
+
+- **Marketing landing page** at `/` — replaces the redirect-only `app/page.tsx` with a fully assembled public surface. Unauthenticated visitors see the landing page; authenticated users are redirected to `/dashboard` via a `qlearn-auth` cookie check on mount.
+- **`Navbar`** (`components/home/Navbar.tsx`) — sticky translucent nav (`backdrop-blur-md`, `bg-background/60`), Q-Learn wordmark, anchor links (`#features`, `#how-it-works`, `#pricing`), desktop Sign In + Get Started CTAs, mobile hamburger Sheet (shadcn `Sheet`).
+- **`HeroCircuitSVG`** (`components/home/HeroCircuitSVG.tsx`) — accessible static SVG: H–CNOT–Measure two-qubit circuit using `globals.css` CIRCUIT PALETTE tokens (`--gate-H` purple, `--gate-CX` blue, `--gate-M` cyan). Measurement gates pulse via CSS `@keyframes`; pulse suppressed under `prefers-reduced-motion`.
+- **`HeroSection`** (`components/home/HeroSection.tsx`) — full-viewport section: `ParticleNetwork` background, eyebrow badge, `ShimmerText` headline, sub-copy, primary `MagneticButton` + outline `Button` CTAs, and the circuit SVG inside a `GlowingBorder` card.
+- **`FeatureCard`** (`components/home/FeatureCard.tsx`) — thin `SpotlightCard` wrapper with Lucide icon slot, title, description, and per-card accent/border class props.
+- **`FeaturesSection`** (`components/home/FeaturesSection.tsx`) — 6-card `StaggerContainer` grid (1→2→3 col) covering Circuit Builder, AI Tutor, Real Simulator, Adaptive Quizzes, State Visualization, and Structured Curriculum.
+- **`ProbabilityMockSVG`** (`components/home/ProbabilityMockSVG.tsx`) — accessible static SVG: `|00⟩ 50%` / `|11⟩ 50%` probability histogram using design-system accent colors.
+- **`HowItWorksSection`** (`components/home/HowItWorksSection.tsx`) — 4 alternating text/visual rows: Follow Curriculum · Design Circuits · Run Simulator · Watch Mastery. Visuals are inline mockup components (`LessonMockup`, `HeroCircuitSVG`, `ProbabilityMockSVG`, `MasteryMockup`) — no screenshots or external images.
+- **`StatsSection`** (`components/home/StatsSection.tsx`) — 4-stat bar (10,000+ Learners · 40+ Lessons · 3 Quantum algorithms · 1 AI Tutor per student) with `MeshGradient` background.
+- **`PricingSection`** (`components/home/PricingSection.tsx`) — Free / Pro card pair (`Card` + `SpotlightCard`), "See full pricing →" link to `/pricing`, SIH2614 badge in `GlowingBorder`.
+- **`HomeFooter`** (`components/home/HomeFooter.tsx`) — 3-column minimal footer: `© 2026 Q-Learn` · Privacy / Terms / GitHub links · tagline.
+
+### Fixed — Marketing Home Page (PR #21)
+- Footer copyright year corrected to 2026.
+- `HeroCircuitSVG` measurement gate pulse wrapped with `@media (prefers-reduced-motion: reduce)` guard so the animation is suppressed for users who have opted out.
+- Dead links in Navbar and Footer replaced with live routes or valid anchor targets.
+- SVG gate colors aligned strictly to CIRCUIT PALETTE tokens; no raw hex in `className`.
+
+---
+
+### Added — IDE Shell & Auth
+
 - **IDE shell (Slice 0)** — persistent VS Code-style shell mounted via a Next.js route group `app/(shell)/layout.tsx` → `AppShell`. Six always-mounted zones (`components/shell/`): `TitleBar` (breadcrumb + XP bar + user menu), `ActivityBar` (pathname-derived active nav), WorkspaceArea, collapsible `RightPanel` (Ctrl+B) and `BottomPanel` (Ctrl+J, results tab bar), `StatusBar` (backend health dot). Workspace routes (`dashboard/learn/circuit/code/quiz/settings`) moved under the group and render `WorkspacePlaceholder` until their slices land; new `/code` route
 - Shell wiring — `lib/workspaces.ts` shared nav model, `hooks/useKeyboardShortcuts.ts` (Ctrl+B/J/1–6), non-redirecting `useAuth().hydrate()` for session restore on refresh, `lib/utils.ts` `cn()` helper
 - Design-system foundation — Geist Sans/Mono + JetBrains Mono fonts, added tokens (`--bg-hover`, `--gate-Y`, `--gate-Z`, `--wire`), `app/styles/animations.css` (with `prefers-reduced-motion` guard)

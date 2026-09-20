@@ -6,6 +6,54 @@
 
 ---
 
+## Marketing Landing Page (`/`)
+
+`app/page.tsx` is a **client component** that gates on a `qlearn-auth` cookie check. Authenticated users are redirected to `/dashboard`; everyone else sees the full marketing surface.
+
+The page sits **outside the IDE shell** — it uses `AuroraBackground` as a full-page fixed layer and renders its own `Navbar` + `HomeFooter` instead of `AppShell`.
+
+### Section Components (`components/home/`)
+
+| Component | Section | Key visual primitives |
+|-----------|---------|----------------------|
+| `Navbar` | Sticky top nav | `MagneticButton`, shadcn `Sheet` (mobile) |
+| `HeroSection` | Full-viewport hero | `ParticleNetwork`, `ShimmerText`, `GlowingBorder`, `HeroCircuitSVG` |
+| `HeroCircuitSVG` | H–CNOT–Measure circuit | Static SVG, `globals.css` gate palette tokens |
+| `FeaturesSection` | 6-card features grid | `StaggerContainer`, `StaggerItem`, `SpotlightCard` |
+| `FeatureCard` | Single feature card | `SpotlightCard` + Lucide icon slot |
+| `HowItWorksSection` | 4 alternating step rows | `SlideUp`, `SpotlightCard`, inline mockups |
+| `ProbabilityMockSVG` | Probability histogram | Static SVG using design-system accent colors |
+| `StatsSection` | Social proof stats bar | `MeshGradient` background |
+| `PricingSection` | Free / Pro card pair | `SpotlightCard`, `GlowingBorder`, SIH2614 badge |
+| `HomeFooter` | 3-column minimal footer | Plain `<footer>`, Next.js `Link` |
+
+### Auth Behavior
+
+```
+unauthenticated visitor  →  renders landing page
+authenticated user       →  router.replace("/dashboard")
+```
+
+The check runs in `useEffect` on mount. `show` is `false` until the check completes, so there is no flash of marketing content for authenticated users.
+
+`NEXT_PUBLIC_DEV_NO_AUTH=1` in development skips the cookie check and shows the page regardless (double-gated on `NODE_ENV !== "production"`).
+
+### Responsiveness
+
+| Breakpoint | Navbar | Feature grid | How It Works | Stats |
+|-----------|--------|--------------|--------------|-------|
+| `< md` | Hamburger Sheet | 1 col | Stack (visual below text) | 2×2 grid |
+| `md` | Desktop links + CTAs | 2 col | Alternating rows | 4-col row |
+| `lg+` | — | 3 col | — | — |
+
+### Motion & Accessibility
+
+All entrance animations use components from `components/motion/` (`FadeIn`, `SlideUp`, `StaggerContainer`) which internally call Framer Motion's `useReducedMotion()`. The `AuroraBackground` and `ParticleNetwork` components already carry `motion-reduce:animate-none`. The `HeroCircuitSVG` measurement gate pulse uses a CSS `@keyframes` with an explicit `@media (prefers-reduced-motion: reduce) { animation: none }` guard.
+
+All SVGs have `aria-label` and `role="img"`. The `Navbar` uses `aria-label="Main navigation"`. All interactive elements have visible focus rings.
+
+---
+
 ## Shell Architecture
 
 The UI is a **persistent VS Code-style IDE shell** that mounts once. Navigation swaps only the `WorkspaceArea` — the chrome never re-renders on mode switch.

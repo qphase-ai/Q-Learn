@@ -40,6 +40,7 @@ This document describes the backend architecture, API design, service layer, dat
 flowchart TD
     subgraph PRESENTATION["🖥️ PRESENTATION LAYER — Vercel (Next.js + React)"]
         direction LR
+        Home["Marketing Home\n(public, unauthenticated)"]
         Auth["Auth Pages"]
         Dashboard["Student Dashboard"]
         CircuitUI["Circuit Builder\n(React Flow)"]
