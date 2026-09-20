@@ -13,6 +13,7 @@ This document is the living frontend reference for Q-Learn. It covers the IDE sh
 
 ## Table of Contents
 
+- [Marketing Landing Page](#marketing-landing-page)
 - [Shell Architecture](#shell-architecture)
 - [Design System](#design-system)
 - [Workspace Layouts](#workspace-layouts)
@@ -25,6 +26,41 @@ This document is the living frontend reference for Q-Learn. It covers the IDE sh
 - [Animations & Transitions](#animations--transitions)
 - [File Structure](#file-structure)
 - [References](#references)
+
+---
+
+## Marketing Landing Page
+
+`app/page.tsx` is a **client component** that serves the public marketing surface at `/`. It sits **outside the IDE shell** — `AuroraBackground` is mounted as a fixed full-page layer and the page renders its own `Navbar` + `HomeFooter` rather than `AppShell`.
+
+### Auth Gate
+
+```
+unauthenticated visitor  →  renders landing page
+authenticated user       →  router.replace("/dashboard")
+```
+
+The check (`document.cookie.includes("qlearn-auth=1")`) runs in `useEffect`. A `show` state flag prevents any flash of marketing content for authenticated users.
+
+`NEXT_PUBLIC_DEV_NO_AUTH=1` bypasses the cookie check in `development` only (double-gated on `NODE_ENV`).
+
+### Sections
+
+| Section | Component | Notes |
+|---------|-----------|-------|
+| Sticky nav | `Navbar` | `backdrop-blur-md`, mobile hamburger Sheet |
+| Full-viewport hero | `HeroSection` | `ParticleNetwork` bg, `ShimmerText`, `GlowingBorder`, `HeroCircuitSVG` |
+| 6-card features grid | `FeaturesSection` | `StaggerContainer` scroll entrance, 1→2→3 col breakpoints |
+| 4-step how-it-works | `HowItWorksSection` | Alternating text/visual rows, inline mockup components |
+| Social proof bar | `StatsSection` | `MeshGradient` bg, 4 stats |
+| Free/Pro pricing | `PricingSection` | `SpotlightCard` Pro, SIH2614 badge |
+| Footer | `HomeFooter` | 3-column, Privacy · Terms · GitHub |
+
+All components live in `components/home/`. The `HeroCircuitSVG` and `ProbabilityMockSVG` are static accessible SVGs using `globals.css` CIRCUIT PALETTE tokens — no screenshots or external images.
+
+### Motion & Accessibility
+
+All entrance animations use `components/motion/` wrappers (`FadeIn`, `SlideUp`, `StaggerContainer`) which internally honor `prefers-reduced-motion`. The measurement gate CSS pulse in `HeroCircuitSVG` carries an explicit `@media (prefers-reduced-motion: reduce) { animation: none }` guard. All SVGs have `aria-label` + `role="img"`.
 
 ---
 
@@ -590,13 +626,25 @@ Three.js 3D interactive: rotatable, state vector arrow, gate operation animation
 apps/web/src/
 ├── app/                          # Next.js App Router
 │   ├── layout.tsx                # Root layout — mounts AppShell
-│   ├── page.tsx                  # Auth redirect
+│   ├── page.tsx                  # Marketing landing page (client) — auth-gate redirects to /dashboard
 │   └── auth/
 │       ├── login/page.tsx
 │       ├── register/page.tsx
 │       └── forgot-password/page.tsx
 │
 ├── components/
+│   ├── home/                     # Marketing landing page sections
+│   │   ├── Navbar.tsx            # Sticky translucent nav + mobile Sheet
+│   │   ├── HeroSection.tsx       # Full-viewport hero
+│   │   ├── HeroCircuitSVG.tsx    # Static H–CNOT–Measure SVG
+│   │   ├── FeatureCard.tsx       # Single feature card
+│   │   ├── FeaturesSection.tsx   # 6-card StaggerContainer grid
+│   │   ├── ProbabilityMockSVG.tsx# Static probability histogram SVG
+│   │   ├── HowItWorksSection.tsx # 4 alternating step rows
+│   │   ├── StatsSection.tsx      # Social proof stats bar
+│   │   ├── PricingSection.tsx    # Free/Pro pricing teaser
+│   │   └── HomeFooter.tsx        # 3-column minimal footer
+│   │
 │   ├── shell/                    # AppShell, TitleBar, ActivityBar,
 │   │                             # RightPanel, BottomPanel, StatusBar
 │   │
