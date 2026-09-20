@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
+    groq_api_key: str = ""          # GROQ_API_KEY
+    openrouter_api_key: str = ""    # OPENROUTER_API_KEY
 
     # Vercel Sandbox
     vercel_token: str = ""
