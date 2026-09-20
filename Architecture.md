@@ -20,6 +20,7 @@ Q-Learn is an AI-powered adaptive learning platform for quantum computing. Three
 - [`docs/rag-pipeline.md`](docs/rag-pipeline.md) — ingestion, hybrid retrieval, reranking, knowledge base
 - [`docs/sandbox.md`](docs/sandbox.md) — microVM architecture, circuit simulation and student code flows
 - [`docs/agents.md`](docs/agents.md) — agent topology, responsibilities, LangGraph + AsyncPostgresSaver
+- [`docs/llm-model-router.md`](docs/llm-model-router.md) — ModelRouter design, RPM capacity pool, sliding-window algorithm, shared context
 - [`docs/security.md`](docs/security.md) — security diagram, controls table, auth flow, RBAC
 - [`docs/api.md`](docs/api.md) — API groups, response format, design rules
 - [`docs/infrastructure.md`](docs/infrastructure.md) — production stack, Docker Compose, env vars, deployment
@@ -30,6 +31,7 @@ Q-Learn is an AI-powered adaptive learning platform for quantum computing. Three
 
 - [High-Level Architecture](#high-level-architecture)
 - [Low-Level Architecture](#low-level-architecture)
+- [LLM Model Routing](#llm-model-routing)
 - [Engineering Rules](#engineering-rules)
 - [Product Principle](#product-principle)
 
@@ -87,7 +89,7 @@ flowchart TD
         end
 
         subgraph External["External"]
-            LLM["LLM Provider\nChatLiteLLM — primary + fallbacks\nOpenAI · Anthropic · Gemini · Ollama"]
+            LLM["LLM Pool (10 models)\nModelRouter → ChatLiteLLM\nGroq (×7) · Gemini · OpenRouter (×2)\n225 RPM reliable capacity"]
             KnowledgeBase["Knowledge Sources\nDocs • Papers • Course Material"]
         end
     end
@@ -115,10 +117,125 @@ Six layers — each has its own module doc:
 | **2. Backend Services** | FastAPI microservices — API Gateway + 11 domain services; `API Router → Service → Repository → PostgreSQL` | [`backend/design.md`](backend/design.md) |
 | **3. Quantum Backend** | Adapter pattern — `QiskitAerAdapter` forks Vercel Sandbox microVM; FastAPI stays I/O-bound | [`docs/quantum-execution.md`](docs/quantum-execution.md) |
 | **4. Code Execution Sandbox** | Vercel Sandbox managed microVM — both student code and quantum circuits; deny-all, 512 MB, 30s | [`docs/sandbox.md`](docs/sandbox.md) |
-| **5. AI & Knowledge** | ChatLiteLLM (`get_llm()`) with primary + fallback routing + RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) | [`docs/rag-pipeline.md`](docs/rag-pipeline.md) · [`docs/agents.md`](docs/agents.md) |
+| **5. AI & Knowledge** | `get_llm()` backed by **ModelRouter** — proactive sliding-window RPM routing across 10 free-tier models (225 RPM reliable capacity) + reactive LangChain fallback chain + RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) | [`docs/llm-model-router.md`](docs/llm-model-router.md) · [`docs/rag-pipeline.md`](docs/rag-pipeline.md) · [`docs/agents.md`](docs/agents.md) |
 | **6. Data Storage** | Supabase (Auth + PostgreSQL + pgvector + Realtime) · Docker Compose for local dev | [`docs/database.md`](docs/database.md) · [`docs/infrastructure.md`](docs/infrastructure.md) |
 
 > Redis is not in the initial stack — deferred to Phase 2 when profiling shows a specific hot path.
+
+---
+
+## LLM Model Routing
+
+Full detail: [`docs/llm-model-router.md`](docs/llm-model-router.md)
+
+### Problem
+
+A single free-tier Groq model is capped at **30 RPM**. The naive approach — always try the primary model, fall back after a 429 — burns every request against the wall before recovering. At 200 RPM sustained load, six of every seven requests fail before any fallback is tried.
+
+### Key insight
+
+Groq assigns **independent quotas per model**. Seven Groq models = 7 × 30 RPM = 210 RPM of parallel, non-competing capacity. The router treats the fallback list as a **capacity pool**, not a disaster recovery list.
+
+### Two-layer design
+
+```mermaid
+flowchart LR
+    REQ(["get_llm() called"])
+
+    subgraph L1["Layer 1 — Proactive Routing (ModelRouter)"]
+        direction TB
+        WINDOW["Sliding-window RPM counter\nper-model deque of timestamps\n60-second rolling window"]
+        RANK["Rank by headroom\nheadroom = limit − len(window)\nsort descending"]
+        PICK["Pick ordered[0]\n(most available capacity)"]
+        WINDOW --> RANK --> PICK
+    end
+
+    subgraph L2["Layer 2 — Reactive Fallback (LangChain)"]
+        direction TB
+        CALL["LLM API call\nordered[0] as primary"]
+        FB["on any Exception:\ntry ordered[1], [2], ..."]
+        CALL -->|"provider error / 429"| FB
+    end
+
+    REQ --> L1 --> L2
+    L2 -->|"token stream"| RESP(["Response"])
+```
+
+### Request flow through ModelRouter
+
+```mermaid
+sequenceDiagram
+    participant S as Service (e.g. TutorService)
+    participant G as get_llm()
+    participant R as ModelRouter
+    participant P as LLM Provider
+
+    S->>G: get_llm()
+    G->>R: get_ordered_models(all_models)
+    Note over R: trim stale timestamps (>60 s)<br/>compute headroom per model<br/>sort by headroom descending
+    R-->>G: [groq/llama-3.3, groq/gemma2, gemini/flash, ...]
+    G->>R: record(ordered[0])
+    G->>G: build primary.with_fallbacks(ordered[1:])
+    G-->>S: Runnable chain
+
+    S->>P: astream(messages)
+    alt success
+        P-->>S: token stream
+    else 429 / error
+        Note over G,P: LangChain tries ordered[1], ordered[2]...
+        P-->>S: token stream from fallback
+    end
+```
+
+### Free-tier capacity pool
+
+```mermaid
+block-beta
+    columns 4
+
+    block:groq["Groq — 7 × 30 RPM"]:4
+        A["llama-3.3-70b\n30 RPM"]
+        B["llama-3.1-8b\n30 RPM"]
+        C["deepseek-r1\n30 RPM"]
+        D["gemma2-9b\n30 RPM"]
+        E["mixtral-8x7b\n30 RPM"]
+        F["llama3-70b\n30 RPM"]
+        G["llama3-8b\n30 RPM"]
+    end
+
+    block:other["Other providers"]:4
+        H["gemini-2.0-flash\n15 RPM"]
+        I["openrouter ×2\n20 RPM each\n⚠ 50 req/day free"]
+        space:2
+    end
+```
+
+| Provider | Models | RPM | Notes |
+|----------|--------|-----|-------|
+| Groq | 7 | 7 × 30 = **210 RPM** | Independent quotas per model |
+| Gemini | 1 | **15 RPM** | 1,500 req/day free |
+| OpenRouter | 2 | 2 × 20 = **40 RPM** | 50 req/day free without credits |
+| **Reliable total** | **8** | **225 RPM** | Groq + Gemini only |
+| **Peak total** | **10** | **265 RPM** | All models |
+
+### Shared conversation context
+
+Switching models per turn would break conversation continuity. Every `get_llm()` call injects the full `AgentMessage` history from PostgreSQL into the message list so every model in the pool sees the complete prior conversation regardless of which one was selected.
+
+```mermaid
+flowchart TD
+    DB[("PostgreSQL\nAgentMessage rows")]
+    FETCH["Fetch prior messages\nfor session_id\n(capped at 20 rows / 10 turns)"]
+    BUILD["Build message list\nSystemMessage\n+ HumanMessage turn 1\n+ AIMessage turn 1\n+ ...\n+ HumanMessage current"]
+    LLM["get_llm().astream(messages)"]
+    DB --> FETCH --> BUILD --> LLM
+```
+
+Context travels in the **payload**, not in the model's memory — any model in the pool can handle any turn coherently.
+
+### Upgrade path to multi-replica
+
+The current counter is in-process (`threading.Lock` + `deque`). When multiple API replicas are deployed, swap the deque for a Redis sorted-set backend in two internal methods (`record` / `_count_last_minute`). All callers and `get_ordered_models()` are unchanged.
 
 ---
 
