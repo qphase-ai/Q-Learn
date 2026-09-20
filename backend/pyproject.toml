@@ -28,9 +28,15 @@ dependencies = [
     # AI / Agents
     "langgraph>=0.2.0",
     "langchain-core>=0.2.0",
-    "langchain-community>=0.2.0",
+    # ChatLiteLLM moved out of the sunset langchain-community into its own
+    # maintained package; pin community below 0.4 (where it was removed) for
+    # any remaining transitive use.
+    "langchain-community>=0.2.0,<0.4.0",
+    "langchain-litellm>=0.1.0",
     "litellm>=1.52.0",
     "supabase>=2.0.0",
+    # RAG embeddings
+    "sentence-transformers>=3.0.0",
     # Observability
     "structlog>=24.0.0",
     # Rate limiting

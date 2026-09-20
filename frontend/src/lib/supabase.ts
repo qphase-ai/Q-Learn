@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient, type RealtimeChannel } from "@supabase/supabase-js";
+import type { Citation } from "@/types";
 
 // Lazily create the browser client. `NEXT_PUBLIC_*` vars are inlined at build
 // time; instantiating at module load would crash `next build` prerendering of
@@ -35,7 +36,7 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
  *
  * The backend publishes broadcast events from `services/realtime_service.py`:
  *   - `circuit:{circuitId}` event `result`
- *   - `tutor:{sessionId}`   event `token`
+ *   - `tutor:{sessionId}`   events `token` (streamed) and `complete` (final)
  *
  * Each helper returns an unsubscribe function — call it on component unmount to
  * avoid leaking channels (never poll the API for these).
@@ -63,6 +64,40 @@ export function subscribeToTutorTokens(
     .channel(`tutor:${sessionId}`)
     .on("broadcast", { event: "token" }, ({ payload }) =>
       onToken((payload as { token: string }).token)
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}
+
+export interface TutorCompletePayload {
+  message_id?: string;
+  content?: string;
+  citations?: Citation[];
+  error?: string;
+}
+
+/**
+ * Subscribe to the tutor stream for a session — both `token` (incremental) and
+ * `complete` (final message + citations, or an error). Returns an unsubscribe
+ * function; call it once `complete` fires (or on unmount) to free the channel.
+ */
+export function subscribeToTutor(
+  sessionId: string,
+  handlers: {
+    onToken: (token: string) => void;
+    onComplete: (payload: TutorCompletePayload) => void;
+  }
+): () => void {
+  const channel: RealtimeChannel = supabase
+    .channel(`tutor:${sessionId}`)
+    .on("broadcast", { event: "token" }, ({ payload }) =>
+      handlers.onToken((payload as { token: string }).token)
+    )
+    .on("broadcast", { event: "complete" }, ({ payload }) =>
+      handlers.onComplete(payload as TutorCompletePayload)
     )
     .subscribe();
 

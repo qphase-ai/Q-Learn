@@ -118,3 +118,20 @@ export interface ProgressItem {
   status: string;
   completion_pct: number;
 }
+
+// ---------------------------------------------------------------------------
+// AI Tutor types (match backend app/schemas/tutor.py)
+// ---------------------------------------------------------------------------
+
+export interface Citation {
+  title: string;
+  url: string | null;
+  score: number;
+}
+
+export interface TutorMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations?: Citation[];
+}

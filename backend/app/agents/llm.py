@@ -1,4 +1,4 @@
-from langchain_community.chat_models import ChatLiteLLM
+from langchain_litellm import ChatLiteLLM
 from langchain_core.runnables import Runnable
 from app.config import get_settings
 

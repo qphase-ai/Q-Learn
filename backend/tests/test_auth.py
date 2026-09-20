@@ -10,6 +10,7 @@ from jose import jwk as jose_jwk
 
 import app.services.auth_service as auth_service
 from app.config import get_settings
+from app.database import get_db
 from app.main import app
 
 
@@ -91,6 +92,56 @@ class _FakeAsyncClient:
 
     async def get(self, _url: str) -> _FakeResp:
         return _FakeResp(self._data)
+
+
+class _FakeExecuteResult:
+    def __init__(self, user):
+        self._user = user
+
+    def scalar_one_or_none(self):
+        return self._user
+
+
+class _FakeSession:
+    """In-memory stand-in for AsyncSession backing ``AuthService._sync_user``.
+
+    Keeps the auth tests hermetic (no Postgres): the only DB access on the
+    ``/me`` path is a select-by-id then an optional insert, so an id-keyed dict
+    is enough. Shared across requests within a test so the sync is idempotent.
+    """
+
+    def __init__(self, store: dict):
+        self._store = store
+        self._pending = None
+
+    async def execute(self, stmt):
+        # The sync only ever runs `select(User).where(User.id == <uuid>)`.
+        user_id = stmt.whereclause.right.value
+        return _FakeExecuteResult(self._store.get(user_id))
+
+    def add(self, obj):
+        self._pending = obj
+
+    async def commit(self):
+        if self._pending is not None:
+            self._store[self._pending.id] = self._pending
+            self._pending = None
+
+    async def refresh(self, obj):
+        return None
+
+
+@pytest.fixture(autouse=True)
+def fake_db():
+    """Route ``get_db`` to an in-memory session so /me needs no live Postgres."""
+    store: dict = {}
+
+    async def _override_get_db():
+        yield _FakeSession(store)
+
+    app.dependency_overrides[get_db] = _override_get_db
+    yield store
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.fixture
