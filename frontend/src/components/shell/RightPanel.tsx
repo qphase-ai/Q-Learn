@@ -1,6 +1,7 @@
 "use client";
 
 import { useShellStore } from "@/stores/shellStore";
+import AITutorPanel from "@/components/tutor/AITutorPanel";
 
 export default function RightPanel() {
   const open = useShellStore((s) => s.rightPanelOpen);
@@ -14,8 +15,8 @@ export default function RightPanel() {
       <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">
         AI Tutor
       </div>
-      <div className="flex flex-1 items-center justify-center p-4 text-center text-sm text-muted-foreground">
-        The AI Tutor arrives in Slice 2.
+      <div className="min-h-0 flex-1">
+        <AITutorPanel />
       </div>
     </aside>
   );
