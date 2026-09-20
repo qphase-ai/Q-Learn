@@ -3,6 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuroraBackground } from "@/components/backgrounds";
+import { Navbar } from "@/components/home/Navbar";
+import { HeroSection } from "@/components/home/HeroSection";
+import { FeaturesSection } from "@/components/home/FeaturesSection";
+import { HowItWorksSection } from "@/components/home/HowItWorksSection";
+import { StatsSection } from "@/components/home/StatsSection";
+import { PricingSection } from "@/components/home/PricingSection";
+import { HomeFooter } from "@/components/home/HomeFooter";
 
 export default function RootPage() {
   const router = useRouter();
@@ -25,9 +32,15 @@ export default function RootPage() {
   return (
     <>
       <AuroraBackground />
-      <main className="relative min-h-screen">
-        {/* sections assembled in Task 7 */}
+      <Navbar />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <StatsSection />
+        <PricingSection />
       </main>
+      <HomeFooter />
     </>
   );
 }
