@@ -1,9 +1,9 @@
 from langchain_litellm import ChatLiteLLM
 from langchain_core.runnables import Runnable
-from app.config import get_settings
+from app.config import get_settings, Settings
 
 
-def _make_llm(model: str, temp: float, settings) -> ChatLiteLLM:
+def _make_llm(model: str, temp: float, settings: Settings) -> ChatLiteLLM:
     """Create a ChatLiteLLM instance with optional OpenRouter extra headers."""
     kwargs: dict = {
         "model": model,
@@ -29,6 +29,8 @@ def get_llm(temperature: float | None = None) -> Runnable:
       - "gpt-4o-mini"                          → OpenAI
       - "anthropic/claude-haiku-4-5-20251001"  → Anthropic
       - "gemini/gemini-1.5-flash"              → Google
+      - "groq/llama3-8b-8192"                  → Groq
+      - "openrouter/openai/gpt-4o"             → OpenRouter
       - "ollama/llama3.2"                      → local Ollama
     """
     settings = get_settings()
