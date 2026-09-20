@@ -58,4 +58,4 @@ class ModelRouter:
         return [m for _, m in ranked]
 
 
-_router = ModelRouter()
+_router: ModelRouter = ModelRouter()

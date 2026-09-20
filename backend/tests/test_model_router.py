@@ -1,7 +1,7 @@
 import time
 import threading
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from app.agents.router import ModelRouter
 
 
@@ -104,3 +104,39 @@ def test_thread_safety():
         t.join()
     count = router._count_last_minute(model)
     assert count == 10
+
+
+def test_get_llm_uses_router_order(monkeypatch):
+    """get_llm() picks the model with the highest headroom as primary."""
+    import app.agents.router as router_module
+
+    # Give gemini full headroom, saturate groq
+    fresh_router = ModelRouter()
+    for _ in range(30):
+        fresh_router.record("groq/llama-3.3-70b-versatile")
+
+    # Patch the module-level singleton used by get_llm()
+    monkeypatch.setattr(router_module, "_router", fresh_router)
+
+    # Patch settings so we control the model list
+    mock_settings = MagicMock()
+    mock_settings.llm_primary_model = "groq/llama-3.3-70b-versatile"
+    mock_settings.llm_fallback_models = ["gemini/gemini-2.0-flash"]
+    mock_settings.llm_temperature = 0.7
+    mock_settings.llm_max_tokens = 2048
+    mock_settings.llm_model_rpm_limits = {}
+
+    captured = {}
+
+    def fake_make_llm(model, temp, settings):
+        captured.setdefault("order", []).append(model)
+        return MagicMock()
+
+    with patch("app.agents.llm.get_settings", return_value=mock_settings), \
+         patch("app.agents.llm._make_llm", side_effect=fake_make_llm), \
+         patch("app.agents.llm._router", fresh_router):
+        from app.agents.llm import get_llm
+        get_llm()
+
+    # groq is saturated → gemini should be picked first
+    assert captured["order"][0] == "gemini/gemini-2.0-flash"
