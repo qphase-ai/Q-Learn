@@ -1,6 +1,7 @@
 # AI Agent Architecture
 
 > Implementation detail: [`backend/design.md § AI Agent Backend`](../backend/design.md)
+> LLM routing and RPM management: [`docs/llm-model-router.md`](llm-model-router.md)
 
 ---
 
