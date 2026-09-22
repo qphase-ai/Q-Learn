@@ -33,11 +33,14 @@ class Settings(BaseSettings):
     llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-1.5-flash"]
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
+    llm_model_rpm_limits: dict[str, int] = {}  # LLM_MODEL_RPM_LIMITS — override per-model RPM cap
 
     # Provider API keys — only set the keys for providers you use
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
+    groq_api_key: str = ""          # GROQ_API_KEY
+    openrouter_api_key: str = ""    # OPENROUTER_API_KEY
 
     # Vercel Sandbox
     vercel_token: str = ""

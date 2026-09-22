@@ -18,6 +18,11 @@ def _make_mock_db():
     db.add = MagicMock()
     db.flush = AsyncMock()
     db.commit = AsyncMock()
+    # db.execute is AsyncMock by default; its return_value must support
+    # .scalars().all() as synchronous calls (used by the history fetch).
+    exec_result = MagicMock()
+    exec_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = exec_result
     return db
 
 

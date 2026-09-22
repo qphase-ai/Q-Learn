@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import AsyncIterator
 
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 from app.agents.llm import get_llm
 from app.agents.prompts import (
@@ -32,10 +32,14 @@ async def stream_tutor_answer(
     question: str,
     retrieved_chunks: list[RetrievedChunk],
     context: dict | None = None,
+    prior_messages: list | None = None,
 ) -> AsyncIterator[str]:
     """Stream a grounded tutor answer token-by-token.
 
     `context` may carry `level` and `concept` for the prompt slots.
+    `prior_messages` are AgentMessage ORM rows from the current session — injected
+    between the system prompt and the current question so every model in the router
+    pool receives the full conversation context regardless of which one is selected.
     """
     context = context or {}
     system = TUTOR_SYSTEM_PROMPT.format(
@@ -43,7 +47,15 @@ async def stream_tutor_answer(
         concept=context.get("concept", TUTOR_DEFAULT_CONCEPT),
         context=_format_context(retrieved_chunks),
     )
-    messages = [SystemMessage(content=system), HumanMessage(content=question)]
+
+    history = []
+    for msg in (prior_messages or []):
+        if msg.role == "user":
+            history.append(HumanMessage(content=msg.content))
+        else:
+            history.append(AIMessage(content=msg.content))
+
+    messages = [SystemMessage(content=system)] + history + [HumanMessage(content=question)]
 
     async for chunk in get_llm().astream(messages):
         token = getattr(chunk, "content", "")

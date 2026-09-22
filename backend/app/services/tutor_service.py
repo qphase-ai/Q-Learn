@@ -114,8 +114,19 @@ async def run_and_stream(
         try:
             chunks = await retrieve(db, message)
 
+            # Load prior turns for this session so every model gets full context.
+            # All messages are already committed (start_message ran before this task).
+            # Drop the last row — it's the current user message we're answering now.
+            history_result = await db.execute(
+                select(AgentMessage)
+                .where(AgentMessage.session_id == session_id)
+                .order_by(AgentMessage.created_at.asc())
+            )
+            all_msgs = history_result.scalars().all()
+            prior_messages = list(all_msgs[:-1])[-20:]  # cap at 20 rows (10 turns)
+
             content = ""
-            async for token in stream_tutor_answer(message, chunks):
+            async for token in stream_tutor_answer(message, chunks, prior_messages=prior_messages):
                 content += token
                 await publish_tutor_token(str(session_id), token)
 
