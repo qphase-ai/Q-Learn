@@ -104,7 +104,7 @@ describe("sendMessage", () => {
     expect(assistant.content).toBe("Hello");
   });
 
-  it("onComplete sets citations, clears isStreaming, opens RightPanel, unsubscribes", async () => {
+  it("onComplete sets citations, clears isStreaming, opens tutor panel, unsubscribes", async () => {
     await useTutorStore.getState().sendMessage("hi");
     expect(capturedOnComplete).not.toBeNull();
 

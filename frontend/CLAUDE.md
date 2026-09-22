@@ -45,7 +45,7 @@ The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once
 | `app/layout.tsx` | Root layout — mounts `AppShell` |
 | `app/auth/` | Login / Register / Forgot-password pages |
 | `app/dashboard/`, `learn/`, `circuit/`, `quiz/`, `pricing/`, `settings/` | Route entry points |
-| `components/shell/` | IDE shell — `AppShell` + zones (`TitleBar`, `ActivityBar`, `RightPanel`, `BottomPanel`, `StatusBar`, `WorkspacePlaceholder`) |
+| `components/shell/` | IDE shell — `AppShell` + zones (`TitleBar`, `ActivityBar`, `TutorFAB`, `BottomPanel`, `StatusBar`, `WorkspacePlaceholder`) |
 | `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas` |
 | `components/tutor/` | `AITutorPanel` — streaming chat, citation badges, KaTeX math |
 | `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer` (BottomPanel tabs) |
@@ -63,7 +63,7 @@ The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once
 | TitleBar | 36px top | Breadcrumb + XP bar + user menu |
 | ActivityBar | 48px left | Mode icons — `dashboard \| learn \| circuit \| code \| quiz \| settings` |
 | WorkspaceArea | fills remainder | Active workspace, lazy-loaded |
-| RightPanel | 380px right | `AITutorPanel` — `Ctrl+B` toggles |
+| TutorFAB | floating 48px | `AITutorPanel` overlay — `Ctrl+B` toggles |
 | BottomPanel | 250px bottom | Simulation results / console — `Ctrl+J` toggles |
 | StatusBar | 24px bottom | Current level · mastery · backend status |
 
@@ -75,7 +75,7 @@ Each store owns one domain. **No store imports from another.** Cross-domain read
 
 | Store | File | Persisted keys |
 |-------|------|---------------|
-| `useShellStore` | `shellStore.ts` | `rightPanelOpen`, `bottomPanelOpen` |
+| `useShellStore` | `shellStore.ts` | `bottomPanelOpen` |
 | `useAuthStore` | `authStore.ts` | `jwt` only |
 | `useLearningStore` | `learningStore.ts` | `lessonProgress`, `xp`, `streak` |
 | `useCircuitStore` | `circuitStore.ts` | none (session-only) |
@@ -215,7 +215,7 @@ Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `.
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+B` | Toggle RightPanel (AI Tutor) |
+| `Ctrl+B` | Toggle Tutor FAB (AI Tutor overlay) |
 | `Ctrl+J` | Toggle BottomPanel (Simulation / Console) |
 | `Ctrl+1…6` | Switch workspace by index |
 | `Space` (circuit canvas) | Run simulation |
