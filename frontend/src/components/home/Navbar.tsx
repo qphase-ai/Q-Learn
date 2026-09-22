@@ -10,7 +10,6 @@ import { MagneticButton } from "@/components/effects";
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
 ];
 
 export function Navbar() {

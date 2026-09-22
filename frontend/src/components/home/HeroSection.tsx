@@ -44,7 +44,7 @@ export function HeroSection() {
               <Link href="/auth/register">Start Learning Free</Link>
             </MagneticButton>
             <Button asChild variant="outline" size="lg">
-              <a href="#pricing">Explore Pricing</a>
+              <a href="#how-it-works">See How It Works</a>
             </Button>
           </div>
         </SlideUp>

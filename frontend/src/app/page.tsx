@@ -8,7 +8,6 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { StatsSection } from "@/components/home/StatsSection";
-import { PricingSection } from "@/components/home/PricingSection";
 import { HomeFooter } from "@/components/home/HomeFooter";
 
 export default function RootPage() {
@@ -38,7 +37,6 @@ export default function RootPage() {
         <FeaturesSection />
         <HowItWorksSection />
         <StatsSection />
-        <PricingSection />
       </main>
       <HomeFooter />
     </>
