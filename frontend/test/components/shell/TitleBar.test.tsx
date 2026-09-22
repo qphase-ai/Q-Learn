@@ -12,7 +12,7 @@ vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ logout }) }));
 beforeEach(() => {
   logout.mockClear();
   useAuthStore.setState({
-    user: { id: "u1", email: "student@example.com", role: "student", subscription_status: "free" },
+    user: { id: "u1", email: "student@example.com", role: "student" },
     jwt: "t",
   });
   useLearningStore.setState({ xp: 120, streak: 3 });

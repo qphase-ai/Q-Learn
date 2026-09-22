@@ -18,7 +18,7 @@ export const WORKSPACES: WorkspaceMeta[] = [
   { id: "circuit", label: "Circuit", href: "/circuit" },
   { id: "code", label: "Code", href: "/code" },
   { id: "quiz", label: "Quiz", href: "/quiz" },
-  { id: "settings", label: "Settings", href: "/settings/billing" },
+  { id: "settings", label: "Settings", href: "/settings" },
 ];
 
 export function workspaceFromPathname(pathname: string): WorkspaceId | null {

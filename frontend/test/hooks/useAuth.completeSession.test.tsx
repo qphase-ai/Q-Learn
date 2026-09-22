@@ -49,7 +49,6 @@ describe("useAuth.completeSession", () => {
       id: "u1",
       email: "a@b.com",
       role: "student",
-      subscription_status: "free",
     });
 
     const { result } = renderHook(() => useAuth());
@@ -64,7 +63,6 @@ describe("useAuth.completeSession", () => {
       id: "u1",
       email: "a@b.com",
       role: "student",
-      subscription_status: "free",
     });
     setSearch("?from=/circuit");
 
@@ -79,7 +77,6 @@ describe("useAuth.completeSession", () => {
       id: "u1",
       email: "a@b.com",
       role: "student",
-      subscription_status: "free",
     });
     setSearch("?from=//evil.com");
 

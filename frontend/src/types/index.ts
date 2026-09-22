@@ -2,7 +2,6 @@ export interface User {
   id: string;
   email: string;
   role: "student" | "instructor" | "admin";
-  subscription_status: "free" | "pro";
 }
 
 export interface Course {

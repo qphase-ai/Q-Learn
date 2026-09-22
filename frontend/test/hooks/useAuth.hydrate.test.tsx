@@ -26,7 +26,7 @@ beforeEach(() => {
 describe("useAuth.hydrate", () => {
   it("loads the user from auth/me without redirecting", async () => {
     getSession.mockResolvedValue({ data: { session: { access_token: "tok" } } });
-    apiFetch.mockResolvedValue({ id: "u1", email: "a@b.com", role: "student", subscription_status: "free" });
+    apiFetch.mockResolvedValue({ id: "u1", email: "a@b.com", role: "student" });
 
     const { result } = renderHook(() => useAuth());
     await result.current.hydrate();

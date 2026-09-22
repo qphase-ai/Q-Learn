@@ -96,9 +96,9 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Next.js 14 App Router pages — `auth/`, `dashboard/`, `learn/`, `circuit/`, `quiz/`, `pricing/`, `settings/` |
-| `components/` | Feature components — `circuit/` (React Flow builder), `tutor/` (AI panel), `visualization/`, `billing/`, `ui/` |
-| `stores/` | Zustand stores — `authStore`, `learningStore`, `circuitStore`, `tutorStore`, `quizStore`, `billingStore`, `shellStore` |
+| `app/` | Next.js 14 App Router pages — `auth/`, `dashboard/`, `learn/`, `circuit/`, `quiz/`, `settings/` |
+| `components/` | Feature components — `circuit/` (React Flow builder), `tutor/` (AI panel), `visualization/`, `ui/` |
+| `stores/` | Zustand stores — `authStore`, `learningStore`, `circuitStore`, `tutorStore`, `quizStore`, `shellStore` |
 | `hooks/` | Custom React hooks |
 | `lib/` | Supabase client, API client, utilities |
 | `types/` | TypeScript type definitions |
@@ -115,7 +115,6 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 | Vercel Sandbox | `AsyncSandbox.fork("qlearn-python-base")` — isolated microVM, deny-all network, 512 MB RAM, 30s timeout |
 | Supabase Realtime | FastAPI publishes events; frontend subscribes via `@supabase/supabase-js` |
 | LLM provider | ChatLiteLLM (`app/agents/llm.py`) — `get_llm()` returns primary + `.with_fallbacks()`; model strings via LiteLLM format |
-| Razorpay | Freemium + Pro subscriptions; AI Tutor + circuit execution gated behind Pro |
 | pgvector | dim=384 embeddings in `knowledge_embeddings` table |
 
 ---
@@ -146,6 +145,6 @@ See `docs/quantum-execution.md`, `docs/rag-pipeline.md`, `docs/agents.md`, `docs
 
 ## Environment
 
-Copy `.env.example` → `.env` (root), `backend/.env`, `frontend/.env.local`. Required variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `VERCEL_TOKEN`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `LLM_PRIMARY_MODEL`. LLM uses ChatLiteLLM — set `LLM_FALLBACK_MODELS` and the relevant provider API keys. Full reference: `docs/infrastructure.md`.
+Copy `.env.example` → `.env` (root), `backend/.env`, `frontend/.env.local`. Required variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DATABASE_URL`, `VERCEL_TOKEN`, `LLM_PRIMARY_MODEL`. LLM uses ChatLiteLLM — set `LLM_FALLBACK_MODELS` and the relevant provider API keys. Full reference: `docs/infrastructure.md`.
 
 Local dev database: `postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn` (Docker Compose).
