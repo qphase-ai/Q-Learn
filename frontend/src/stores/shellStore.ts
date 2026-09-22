@@ -6,12 +6,12 @@ type BottomPanelTab = "probabilities" | "statevector" | "qasm" | "console";
 
 interface ShellStore {
   activeWorkspace: Workspace;
-  rightPanelOpen: boolean;
+  tutorOpen: boolean;
   bottomPanelOpen: boolean;
   focusMode: boolean;
   bottomPanelTab: BottomPanelTab;
   setWorkspace: (workspace: Workspace) => void;
-  toggleRightPanel: () => void;
+  toggleTutor: () => void;
   toggleBottomPanel: () => void;
   setFocusMode: (focus: boolean) => void;
   setBottomPanelTab: (tab: BottomPanelTab) => void;
@@ -21,16 +21,16 @@ export const useShellStore = create<ShellStore>()(
   persist(
     (set) => ({
       activeWorkspace: "dashboard",
-      rightPanelOpen: true,
+      tutorOpen: false,
       bottomPanelOpen: false,
       focusMode: false,
       bottomPanelTab: "probabilities",
       setWorkspace: (activeWorkspace) => set({ activeWorkspace }),
-      toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+      toggleTutor: () => set((s) => ({ tutorOpen: !s.tutorOpen })),
       toggleBottomPanel: () => set((s) => ({ bottomPanelOpen: !s.bottomPanelOpen })),
       setFocusMode: (focusMode) => set({ focusMode }),
       setBottomPanelTab: (bottomPanelTab) => set({ bottomPanelTab }),
     }),
-    { name: "shell", partialize: (s) => ({ rightPanelOpen: s.rightPanelOpen, bottomPanelOpen: s.bottomPanelOpen }) }
+    { name: "shell", partialize: (s) => ({ bottomPanelOpen: s.bottomPanelOpen }) }
   )
 );

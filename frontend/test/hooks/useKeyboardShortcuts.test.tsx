@@ -13,7 +13,7 @@ function Harness() {
 
 beforeEach(() => {
   push.mockClear();
-  useShellStore.setState({ rightPanelOpen: true, bottomPanelOpen: false });
+  useShellStore.setState({ tutorOpen: false, bottomPanelOpen: false });
 });
 
 function press(key: string) {
@@ -21,10 +21,10 @@ function press(key: string) {
 }
 
 describe("useKeyboardShortcuts", () => {
-  it("Ctrl+B toggles the right panel", () => {
+  it("Ctrl+B toggles the tutor FAB", () => {
     render(<Harness />);
     press("b");
-    expect(useShellStore.getState().rightPanelOpen).toBe(false);
+    expect(useShellStore.getState().tutorOpen).toBe(true);
   });
 
   it("Ctrl+J toggles the bottom panel", () => {

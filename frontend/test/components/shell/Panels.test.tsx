@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import RightPanel from "@/components/shell/RightPanel";
 import BottomPanel from "@/components/shell/BottomPanel";
 import { useShellStore } from "@/stores/shellStore";
 import { useCircuitStore } from "@/stores/circuitStore";
@@ -21,25 +20,8 @@ const SEEDED_RESULTS = {
 };
 
 beforeEach(() => {
-  useShellStore.setState({
-    rightPanelOpen: true,
-    bottomPanelOpen: true,
-    bottomPanelTab: "probabilities",
-  });
+  useShellStore.setState({ bottomPanelOpen: true, bottomPanelTab: "probabilities" });
   useCircuitStore.setState({ results: null });
-});
-
-describe("RightPanel", () => {
-  it("renders its region when open", () => {
-    render(<RightPanel />);
-    expect(screen.getByRole("complementary", { name: /ai tutor/i })).toBeInTheDocument();
-  });
-
-  it("is hidden when closed", () => {
-    useShellStore.setState({ rightPanelOpen: false });
-    render(<RightPanel />);
-    expect(screen.queryByRole("complementary", { name: /ai tutor/i })).not.toBeInTheDocument();
-  });
 });
 
 describe("BottomPanel", () => {

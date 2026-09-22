@@ -49,7 +49,7 @@ beforeEach(() => {
   useTutorStore.setState({ messages: [], isStreaming: false });
   useAuthStore.setState({ jwt: "jwt-token", user: null, isLoading: false });
   useLearningStore.setState({ currentLessonId: "lesson-1" });
-  useShellStore.setState({ rightPanelOpen: false });
+  useShellStore.setState({ tutorOpen: false });
 
   vi.clearAllMocks();
   vi.mocked(apiFetch).mockResolvedValue({ session_id: "s", status: "pending" } as never);
@@ -114,7 +114,7 @@ describe("sendMessage", () => {
     const assistant = useTutorStore.getState().messages[1];
     expect(assistant.citations).toEqual(citations);
     expect(useTutorStore.getState().isStreaming).toBe(false);
-    expect(useShellStore.getState().rightPanelOpen).toBe(true);
+    expect(useShellStore.getState().tutorOpen).toBe(true);
     expect(unsubscribed).toBe(true);
   });
 

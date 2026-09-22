@@ -75,7 +75,7 @@ export const useTutorStore = create<TutorStore>((set) => ({
               : m
           ),
         }));
-        useShellStore.setState({ rightPanelOpen: true });
+        useShellStore.setState({ tutorOpen: true });
         unsubscribe();
       },
     });

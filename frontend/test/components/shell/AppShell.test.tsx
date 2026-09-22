@@ -9,14 +9,18 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ hydrate, logout: vi.fn() }) }));
+vi.mock("@/stores/tutorStore", () => ({
+  useTutorStore: (sel: (s: { messages: []; isStreaming: boolean; suggestedPrompts: string[]; sendMessage: () => void }) => unknown) =>
+    sel({ messages: [], isStreaming: false, suggestedPrompts: [], sendMessage: vi.fn() }),
+}));
 
 beforeEach(() => {
   hydrate.mockClear();
-  useShellStore.setState({ rightPanelOpen: true, bottomPanelOpen: true, activeWorkspace: "dashboard", bottomPanelTab: "probabilities" });
+  useShellStore.setState({ tutorOpen: false, bottomPanelOpen: true, activeWorkspace: "dashboard", bottomPanelTab: "probabilities" });
 });
 
 describe("AppShell", () => {
-  it("mounts all six zones and renders children", () => {
+  it("mounts all zones and renders children", () => {
     render(
       <AppShell>
         <div>WORKSPACE CONTENT</div>
@@ -25,7 +29,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument(); // TitleBar
     expect(screen.getByRole("navigation", { name: /workspaces/i })).toBeInTheDocument(); // ActivityBar
     expect(screen.getByText("WORKSPACE CONTENT")).toBeInTheDocument(); // WorkspaceArea
-    expect(screen.getByRole("complementary", { name: /ai tutor/i })).toBeInTheDocument(); // RightPanel
+    expect(screen.getByRole("button", { name: /open ai tutor/i })).toBeInTheDocument(); // TutorFAB
     expect(screen.getByRole("region", { name: /simulation results/i })).toBeInTheDocument(); // BottomPanel
     expect(screen.getByRole("contentinfo")).toBeInTheDocument(); // StatusBar
   });
