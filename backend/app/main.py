@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.exceptions import QlearnError, qlearn_exception_handler
-from app.routers import auth, billing, circuits, learning, tutor
+from app.routers import auth, circuits, learning, tutor
 
 settings = get_settings()
 
@@ -35,7 +35,6 @@ def create_app() -> FastAPI:
     app.add_exception_handler(QlearnError, qlearn_exception_handler)
 
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-    app.include_router(billing.router, prefix="/api/v1/billing", tags=["billing"])
     app.include_router(circuits.router, prefix="/api/v1/circuits", tags=["circuits"])
     app.include_router(learning.router, prefix="/api/v1", tags=["learning"])
     app.include_router(tutor.router, prefix="/api/v1/tutor", tags=["tutor"])

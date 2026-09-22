@@ -19,7 +19,6 @@ class User(Base):
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     profile: Mapped["UserProfile"] = relationship("UserProfile", back_populates="user", uselist=False)
-    subscription: Mapped["UserSubscription"] = relationship("UserSubscription", back_populates="user", uselist=False)
 
 
 class UserProfile(Base):
