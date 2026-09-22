@@ -1,5 +1,5 @@
-import WorkspacePlaceholder from "@/components/shell/WorkspacePlaceholder";
+import DashboardWorkspace from "@/components/dashboard/DashboardWorkspace";
 
 export default function DashboardPage() {
-  return <WorkspacePlaceholder name="Dashboard" slice={4} />;
+  return <DashboardWorkspace />;
 }
