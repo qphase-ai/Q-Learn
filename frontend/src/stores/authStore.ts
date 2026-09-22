@@ -5,7 +5,6 @@ interface User {
   id: string;
   email: string;
   role: string;
-  subscription_status: "free" | "pro";
 }
 
 interface AuthStore {

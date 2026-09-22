@@ -50,7 +50,7 @@ External compute (quantum simulation, student code) exits the process via `Async
 | `database.py` | Async SQLAlchemy engine and session factory |
 | `dependencies.py` | FastAPI dependency injectors (DB session, current user, entitlement checks) |
 | `exceptions.py` | `QlearnError` hierarchy + global handler; all domain errors raised here |
-| `models/` | SQLAlchemy 2.x ORM models — one file per domain (`user`, `learning`, `circuit`, `assessment`, `agent`, `knowledge`, `billing`, `progress`) |
+| `models/` | SQLAlchemy 2.x ORM models — one file per domain (`user`, `learning`, `circuit`, `assessment`, `agent`, `knowledge`, `progress`) |
 | `schemas/` | Pydantic request/response schemas — **always keep separate from ORM models** |
 | `routers/` | Thin route handlers — delegate all logic to services; no business logic here |
 | `services/` | Business logic — one service file per domain |
@@ -68,9 +68,8 @@ External compute (quantum simulation, student code) exits the process via `Async
 Raise from the `QlearnError` hierarchy in `exceptions.py`. The global handler in `main.py` serializes them into `{success, error: {code, message, details}}`. Never raise raw `HTTPException` from services.
 
 ```python
-from app.exceptions import NotFoundError, PlanRequiredError
+from app.exceptions import NotFoundError
 raise NotFoundError("Circuit not found")
-raise PlanRequiredError("Upgrade to Pro to execute circuits")
 ```
 
 ### Settings
@@ -143,7 +142,6 @@ Copy `.env.example` → `.env` in `backend/`. Required keys:
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_ANON_KEY` | Supabase project |
 | `SUPABASE_JWT_SECRET` | Verifies Supabase Auth access tokens (HS256) — required for `/me` and all authed routes |
 | `VERCEL_TOKEN` | Sandbox SDK auth |
-| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Payment integration |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
 | `LLM_FALLBACK_MODELS` | JSON list of fallback model strings |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GROQ_API_KEY` / `OPENROUTER_API_KEY` | Set only for providers you use |

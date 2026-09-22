@@ -107,7 +107,6 @@ class AuthService:
                 id=user_id,
                 email=email or "",
                 role="student",
-                subscription_status="free",
                 is_active=True,
                 is_verified=True,
             )

@@ -13,9 +13,9 @@ describe("WORKSPACES", () => {
     ]);
   });
 
-  it("uses /<id> hrefs except settings which deep-links to billing", () => {
+  it("uses /<id> hrefs for all workspaces", () => {
     expect(WORKSPACES.find((w) => w.id === "circuit")?.href).toBe("/circuit");
-    expect(WORKSPACES.find((w) => w.id === "settings")?.href).toBe("/settings/billing");
+    expect(WORKSPACES.find((w) => w.id === "settings")?.href).toBe("/settings");
   });
 });
 

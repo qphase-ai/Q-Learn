@@ -48,11 +48,6 @@ class Settings(BaseSettings):
     sandbox_base_name: str = "qlearn-python-base"
     sandbox_timeout: int = 30000  # ms
 
-    # Razorpay
-    razorpay_key_id: str = ""
-    razorpay_key_secret: str = ""
-    razorpay_webhook_secret: str = ""
-
     # Rate limiting
     rate_limit_per_minute: int = 100
 

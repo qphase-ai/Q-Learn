@@ -74,7 +74,7 @@ Auth is **Supabase Auth**, not custom JWT:
   email/password **or** Google — and sends the Supabase access token as
   `Authorization: Bearer <token>`.
 - The backend **verifies** that token and syncs a `public.users` row that owns
-  `role` / `subscription_status`. Only `GET /api/v1/auth/me` remains — there are
+  `role`. Only `GET /api/v1/auth/me` remains — there are
   no `register` / `login` / `refresh` API endpoints. `_sync_user()` provisions
   the local user from the token `sub`, so **any** provider works with no backend
   change.

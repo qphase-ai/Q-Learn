@@ -24,7 +24,6 @@ The page sits **outside the IDE shell** — it uses `AuroraBackground` as a full
 | `HowItWorksSection` | 4 alternating step rows | `SlideUp`, `SpotlightCard`, inline mockups |
 | `ProbabilityMockSVG` | Probability histogram | Static SVG using design-system accent colors |
 | `StatsSection` | Social proof stats bar | `MeshGradient` background |
-| `PricingSection` | Free / Pro card pair | `SpotlightCard`, `GlowingBorder`, SIH2614 badge |
 | `HomeFooter` | 3-column minimal footer | Plain `<footer>`, Next.js `Link` |
 
 ### Auth Behavior
@@ -99,7 +98,6 @@ Seven domain stores — no cross-store reactive subscriptions; cross-domain read
 | `useCircuitStore` | `nodes`, `edges`, `runState`, `results: SimulationResult` |
 | `useTutorStore` | `messages`, `isStreaming`, `suggestedPrompts` |
 | `useQuizStore` | `quiz`, `currentIndex`, `answers`, `score` |
-| `useBillingStore` | `subscriptionStatus`, `currentPlan`, `isUpgradeModalOpen`, `triggerFeature` |
 
 **localStorage persistence:** `jwt` only (auth) · `lessonProgress`/`xp`/`streak` (learning) · `rightPanelOpen`/`bottomPanelOpen` (shell). Circuit, quiz, and tutor state are session-only.
 

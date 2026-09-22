@@ -65,7 +65,7 @@ Client (email/password or Google OAuth)
 Backend (every authenticated request)
   → verify access_token with SUPABASE_JWT_SECRET (aud "authenticated")
   → _sync_user(): upsert public.users row keyed by token `sub`
-    (owns role / subscription_status; provisions on first request, any provider)
+    (owns role; provisions on first request, any provider)
 
 GET /api/v1/auth/me   → returns the synced local profile
 ```

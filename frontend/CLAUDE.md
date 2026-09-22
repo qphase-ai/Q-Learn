@@ -49,7 +49,6 @@ The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once
 | `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas` |
 | `components/tutor/` | `AITutorPanel` — streaming chat, citation badges, KaTeX math |
 | `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer` (BottomPanel tabs) |
-| `components/billing/` | Pricing, upgrade modal, subscription management |
 | `components/ui/` | Primitive atoms (Button, Badge, etc.) — accessibility baseline via shadcn/ui |
 | `stores/` | Zustand stores — one per domain |
 | `hooks/` | Custom React hooks wrapping store + API logic |
@@ -82,7 +81,6 @@ Each store owns one domain. **No store imports from another.** Cross-domain read
 | `useCircuitStore` | `circuitStore.ts` | none (session-only) |
 | `useTutorStore` | `tutorStore.ts` | none (session-only) |
 | `useQuizStore` | `quizStore.ts` | none (session-only) |
-| `useBillingStore` | `billingStore.ts` | — |
 
 ### Key cross-store flows
 
@@ -200,12 +198,6 @@ Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — un
 
 ---
 
-## Pro Gating
-
-`user.subscription_status === "pro"` gates AI Tutor, circuit execution, and adaptive quizzes. Check via `useAuthStore`. Show upgrade modal (from `components/billing/`) on denied access. Never gate lessons or curriculum content.
-
----
-
 ## Environment Variables
 
 | Variable | Purpose |
@@ -213,7 +205,6 @@ Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — un
 | `NEXT_PUBLIC_API_URL` | FastAPI backend base URL (default: `http://localhost:8000`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay key (client-side, public) |
 | `NEXT_PUBLIC_DEV_NO_AUTH` | Dev-only: `1` opens every page without login (ignored in production; double-gated on `NODE_ENV`) |
 
 Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `../docs/infrastructure.md`.
