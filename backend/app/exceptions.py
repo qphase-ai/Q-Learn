@@ -28,11 +28,6 @@ class ForbiddenError(QlearnError):
     code = "FORBIDDEN"
 
 
-class PlanRequiredError(QlearnError):
-    status_code = 403
-    code = "PLAN_REQUIRED"
-
-
 class ValidationError(QlearnError):
     status_code = 422
     code = "VALIDATION_ERROR"

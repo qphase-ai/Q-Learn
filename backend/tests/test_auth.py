@@ -159,7 +159,6 @@ async def test_me_syncs_new_user(client: AsyncClient):
     assert data["id"] == user_id
     assert data["email"] == "new@qlearn.dev"
     assert data["role"] == "student"
-    assert data["subscription_status"] == "free"
 
 
 async def test_me_is_idempotent(client: AsyncClient):

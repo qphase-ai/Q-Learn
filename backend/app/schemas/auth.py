@@ -8,7 +8,6 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     role: str
-    subscription_status: str
     is_active: bool
     is_verified: bool
 

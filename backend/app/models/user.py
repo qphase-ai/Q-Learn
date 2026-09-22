@@ -14,7 +14,6 @@ class User(Base):
     # Supabase Auth owns credentials; kept nullable only for legacy rows.
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     role: Mapped[str] = mapped_column(String(20), default="student", nullable=False)
-    subscription_status: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
