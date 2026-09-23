@@ -7,6 +7,9 @@ import AITutorPanel from "@/components/tutor/AITutorPanel";
 export default function TutorFAB() {
   const open = useShellStore((s) => s.tutorOpen);
   const toggleTutor = useShellStore((s) => s.toggleTutor);
+  const focusMode = useShellStore((s) => s.focusMode);
+
+  if (focusMode) return null;
 
   return (
     <>
@@ -36,7 +39,7 @@ export default function TutorFAB() {
         onClick={toggleTutor}
         aria-label={open ? "Close AI Tutor" : "Open AI Tutor"}
         aria-expanded={open}
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-cyber-cyan text-background shadow-glow-cyan transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-cyber-cyan text-background shadow-glow-cyan transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95"
       >
         {open ? <X size={20} aria-hidden /> : <MessageCircle size={20} aria-hidden />}
       </button>

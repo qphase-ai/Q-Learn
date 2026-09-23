@@ -62,6 +62,7 @@ export default function ProgressHero({
           <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
             <div
               role="progressbar"
+              aria-label="Current lesson progress"
               aria-valuenow={currentProgress}
               aria-valuemin={0}
               aria-valuemax={100}

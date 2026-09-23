@@ -29,7 +29,7 @@ export default function DashboardWorkspace() {
   const currentProgress = currentLessonId ? (lessonProgress[currentLessonId] ?? 0) : 0;
 
   return (
-    <div className="shell-fade relative flex h-full flex-col gap-6 overflow-auto p-6">
+    <div className="relative flex h-full flex-col gap-6 overflow-auto p-6">
       <QuantumSpinBackground />
       <ProgressHero
         xp={xp}
