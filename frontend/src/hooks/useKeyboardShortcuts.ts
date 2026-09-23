@@ -18,12 +18,12 @@ export function useKeyboardShortcuts(): void {
     function onKeyDown(e: KeyboardEvent) {
       if (!e.ctrlKey || isTypingTarget(e.target)) return;
 
-      const { toggleRightPanel, toggleBottomPanel } = useShellStore.getState();
+      const { toggleTutor, toggleBottomPanel } = useShellStore.getState();
       const key = e.key.toLowerCase();
 
       if (key === "b") {
         e.preventDefault();
-        toggleRightPanel();
+        toggleTutor();
         return;
       }
       if (key === "j") {

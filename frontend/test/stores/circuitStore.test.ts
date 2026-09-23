@@ -45,7 +45,6 @@ beforeEach(() => {
   useShellStore.setState({
     bottomPanelOpen: false,
     bottomPanelTab: "probabilities",
-    rightPanelOpen: true,
     focusMode: false,
     activeWorkspace: "circuit",
   });
