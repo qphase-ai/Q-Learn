@@ -5,6 +5,7 @@ import { CircuitBoard, CodeXml } from "lucide-react";
 import { useLearningStore } from "@/stores/learningStore";
 import ProgressHero from "./ProgressHero";
 import TrackCard from "./TrackCard";
+import QuantumSpinBackground from "@/components/backgrounds/QuantumSpinBackground";
 
 export default function DashboardWorkspace() {
   const xp = useLearningStore((s) => s.xp);
@@ -28,7 +29,8 @@ export default function DashboardWorkspace() {
   const currentProgress = currentLessonId ? (lessonProgress[currentLessonId] ?? 0) : 0;
 
   return (
-    <div className="shell-fade flex h-full flex-col gap-6 overflow-auto p-6">
+    <div className="shell-fade relative flex h-full flex-col gap-6 overflow-auto p-6">
+      <QuantumSpinBackground />
       <ProgressHero
         xp={xp}
         streak={streak}
