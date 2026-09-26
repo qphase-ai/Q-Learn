@@ -1,0 +1,77 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCircuitStore } from "@/stores/circuitStore";
+import { nodesToCircuitSpec, circuitSpecToQiskitSource } from "@/lib/circuit-spec";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// Monaco needs `window`/workers — dynamic-import only, never SSR'd, per
+// frontend/CLAUDE.md's "Monaco Editor: dynamic import only" rule.
+const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+
+export default function MonacoCodePanel() {
+  const nodes = useCircuitStore((s) => s.nodes);
+  const qubitCount = useCircuitStore((s) => s.qubitCount);
+  const runSimulation = useCircuitStore((s) => s.runSimulation);
+  const runState = useCircuitStore((s) => s.runState);
+
+  const generatedSource = circuitSpecToQiskitSource(nodesToCircuitSpec(nodes, qubitCount));
+  const [buffer, setBuffer] = useState(generatedSource);
+
+  // Follow the live circuit as it's edited on the canvas, as long as the
+  // student hasn't diverged the buffer yet.
+  useEffect(() => {
+    setBuffer((current) => (current === generatedSource ? generatedSource : current));
+  }, [generatedSource]);
+
+  const isEdited = buffer !== generatedSource;
+  const isRunning = runState === "running";
+
+  const runButton = (
+    <button
+      type="button"
+      onClick={() => runSimulation()}
+      disabled={isEdited || isRunning}
+      className="h-8 rounded-md bg-cyber-cyan px-2.5 text-[13px] font-semibold text-background shadow-glow-cyan disabled:cursor-not-allowed disabled:bg-elevated disabled:text-muted-foreground disabled:opacity-60 disabled:shadow-none"
+    >
+      {isRunning ? "Running…" : "▶ Run"}
+    </button>
+  );
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-surface">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+        <span className="text-sm font-medium text-foreground">circuit.py</span>
+        {isEdited ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>{runButton}</TooltipTrigger>
+              <TooltipContent>
+                Custom code execution isn&apos;t connected to a backend sandbox yet — edit the
+                circuit on the Circuit tab to change what runs.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          runButton
+        )}
+      </div>
+      <div className="flex-1">
+        <Editor
+          height="100%"
+          language="python"
+          theme="vs-dark"
+          value={buffer}
+          onChange={(v) => setBuffer(v ?? "")}
+          options={{ fontSize: 13, minimap: { enabled: false }, fontFamily: "var(--font-mono)" }}
+        />
+      </div>
+    </div>
+  );
+}
