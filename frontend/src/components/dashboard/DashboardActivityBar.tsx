@@ -15,7 +15,6 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
-import { workspaceFromPathname } from "@/lib/workspaces";
 import {
   Tooltip,
   TooltipContent,
@@ -37,21 +36,22 @@ export default function DashboardActivityBar({
   onOpenTutor?: () => void;
   dim?: boolean;
 }) {
-  const pathname = usePathname();
-  const active = workspaceFromPathname(pathname ?? "");
+  const pathname = usePathname() ?? "";
+  const isActive = (href?: string) =>
+    !!href && (pathname === href || pathname.startsWith(`${href}/`));
 
   const navItems: NavItem[] = [
     { label: "Learn", icon: BookOpen, href: "/learn" },
     { label: "Circuits", icon: CircuitBoard, href: "/circuit" },
     { label: "Code", icon: Code2, href: "/code" },
     { label: "Practice", icon: ListChecks, href: "/quiz" },
-    { label: "Progress", icon: BarChart3, disabledHint: "Progress overview coming soon" },
+    { label: "Progress", icon: BarChart3, href: "/progress" },
     { label: "AI Tutor", icon: Sparkles, onClick: onOpenTutor },
   ];
 
   const utilityItems: NavItem[] = [
-    { label: "Docs", icon: FileText, disabledHint: "Documentation coming soon" },
-    { label: "Feedback", icon: MessageSquareWarning, disabledHint: "Feedback coming soon" },
+    { label: "Docs", icon: FileText, href: "/docs" },
+    { label: "Feedback", icon: MessageSquareWarning, href: "/feedback" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ];
 
@@ -64,22 +64,24 @@ export default function DashboardActivityBar({
     >
       <div className="flex flex-col items-center gap-1">
         {navItems.map((item) => (
-          <NavButton key={item.label} item={item} isActive={item.href ? active === workspaceFromPathname(item.href) : false} />
+          <NavButton key={item.label} item={item} isActive={isActive(item.href)} />
         ))}
       </div>
 
-      <button
-        type="button"
-        title="Upgrade (coming soon)"
-        className="mt-auto flex w-14 flex-col items-center gap-1 rounded-lg border border-warning/30 bg-gradient-to-b from-warning/15 to-transparent px-1 py-2 text-[10px] font-medium text-warning"
+      <Link
+        href="/pricing"
+        aria-label="Upgrade"
+        aria-current={isActive("/pricing") ? "page" : undefined}
+        title="Upgrade to Pro"
+        className="mt-auto flex w-14 flex-col items-center gap-1 rounded-lg border border-warning/30 bg-gradient-to-b from-warning/15 to-transparent px-1 py-2 text-[10px] font-medium text-warning transition-colors hover:from-warning/25"
       >
         <Crown size={16} aria-hidden />
         Upgrade
-      </button>
+      </Link>
 
       <div className="mt-2 flex flex-col items-center gap-1">
         {utilityItems.map((item) => (
-          <NavButton key={item.label} item={item} isActive={item.href ? active === workspaceFromPathname(item.href) : false} />
+          <NavButton key={item.label} item={item} isActive={isActive(item.href)} />
         ))}
       </div>
     </nav>
