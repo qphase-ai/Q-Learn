@@ -11,10 +11,11 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * Wires Space/Delete/H/X/C/M shortcuts for the circuit canvas. Pass
- * `enabled: false` to mount the listener without activating it — used on
- * `/circuit` (`lockedTab === "circuit"`) so the shortcuts don't also fire
- * when the circuit tab is just one of several visible in the embedded
- * dashboard preview.
+ * `enabled: false` to mount the listener without activating it — callers
+ * pass `enabled: true` only when `lockedTab === "circuit"` (i.e. on the
+ * standalone `/circuit` route) so the shortcuts don't also fire when the
+ * circuit tab is just one of several visible in the embedded dashboard
+ * preview.
  */
 export function useCircuitShortcuts(enabled = true): void {
   useEffect(() => {
