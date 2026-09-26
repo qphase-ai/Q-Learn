@@ -16,35 +16,53 @@ export function generateQuizFromLesson(lesson: LessonDetail): QuizQuestion[] {
   if (concepts.length === 0) return [];
 
   if (concepts.length === 1) {
-    return [trueFalseQuestion(concepts[0])];
+    return [trueFalseQuestion(concepts[0], concepts)];
   }
 
-  return concepts.map((concept) => multipleChoiceQuestion(concept, concepts));
+  // A concept without a description has no prompt text that doesn't already
+  // name it, so a "which concept does this describe" question would give
+  // away the answer. Fall back to a true/false question for those instead.
+  return concepts.map((concept) =>
+    concept.description
+      ? multipleChoiceQuestion(concept, concepts)
+      : trueFalseQuestion(concept, concepts)
+  );
 }
 
+// Only called for concepts with a description (see generateQuizFromLesson).
 function multipleChoiceQuestion(concept: ConceptOut, pool: ConceptOut[]): QuizQuestion {
+  const description = concept.description!;
   const distractors = pool.filter((c) => c.id !== concept.id).map((c) => c.name);
   const options = shuffle([concept.name, ...distractors]);
 
   return {
     id: `q-${concept.id}`,
     concept_id: concept.id,
-    question_text: `Which concept does this describe: "${concept.description ?? concept.name}"?`,
+    question_text: `Which concept does this describe: "${description}"?`,
     question_type: "multiple_choice",
     options,
     correct_answer: concept.name,
-    hint: concept.description ?? `Think about ${concept.name}.`,
+    hint: description,
   };
 }
 
-function trueFalseQuestion(concept: ConceptOut): QuizQuestion {
+function trueFalseQuestion(concept: ConceptOut, pool: ConceptOut[] = []): QuizQuestion {
+  // When another described concept is available, sometimes swap in its
+  // description so the correct answer isn't always "True".
+  const others = pool.filter((c) => c.id !== concept.id && c.description);
+  const isFalseStatement = others.length > 0 && Math.random() < 0.5;
+  const statementSource = isFalseStatement
+    ? others[Math.floor(Math.random() * others.length)]
+    : concept;
+  const description = statementSource.description ?? `This lesson covers ${concept.name}.`;
+
   return {
     id: `q-${concept.id}`,
     concept_id: concept.id,
-    question_text: `True or False: ${concept.description ?? `This lesson covers ${concept.name}.`}`,
+    question_text: `True or False: "${description}" describes ${concept.name}.`,
     question_type: "true_false",
     options: ["True", "False"],
-    correct_answer: "True",
+    correct_answer: isFalseStatement ? "False" : "True",
     hint: concept.description ?? `Think about ${concept.name}.`,
   };
 }
