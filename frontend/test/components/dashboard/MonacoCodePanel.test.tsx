@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MonacoCodePanel from "@/components/dashboard/MonacoCodePanel";
 import { useCircuitStore } from "@/stores/circuitStore";
@@ -56,6 +56,47 @@ describe("MonacoCodePanel", () => {
     render(<MonacoCodePanel />);
     const editor = await screen.findByLabelText("code editor");
     await user.type(editor, "\n# edited");
+    expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
+  });
+
+  it("follows the live circuit while unedited, keeping Run enabled", async () => {
+    render(<MonacoCodePanel />);
+    const editor = (await screen.findByLabelText(
+      "code editor"
+    )) as HTMLTextAreaElement;
+    expect(screen.getByRole("button", { name: /run/i })).toBeEnabled();
+
+    // Simulate a circuit edit on the Circuit tab (not the code buffer itself).
+    act(() => {
+      useCircuitStore.setState({ nodes: [], qubitCount: 3 });
+    });
+
+    await waitFor(() => {
+      expect(editor.value).toContain("QuantumCircuit(3, 3)");
+    });
+    expect(screen.getByRole("button", { name: /run/i })).toBeEnabled();
+  });
+
+  it("does not silently overwrite an edited buffer when the circuit changes again", async () => {
+    const user = userEvent.setup();
+    render(<MonacoCodePanel />);
+    const editor = (await screen.findByLabelText(
+      "code editor"
+    )) as HTMLTextAreaElement;
+
+    await user.type(editor, "\n# edited");
+    expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
+    const editedValue = editor.value;
+
+    // Circuit changes again while the buffer is diverged — buffer must stay frozen.
+    act(() => {
+      useCircuitStore.setState({ nodes: [], qubitCount: 4 });
+    });
+
+    await waitFor(() => {
+      expect(useCircuitStore.getState().qubitCount).toBe(4);
+    });
+    expect(editor.value).toBe(editedValue);
     expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
   });
 });

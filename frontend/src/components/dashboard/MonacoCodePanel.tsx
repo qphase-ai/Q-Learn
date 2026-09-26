@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useCircuitStore } from "@/stores/circuitStore";
 import { nodesToCircuitSpec, circuitSpecToQiskitSource } from "@/lib/circuit-spec";
@@ -23,11 +23,16 @@ export default function MonacoCodePanel() {
 
   const generatedSource = circuitSpecToQiskitSource(nodesToCircuitSpec(nodes, qubitCount));
   const [buffer, setBuffer] = useState(generatedSource);
+  const prevGeneratedRef = useRef(generatedSource);
 
   // Follow the live circuit as it's edited on the canvas, as long as the
   // student hasn't diverged the buffer yet.
   useEffect(() => {
-    setBuffer((current) => (current === generatedSource ? generatedSource : current));
+    setBuffer((current) => {
+      const wasFollowing = current === prevGeneratedRef.current;
+      prevGeneratedRef.current = generatedSource;
+      return wasFollowing ? generatedSource : current;
+    });
   }, [generatedSource]);
 
   const isEdited = buffer !== generatedSource;
