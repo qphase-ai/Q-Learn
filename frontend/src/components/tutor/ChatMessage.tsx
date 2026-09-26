@@ -24,10 +24,12 @@ export default function ChatMessage({ message }: { message: TutorMessage }) {
           "max-w-[90%] rounded-lg px-3 py-2 text-sm leading-[1.6]",
           isUser
             ? "bg-cyber-cyan/15 text-foreground"
-            : "bg-white/[0.03] text-foreground"
+            : message.error
+              ? "border border-error/40 bg-error/10 text-error"
+              : "bg-white/[0.03] text-foreground"
         )}
       >
-        {isUser ? (
+        {isUser || message.error ? (
           <p className="whitespace-pre-wrap">{message.content}</p>
         ) : (
           <div className="tutor-markdown space-y-2">

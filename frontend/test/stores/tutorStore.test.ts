@@ -118,10 +118,25 @@ describe("sendMessage", () => {
     expect(unsubscribed).toBe(true);
   });
 
-  it("onComplete with an error clears isStreaming without throwing", async () => {
+  it("onComplete with an error surfaces a visible error message on the assistant turn", async () => {
     await useTutorStore.getState().sendMessage("hi");
     capturedOnComplete!({ error: "llm exploded" });
 
+    const assistant = useTutorStore.getState().messages[1];
     expect(useTutorStore.getState().isStreaming).toBe(false);
+    expect(assistant.error).toBe(true);
+    expect(assistant.content).toMatch(/unavailable/i);
+    expect(assistant.content).not.toBe("");
+  });
+
+  it("keeps streamed content when complete carries an error after tokens arrived", async () => {
+    await useTutorStore.getState().sendMessage("hi");
+    capturedOnToken!("partial answer");
+    capturedOnComplete!({ error: "late failure" });
+
+    const assistant = useTutorStore.getState().messages[1];
+    // Real content already streamed — don't overwrite it with the error notice.
+    expect(assistant.content).toBe("partial answer");
+    expect(assistant.error).toBeUndefined();
   });
 });

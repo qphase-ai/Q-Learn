@@ -133,4 +133,6 @@ export interface TutorMessage {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
+  /** Set when the tutor stream ended in an error (surfaced from `complete`). */
+  error?: boolean;
 }
