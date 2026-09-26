@@ -46,7 +46,6 @@ export default function LabShell({
 
   function askTutor(tab: AskableTab) {
     setActiveTutorTab(tab);
-    if (askedTutorTabs.has(tab)) return;
     setTutorAskError(null);
     useTutorStore
       .getState()

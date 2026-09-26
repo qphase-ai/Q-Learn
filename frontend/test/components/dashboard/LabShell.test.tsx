@@ -25,10 +25,19 @@ vi.mock("@/components/dashboard/CurriculumSidebar", () => ({
   ),
 }));
 vi.mock("@/components/dashboard/DashboardTutorPanel", () => ({
-  default: ({ activeTab, askedTabs }: { activeTab: string; askedTabs: Set<string> }) => (
+  default: ({
+    activeTab,
+    askedTabs,
+    onAsk,
+  }: {
+    activeTab: string;
+    askedTabs: Set<string>;
+    onAsk: (tab: "explain" | "hints" | "next") => void;
+  }) => (
     <div>
       <span>active-tab:{activeTab}</span>
       <span>asked-tabs:{Array.from(askedTabs).join(",")}</span>
+      <button onClick={() => onAsk("explain")}>ask-explain</button>
     </div>
   ),
 }));
@@ -103,5 +112,19 @@ describe("LabShell", () => {
     await user.click(screen.getByText("trigger-explain"));
     expect(sendMessage).toHaveBeenCalledWith("Explain my circuit");
     await waitFor(() => expect(screen.getByText("active-tab:explain")).toBeInTheDocument());
+  });
+
+  it("asking the same tab again re-sends the canned prompt instead of no-op'ing", async () => {
+    const user = userEvent.setup();
+    render(
+      <LabShell sidebarProps={{ loading: false, error: null, onRetry: vi.fn() }}>
+        {() => <div>ContentSlot</div>}
+      </LabShell>
+    );
+    await user.click(screen.getByText("ask-explain"));
+    await waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByText("ask-explain"));
+    await waitFor(() => expect(sendMessage).toHaveBeenCalledTimes(2));
   });
 });
