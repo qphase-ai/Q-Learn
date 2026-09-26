@@ -126,13 +126,26 @@ describe("CentralWorkspace", () => {
     expect(screen.queryByText("LessonContentMock")).not.toBeInTheDocument();
   });
 
-  it("lockedTab='circuit' renders the circuit branch in a flex-1 container, not the fixed 420px preview height", () => {
+  it("lockedTab='circuit' keeps the canvas row at a fixed 420px height", () => {
     render(
       <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
     );
-    const container = screen.getByText("GatePaletteMock").closest("div.flex.h-full")
-      ?? screen.getByText("GatePaletteMock").parentElement?.parentElement;
-    expect(container?.className ?? "").not.toContain("h-[420px]");
+    // The canvas row is GatePaletteMock's direct parent — it stays h-[420px] in
+    // both locked and unlocked mode after Step 10's restructuring; only the
+    // outer wrapper (asserted separately below) grows to flex-1 when locked.
+    const canvasRow = screen.getByText("GatePaletteMock").parentElement;
+    expect(canvasRow?.className ?? "").toContain("h-[420px]");
+  });
+
+  it("lockedTab='circuit' wraps the canvas row and results panel in a flex-1 scrollable container", () => {
+    useCircuitStore.setState({ runState: "success" });
+    render(
+      <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
+    );
+    const canvasRow = screen.getByText("GatePaletteMock").parentElement;
+    const outerWrapper = canvasRow?.parentElement;
+    expect(outerWrapper?.className ?? "").toContain("flex-1");
+    expect(outerWrapper?.contains(screen.getByText("ResultsPanelMock"))).toBe(true);
   });
 
   it("lockedTab='circuit' shows CircuitResultsPanel below the canvas once a run has happened", () => {
