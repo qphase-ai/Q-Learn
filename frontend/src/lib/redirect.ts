@@ -12,8 +12,8 @@
  * or effects, never during SSR/prerender.
  */
 export function safeRedirectTarget(): string {
-  if (typeof window === "undefined") return "/dashboard";
+  if (typeof window === "undefined") return "/learn";
   const from = new URLSearchParams(window.location.search).get("from");
   if (from && from.startsWith("/") && !from.startsWith("//")) return from;
-  return "/dashboard";
+  return "/learn";
 }

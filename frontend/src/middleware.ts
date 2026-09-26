@@ -37,7 +37,7 @@ export function middleware(request: NextRequest) {
 
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
   if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/learn", request.url));
   }
 
   return NextResponse.next();

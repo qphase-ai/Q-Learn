@@ -9,29 +9,42 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ hydrate, logout: vi.fn() }) }));
+vi.mock("katex/dist/katex.min.css", () => ({}));
 vi.mock("@/stores/tutorStore", () => ({
-  useTutorStore: (sel: (s: { messages: []; isStreaming: boolean; suggestedPrompts: string[]; sendMessage: () => void }) => unknown) =>
-    sel({ messages: [], isStreaming: false, suggestedPrompts: [], sendMessage: vi.fn() }),
+  useTutorStore: (
+    sel: (s: {
+      messages: [];
+      isStreaming: boolean;
+      suggestedPrompts: string[];
+      sendMessage: () => void;
+    }) => unknown
+  ) => sel({ messages: [], isStreaming: false, suggestedPrompts: [], sendMessage: vi.fn() }),
 }));
 
 beforeEach(() => {
   hydrate.mockClear();
-  useShellStore.setState({ tutorOpen: false, bottomPanelOpen: true, activeWorkspace: "dashboard", bottomPanelTab: "probabilities" });
+  useShellStore.setState({
+    tutorOpen: false,
+    bottomPanelOpen: true,
+    activeWorkspace: "dashboard",
+    bottomPanelTab: "probabilities",
+  });
 });
 
 describe("AppShell", () => {
-  it("mounts all zones and renders children", () => {
+  it("mounts the global header, primary nav, tutor, and renders children", () => {
     render(
       <AppShell>
         <div>WORKSPACE CONTENT</div>
       </AppShell>
     );
-    expect(screen.getByRole("banner")).toBeInTheDocument(); // TitleBar
-    expect(screen.getByRole("navigation", { name: /workspaces/i })).toBeInTheDocument(); // ActivityBar
+    expect(screen.getByRole("banner")).toBeInTheDocument(); // GlobalHeader
+    expect(
+      screen.getByRole("navigation", { name: /primary navigation/i })
+    ).toBeInTheDocument(); // LeftNav
     expect(screen.getByText("WORKSPACE CONTENT")).toBeInTheDocument(); // WorkspaceArea
-    expect(screen.getByRole("button", { name: /open ai tutor/i })).toBeInTheDocument(); // TutorFAB
-    expect(screen.getByRole("region", { name: /simulation results/i })).toBeInTheDocument(); // BottomPanel
-    expect(screen.getByRole("contentinfo")).toBeInTheDocument(); // StatusBar
+    // Tutor collapsed → at least one "Open AI Tutor" affordance is present
+    expect(screen.getAllByRole("button", { name: /open ai tutor/i }).length).toBeGreaterThan(0);
   });
 
   it("hydrates the session on mount and syncs the workspace from the pathname", () => {

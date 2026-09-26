@@ -20,7 +20,7 @@ export default function RootPage() {
       process.env.NEXT_PUBLIC_DEV_NO_AUTH === "1";
     const authed = document.cookie.includes("qlearn-auth=1");
     if (authed || devNoAuth) {
-      router.replace("/dashboard");
+      router.replace("/learn");
     } else {
       setShow(true);
     }

@@ -25,6 +25,17 @@
     --warning-ds: 38 92% 50%;
     --error-ds: 0 91% 65%;
   }
+
+  /* Light theme overrides — applied when <html> carries the `light` class
+     (see hooks/useTheme.ts). Dark remains the default quantum-lab palette. */
+  :root.light {
+    --background: 210 20% 98%;
+    --surface: 0 0% 100%;
+    --elevated: 210 20% 96%;
+    --foreground: 222 30% 12%;
+    --muted-foreground: 220 9% 42%;
+    --border-ds: 222 20% 12%;
+  }
 }
 
 /* CIRCUIT PALETTE — DO NOT MODIFY (consumed by circuit builder node components) */

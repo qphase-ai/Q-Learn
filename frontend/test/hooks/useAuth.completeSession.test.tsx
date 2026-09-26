@@ -41,7 +41,7 @@ describe("useAuth.completeSession", () => {
     await expect(result.current.completeSession("tok")).resolves.toBeUndefined();
 
     expect(useAuthStore.getState().jwt).toBe("tok");
-    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(replace).toHaveBeenCalledWith("/learn");
   });
 
   it("sets the user and redirects on a successful profile fetch", async () => {
@@ -55,7 +55,7 @@ describe("useAuth.completeSession", () => {
     await result.current.completeSession("tok");
 
     expect(useAuthStore.getState().user?.email).toBe("a@b.com");
-    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(replace).toHaveBeenCalledWith("/learn");
   });
 
   it("honors the middleware ?from param for an internal path", async () => {
@@ -83,7 +83,7 @@ describe("useAuth.completeSession", () => {
     const { result } = renderHook(() => useAuth());
     await result.current.completeSession("tok");
 
-    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(replace).toHaveBeenCalledWith("/learn");
   });
 });
 
@@ -95,7 +95,7 @@ describe("useAuth.redirectIfAuthenticated", () => {
     await result.current.redirectIfAuthenticated();
 
     expect(useAuthStore.getState().jwt).toBe("tok");
-    expect(replace).toHaveBeenCalledWith("/dashboard");
+    expect(replace).toHaveBeenCalledWith("/learn");
   });
 
   it("does nothing when there is no session", async () => {

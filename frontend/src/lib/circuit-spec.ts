@@ -97,3 +97,74 @@ export function nodesToCircuitSpec(
     gates,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Qiskit code generation: CircuitSpec → runnable Qiskit Python
+// ---------------------------------------------------------------------------
+
+// Single-qubit gate type → Qiskit method name.
+const SINGLE_QUBIT_METHODS: Record<string, string> = {
+  H: "h",
+  X: "x",
+  Y: "y",
+  Z: "z",
+  S: "s",
+  T: "t",
+  I: "id",
+};
+
+// Two-qubit gate type → Qiskit method name (called as qc.method(control, target)).
+const TWO_QUBIT_METHODS: Record<string, string> = {
+  CX: "cx",
+  CZ: "cz",
+  SWAP: "swap",
+};
+
+/**
+ * Generate runnable Qiskit Python for a `CircuitSpec`. This is a deterministic
+ * translation of the circuit the student has actually built — not sample code.
+ * The output mirrors the panel shown in the reference: build the circuit, apply
+ * each gate in order, measure, then run on the Aer simulator.
+ */
+export function specToQiskit(spec: CircuitSpec, name = "Untitled"): string {
+  const lines: string[] = [];
+  const safeName = name.trim() || "Untitled";
+
+  lines.push("from qiskit import QuantumCircuit");
+  lines.push("from qiskit_aer import AerSimulator");
+  lines.push("");
+  lines.push(`# ${safeName} — ${spec.qubits}-qubit circuit`);
+  lines.push(
+    `qc = QuantumCircuit(${spec.qubits}, ${spec.classical_bits || spec.qubits})`
+  );
+  lines.push("");
+
+  if (spec.gates.length === 0) {
+    lines.push("# (add gates in the circuit builder to generate operations)");
+  }
+
+  for (const gate of spec.gates) {
+    const target = gate.targets[0];
+    if (gate.type === "M") {
+      const classical = gate.classical?.[0] ?? target;
+      lines.push(`qc.measure(${target}, ${classical})`);
+    } else if (TWO_QUBIT_METHODS[gate.type] !== undefined) {
+      const method = TWO_QUBIT_METHODS[gate.type];
+      const control = gate.control ?? target;
+      lines.push(`qc.${method}(${control}, ${target})`);
+    } else if (SINGLE_QUBIT_METHODS[gate.type] !== undefined) {
+      lines.push(`qc.${SINGLE_QUBIT_METHODS[gate.type]}(${target})`);
+    } else {
+      lines.push(`# unsupported gate: ${gate.type}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("# Execute on the Aer simulator");
+  lines.push("simulator = AerSimulator()");
+  lines.push("result = simulator.run(qc, shots=1024).result()");
+  lines.push("counts = result.get_counts()");
+  lines.push("print(counts)");
+
+  return lines.join("\n");
+}

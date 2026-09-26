@@ -1,5 +1,5 @@
-import LearnWorkspace from "@/components/learn/LearnWorkspace";
+import LearnScreen from "@/components/workspace/LearnScreen";
 
 export default function LearnPage() {
-  return <LearnWorkspace />;
+  return <LearnScreen />;
 }
