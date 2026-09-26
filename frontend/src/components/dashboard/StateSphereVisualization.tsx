@@ -16,7 +16,20 @@ import { useCircuitStore } from "@/stores/circuitStore";
  * off this as physics.
  */
 
-const PALETTE = ["#B026FF", "#00F0FF", "#39FF14", "#f97316", "#f85149"];
+const PALETTE_CLASSES = [
+  "fill-electric-purple",
+  "fill-cyber-cyan",
+  "fill-neon-green",
+  "fill-warning",
+  "fill-error",
+];
+const PALETTE_BG_CLASSES = [
+  "bg-electric-purple",
+  "bg-cyber-cyan",
+  "bg-neon-green",
+  "bg-warning",
+  "bg-error",
+];
 
 function angleForBitstring(key: string): number {
   let hash = 0;
@@ -65,13 +78,13 @@ export default function StateSphereVisualization() {
           stroke="var(--wire)"
           strokeOpacity={0.5}
         />
-        <text x={cx + r + 12} y={cy + 4} fontSize="10" fill="var(--text-secondary)">x</text>
-        <text x={cx - 6} y={cy - r - 14} fontSize="10" fill="var(--text-secondary)">z</text>
+        <text x={cx + r + 12} y={cy + 4} fontSize="10" className="fill-muted-foreground">x</text>
+        <text x={cx - 6} y={cy - r - 14} fontSize="10" className="fill-muted-foreground">z</text>
         <text
           x={cx + (r + 10) * 0.6 + 4}
           y={cy - (r + 10) * 0.6}
           fontSize="10"
-          fill="var(--text-secondary)"
+          className="fill-muted-foreground"
         >
           y
         </text>
@@ -81,14 +94,13 @@ export default function StateSphereVisualization() {
           const mr = r * 0.9;
           const x = cx + mr * Math.cos(angle);
           const y = cy + mr * 0.45 * Math.sin(angle);
-          const color = PALETTE[i % PALETTE.length];
           return (
             <circle
               key={key}
               cx={x}
               cy={y}
               r={4 + prob * 8}
-              fill={color}
+              className={PALETTE_CLASSES[i % PALETTE_CLASSES.length]}
               opacity={0.5 + prob * 0.5}
             />
           );
@@ -103,8 +115,7 @@ export default function StateSphereVisualization() {
               className="flex items-center gap-1.5 rounded-full bg-white/[0.03] px-2 py-0.5 text-xs text-foreground"
             >
               <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: PALETTE[i % PALETTE.length] }}
+                className={`h-2 w-2 rounded-full ${PALETTE_BG_CLASSES[i % PALETTE_BG_CLASSES.length]}`}
                 aria-hidden
               />
               |{key}⟩ ({prob.toFixed(2)})
