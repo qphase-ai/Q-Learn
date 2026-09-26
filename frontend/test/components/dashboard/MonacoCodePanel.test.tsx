@@ -77,6 +77,22 @@ describe("MonacoCodePanel", () => {
     expect(screen.getByRole("button", { name: /run/i })).toBeEnabled();
   });
 
+  it("shows the no-backend-sandbox tooltip on hover once the buffer is edited", async () => {
+    const user = userEvent.setup();
+    render(<MonacoCodePanel />);
+    const editor = await screen.findByLabelText("code editor");
+    await user.type(editor, "\n# edited");
+    const runButton = screen.getByRole("button", { name: /run/i });
+    expect(runButton).toBeDisabled();
+
+    // The trigger is the plain <span> wrapping the disabled button — disabled
+    // DOM elements don't reliably fire the pointer events Radix needs.
+    await user.hover(runButton.parentElement as HTMLElement);
+    expect(
+      await screen.findByText(/no.*sandbox|isn.t connected to a backend sandbox/i)
+    ).toBeInTheDocument();
+  });
+
   it("does not silently overwrite an edited buffer when the circuit changes again", async () => {
     const user = userEvent.setup();
     render(<MonacoCodePanel />);

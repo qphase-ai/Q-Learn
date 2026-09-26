@@ -54,9 +54,18 @@ export default function MonacoCodePanel() {
       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
         <span className="text-sm font-medium text-foreground">circuit.py</span>
         {isEdited ? (
+          // A local TooltipProvider is required here: this file is rendered in
+          // isolation by MonacoCodePanel.test.tsx, without the app-level
+          // TooltipProvider from `app/providers.tsx`. In production this nests
+          // harmlessly inside the root provider.
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>{runButton}</TooltipTrigger>
+              {/* Radix Tooltip needs pointer events the disabled `runButton`
+                  can't reliably fire — wrap it in a plain span, which can,
+                  and trigger off that instead. */}
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>{runButton}</span>
+              </TooltipTrigger>
               <TooltipContent>
                 Custom code execution isn&apos;t connected to a backend sandbox yet — edit the
                 circuit on the Circuit tab to change what runs.
