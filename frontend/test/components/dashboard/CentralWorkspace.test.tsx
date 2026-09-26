@@ -13,9 +13,9 @@ vi.mock("@/components/circuit/GatePalette", () => ({ default: () => <div>GatePal
 vi.mock("@/components/circuit/CircuitCanvas", () => ({ default: () => <div>CircuitCanvasMock</div> }));
 vi.mock("@/components/circuit/CircuitToolbar", () => ({ default: () => <div>CircuitToolbarMock</div> }));
 vi.mock("@/components/dashboard/CircuitCodePanel", () => ({ default: () => <div>CircuitCodeMock</div> }));
-vi.mock("@/components/visualization/ProbabilityChart", () => ({ default: () => <div>ProbChartMock</div> }));
-vi.mock("@/components/visualization/StateVectorTable", () => ({ default: () => <div>StateVectorMock</div> }));
-vi.mock("@/components/dashboard/StateSphereVisualization", () => ({ default: () => <div>SphereMock</div> }));
+vi.mock("@/components/dashboard/CircuitResultsPanel", () => ({
+  default: () => <div>ResultsPanelMock</div>,
+}));
 
 const course: CourseDetail = {
   id: "course-1",
@@ -92,7 +92,7 @@ describe("CentralWorkspace", () => {
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
     await user.click(screen.getByRole("button", { name: /run simulation/i }));
     expect(runSimulation).toHaveBeenCalledOnce();
-    expect(screen.getByText("ProbChartMock")).toBeInTheDocument();
+    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
   });
 
   it("Explain Circuit calls the onExplainCircuit callback", async () => {
@@ -102,12 +102,12 @@ describe("CentralWorkspace", () => {
     expect(onExplainCircuit).toHaveBeenCalledOnce();
   });
 
-  it("shows an error banner in the Simulation tab when the run failed", async () => {
+  it("shows the results panel in the Simulation tab", async () => {
     useCircuitStore.setState({ runState: "error", error: "Backend unreachable" });
     const user = userEvent.setup();
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
     await user.click(screen.getByRole("tab", { name: "Simulation" }));
-    expect(screen.getByText("Backend unreachable")).toBeInTheDocument();
+    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
   });
 
   it("Practice button switches to the Practice tab with a link to /quiz", async () => {
@@ -133,5 +133,17 @@ describe("CentralWorkspace", () => {
     const container = screen.getByText("GatePaletteMock").closest("div.flex.h-full")
       ?? screen.getByText("GatePaletteMock").parentElement?.parentElement;
     expect(container?.className ?? "").not.toContain("h-[420px]");
+  });
+
+  it("lockedTab='circuit' shows CircuitResultsPanel below the canvas once a run has happened", () => {
+    useCircuitStore.setState({ runState: "success" });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
+  });
+
+  it("lockedTab='circuit' hides CircuitResultsPanel before any run", () => {
+    useCircuitStore.setState({ runState: "idle" });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(screen.queryByText("ResultsPanelMock")).not.toBeInTheDocument();
   });
 });

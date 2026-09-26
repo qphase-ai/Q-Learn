@@ -183,7 +183,7 @@ describe("runSimulation", () => {
     expect(body.name).toBe(circuitName);
   });
 
-  it("onResult sets results + runState='success' and opens BottomPanel on 'probabilities'", async () => {
+  it("onResult sets results + runState='success'", async () => {
     useCircuitStore.getState().placeGate("H", 0, 0);
     await useCircuitStore.getState().runSimulation();
 
@@ -202,8 +202,6 @@ describe("runSimulation", () => {
 
     expect(useCircuitStore.getState().results).toEqual(payload);
     expect(useCircuitStore.getState().runState).toBe("success");
-    expect(useShellStore.getState().bottomPanelOpen).toBe(true);
-    expect(useShellStore.getState().bottomPanelTab).toBe("probabilities");
   });
 
   it("onResult with status='failed' sets runState='error' and keeps error_message", async () => {

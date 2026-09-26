@@ -5,7 +5,6 @@ import { nodesToCircuitSpec, xyFromCell } from "@/lib/circuit-spec";
 import { subscribeToCircuitResult } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
-import { useShellStore } from "@/stores/shellStore";
 
 // ---------------------------------------------------------------------------
 // Store interface
@@ -142,11 +141,6 @@ export const useCircuitStore = create<CircuitStore>((set, get) => ({
           results: payload,
           runState: payload.status === "failed" ? "error" : "success",
         });
-
-        // Open the BottomPanel and focus the probabilities tab
-        const shell = useShellStore.getState();
-        if (!shell.bottomPanelOpen) shell.toggleBottomPanel();
-        shell.setBottomPanelTab("probabilities");
 
         unsub();
       }
