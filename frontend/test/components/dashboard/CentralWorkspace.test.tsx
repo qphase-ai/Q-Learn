@@ -88,6 +88,14 @@ describe("CentralWorkspace", () => {
     expect(screen.getByText("CircuitCanvasMock")).toBeInTheDocument();
   });
 
+  it("switches to the Code tab in embedded mode and renders the editor without the file tree", async () => {
+    const user = userEvent.setup();
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
+    await user.click(screen.getByRole("tab", { name: "Code" }));
+    expect(screen.getByText("MonacoCodeMock")).toBeInTheDocument();
+    expect(screen.queryByText("FileTreeMock")).not.toBeInTheDocument();
+  });
+
   it("Run Simulation calls runSimulation and switches to the Simulation tab", async () => {
     const user = userEvent.setup();
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
@@ -159,5 +167,11 @@ describe("CentralWorkspace", () => {
     useCircuitStore.setState({ runState: "idle" });
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
     expect(screen.queryByText("ResultsPanelMock")).not.toBeInTheDocument();
+  });
+
+  it("lockedTab='code' renders both the file tree and the code editor", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="code" />);
+    expect(screen.getByText("FileTreeMock")).toBeInTheDocument();
+    expect(screen.getByText("MonacoCodeMock")).toBeInTheDocument();
   });
 });
