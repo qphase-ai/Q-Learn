@@ -65,15 +65,21 @@ export const useTutorStore = create<TutorStore>((set) => ({
         const citations = (payload.citations ?? []) as Citation[];
         set((s) => ({
           isStreaming: false,
-          messages: s.messages.map((m) =>
-            m.id === assistantId
-              ? {
-                  ...m,
-                  content: payload.content ?? m.content,
-                  citations,
-                }
-              : m
-          ),
+          messages: s.messages.map((m) => {
+            if (m.id !== assistantId) return m;
+            // Surface a tutor-side failure instead of leaving a blank bubble:
+            // the backend publishes `complete` with `{error}` (and no content)
+            // when the model call fails.
+            if (payload.error && !payload.content && !m.content) {
+              return {
+                ...m,
+                content:
+                  "⚠️ The AI Tutor is temporarily unavailable. Please try again in a moment.",
+                error: true,
+              };
+            }
+            return { ...m, content: payload.content ?? m.content, citations };
+          }),
         }));
         useShellStore.setState({ tutorOpen: true });
         unsubscribe();
@@ -91,7 +97,15 @@ export const useTutorStore = create<TutorStore>((set) => ({
         token,
       });
     } catch (err) {
-      set({ isStreaming: false });
+      const detail = err instanceof Error ? err.message : "Request failed";
+      set((s) => ({
+        isStreaming: false,
+        messages: s.messages.map((m) =>
+          m.id === assistantId && !m.content
+            ? { ...m, content: `⚠️ Couldn't reach the AI Tutor: ${detail}`, error: true }
+            : m
+        ),
+      }));
       unsubscribe();
       throw err;
     }
