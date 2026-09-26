@@ -116,4 +116,22 @@ describe("CentralWorkspace", () => {
     await user.click(screen.getByRole("button", { name: /^practice$/i }));
     expect(screen.getByRole("link", { name: /open practice/i })).toHaveAttribute("href", "/quiz");
   });
+
+  it("lockedTab hides the tab switcher and renders only that tab, full height", () => {
+    render(
+      <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
+    );
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.getByText("GatePaletteMock")).toBeInTheDocument();
+    expect(screen.queryByText("LessonContentMock")).not.toBeInTheDocument();
+  });
+
+  it("lockedTab='circuit' renders the circuit branch in a flex-1 container, not the fixed 420px preview height", () => {
+    render(
+      <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
+    );
+    const container = screen.getByText("GatePaletteMock").closest("div.flex.h-full")
+      ?? screen.getByText("GatePaletteMock").parentElement?.parentElement;
+    expect(container?.className ?? "").not.toContain("h-[420px]");
+  });
 });

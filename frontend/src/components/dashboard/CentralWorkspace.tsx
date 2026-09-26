@@ -42,8 +42,12 @@ function keyInsight(probabilities: Record<string, number> | null | undefined): s
 
 export default function CentralWorkspace({
   onExplainCircuit,
+  lockedTab,
+  showTabBar = lockedTab === undefined,
 }: {
   onExplainCircuit: () => void;
+  lockedTab?: CentralTab;
+  showTabBar?: boolean;
 }) {
   const activeCourse = useLearningStore((s) => s.activeCourse);
   const activeLesson = useLearningStore((s) => s.activeLesson);
@@ -54,7 +58,9 @@ export default function CentralWorkspace({
   const error = useCircuitStore((s) => s.error);
   const results = useCircuitStore((s) => s.results);
 
-  const [tab, setTab] = useState<CentralTab>("lesson");
+  const [internalTab, setInternalTab] = useState<CentralTab>("lesson");
+  const tab = lockedTab ?? internalTab;
+  const setTab = setInternalTab;
 
   const modules = activeCourse ? sortedModules(activeCourse) : [];
   const moduleIndex = findModuleIndexForLesson(modules, currentLessonId);
@@ -116,15 +122,17 @@ export default function CentralWorkspace({
         {summary && <p className="mt-1 text-sm text-muted-foreground">{summary}</p>}
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as CentralTab)}>
-        <TabsList>
-          <TabsTrigger value="lesson">Lesson</TabsTrigger>
-          <TabsTrigger value="circuit">Circuit</TabsTrigger>
-          <TabsTrigger value="code">Code</TabsTrigger>
-          <TabsTrigger value="simulation">Simulation</TabsTrigger>
-          <TabsTrigger value="practice">Practice</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {showTabBar && (
+        <Tabs value={tab} onValueChange={(v) => setTab(v as CentralTab)}>
+          <TabsList>
+            <TabsTrigger value="lesson">Lesson</TabsTrigger>
+            <TabsTrigger value="circuit">Circuit</TabsTrigger>
+            <TabsTrigger value="code">Code</TabsTrigger>
+            <TabsTrigger value="simulation">Simulation</TabsTrigger>
+            <TabsTrigger value="practice">Practice</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       {tab === "lesson" && (
         <div className="flex flex-col gap-4">
@@ -140,7 +148,11 @@ export default function CentralWorkspace({
           circuit here is the same circuit reachable from "Open in Circuit
           Builder" on the Learn workspace, not a separate per-lesson copy. */}
       {tab === "circuit" && (
-        <div className="flex h-[420px] overflow-hidden rounded-xl border border-white/10">
+        <div
+          className={`flex overflow-hidden rounded-xl border border-white/10 ${
+            lockedTab ? "flex-1" : "h-[420px]"
+          }`}
+        >
           <GatePalette />
           <div className="flex flex-1 flex-col">
             <CircuitToolbar />
@@ -152,7 +164,7 @@ export default function CentralWorkspace({
       )}
 
       {tab === "code" && (
-        <div className="h-[420px]">
+        <div className={lockedTab ? "flex-1" : "h-[420px]"}>
           <CircuitCodePanel />
         </div>
       )}
