@@ -35,20 +35,28 @@ docker compose up --build
 
 ## Architecture
 
-The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once. Navigation swaps only the `WorkspaceArea` — the surrounding chrome never re-renders.
+The UI is built on a shared **`LabShell`** chrome component (`components/dashboard/LabShell.tsx`) that each top-level route mounts directly — `/dashboard`, `/learn`, `/circuit`, `/code`, and `/quiz` each render their own `LabShell` instance (there is no single app-wide shell mounted from the root layout). `LabShell` renders `DashboardHeader` + `DashboardActivityBar` + an optional `CurriculumSidebar` + its `children` render-prop (passed an `LabShellChildContext` with `onExplainCircuit`) + an optional `DashboardTutorPanel`. Three props drive layout variants:
+- `sidebarCollapsed` — hides `CurriculumSidebar` when true
+- `tutorCollapsed` — hides `DashboardTutorPanel` when true
+- `activityBarDim` — dims `DashboardActivityBar`
+
+`/quiz` sets all three of `sidebarCollapsed`/`tutorCollapsed`/`activityBarDim` for its focus-mode layout (no sidebar, no tutor column, dimmed activity bar). `/dashboard`, `/learn`, `/circuit`, `/code` use the default (expanded) layout.
+
+Inside `LabShell`'s children, `/dashboard` renders the full `CentralWorkspace` with its tab switcher (Lesson/Circuit/Code/Simulation/Practice), while `/learn`, `/circuit`, and `/code` each pass a `lockedTab` prop to `CentralWorkspace` (`"lesson"`, `"circuit"`, `"code"` respectively) so only that one tab renders full-height with no tab switcher (`showTabBar` defaults to `lockedTab === undefined`).
 
 ### Source layout (`src/`)
 
 | Path | Purpose |
 |------|---------|
 | `app/` | Next.js 14 App Router — page files only, no component logic here |
-| `app/layout.tsx` | Root layout — mounts `AppShell` |
+| `app/layout.tsx` | Root layout — fonts, `Providers`; does not mount any shell (each route mounts its own `LabShell`) |
 | `app/auth/` | Login / Register / Forgot-password pages |
-| `app/dashboard/`, `learn/`, `circuit/`, `quiz/`, `pricing/`, `settings/` | Route entry points |
-| `components/shell/` | IDE shell — `AppShell` + zones (`TitleBar`, `ActivityBar`, `TutorFAB`, `BottomPanel`, `StatusBar`, `WorkspacePlaceholder`) |
-| `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas` |
+| `app/dashboard/`, `learn/`, `circuit/`, `code/`, `quiz/`, `pricing/`, `settings/` | Route entry points |
+| `components/dashboard/` | `LabShell`, `CentralWorkspace`, `DashboardHeader`, `DashboardActivityBar`, `CurriculumSidebar`, `DashboardTutorPanel`, `FileTreePanel`, `MonacoCodePanel`, `CircuitResultsPanel`, `DashboardWorkspace`, and other dashboard-owned pieces |
+| `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas`, `CircuitToolbar` |
+| `components/quiz/` | `QuizWorkspace` + its children — `QuizProgressBar`, `QuestionDisplay`, `AnswerOptions`, `HintButton`, `QuizNavigation` |
 | `components/tutor/` | `AITutorPanel` — streaming chat, citation badges, KaTeX math |
-| `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer` (BottomPanel tabs) |
+| `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer`, `ConsoleOutput` — rendered inline (e.g. inside `CircuitResultsPanel`), not in a separate bottom panel |
 | `components/ui/` | Primitive atoms (Button, Badge, etc.) — accessibility baseline via shadcn/ui |
 | `stores/` | Zustand stores — one per domain |
 | `hooks/` | Custom React hooks wrapping store + API logic |
@@ -56,16 +64,17 @@ The UI is a **persistent VS Code-style IDE shell** (`AppShell`) that mounts once
 | `lib/supabase.ts` | Supabase client + Realtime channel subscriptions |
 | `types/index.ts` | Shared TypeScript types (`User`, `Course`, `GateSpec`, `SimulationResult`, `Plan`, …) |
 
-### Shell zones (6, always mounted)
+### LabShell zones
 
-| Zone | Size | Content |
-|------|------|---------|
-| TitleBar | 36px top | Breadcrumb + XP bar + user menu |
-| ActivityBar | 48px left | Mode icons — `dashboard \| learn \| circuit \| code \| quiz \| settings` |
-| WorkspaceArea | fills remainder | Active workspace, lazy-loaded |
-| TutorFAB | floating 48px | `AITutorPanel` overlay — `Ctrl+B` toggles |
-| BottomPanel | 250px bottom | Simulation results / console — `Ctrl+J` toggles |
-| StatusBar | 24px bottom | Current level · mastery · backend status |
+| Zone | Content |
+|------|---------|
+| `DashboardHeader` | Top bar — brand, search, backend status, theme toggle, user menu |
+| `DashboardActivityBar` | Left rail — nav items Learn / Circuits / Code / Practice / Progress / AI Tutor, plus Docs / Feedback / Settings utility icons; dims when `activityBarDim` is set (quiz focus mode). No separate "Dashboard" nav entry — `/dashboard` isn't linked from the activity bar. |
+| `CurriculumSidebar` | Left complementary panel — course/module/lesson tree; omitted when `sidebarCollapsed` |
+| Center content (`children`) | The route's main content — `CentralWorkspace` for `/dashboard`/`/learn`/`/circuit`/`/code`, `QuizWorkspace` for `/quiz` |
+| `DashboardTutorPanel` | Right complementary panel — AI Tutor chat/hints/next-step tabs; omitted when `tutorCollapsed` |
+
+There is no separate `BottomPanel`/`StatusBar`/`TutorFAB` zone anymore — simulation results render inline where needed (`CircuitResultsPanel` in `CentralWorkspace`'s lesson/circuit/code/simulation tabs), and there's no floating tutor FAB. The tutor panel's visibility is a `LabShell` prop (`tutorCollapsed`), not shell-store state — `useShellStore`'s `tutorOpen`/`toggleTutor` are dead (nothing reads `tutorOpen`; only `tutorStore.sendMessage` writes it, as a no-op).
 
 ---
 
@@ -75,7 +84,7 @@ Each store owns one domain. **No store imports from another.** Cross-domain read
 
 | Store | File | Persisted keys |
 |-------|------|---------------|
-| `useShellStore` | `shellStore.ts` | `bottomPanelOpen` |
+| `useShellStore` | `shellStore.ts` | none — only holds `activeWorkspace`/`tutorOpen` (+ `setWorkspace`/`toggleTutor`); the `persist` wrapper was removed |
 | `useAuthStore` | `authStore.ts` | `jwt` only |
 | `useLearningStore` | `learningStore.ts` | `lessonProgress`, `xp`, `streak` |
 | `useCircuitStore` | `circuitStore.ts` | none (session-only) |
@@ -85,9 +94,9 @@ Each store owns one domain. **No store imports from another.** Cross-domain read
 ### Key cross-store flows
 
 - Quiz submitted → `useQuizStore.setScore` → call `useLearningStore.updateMastery`
-- Circuit run succeeds → `useCircuitStore.setResults` + open BottomPanel via `useShellStore`
+- Circuit run succeeds → `useCircuitStore.setResults`; the result renders inline via `CircuitResultsPanel` wherever it's mounted (no shell-level panel toggle needed)
 - Tutor message sent → reads `useLearningStore.currentLessonId` as snapshot for context
-- Quiz workspace entered → `useShellStore.setFocusMode(true)` — collapses both panels
+- Quiz workspace entered → `/quiz` mounts `LabShell` with `sidebarCollapsed`/`tutorCollapsed`/`activityBarDim` all set — the focus-mode layout is a prop passed to `LabShell`, not shell store state
 
 ---
 
@@ -116,8 +125,7 @@ const data = await apiFetch<Course[]>("/api/v1/courses", { token: jwt });
 // Circuit result — subscribe in CircuitCanvas
 supabase.channel(`circuit:${circuitId}`)
   .on("broadcast", { event: "result" }, ({ payload }) => {
-    circuitStore.setResults(payload);
-    shellStore.toggleBottomPanel();   // open on result
+    circuitStore.setResults(payload);   // CircuitResultsPanel re-renders inline
   })
   .subscribe();
 
@@ -139,7 +147,7 @@ Unsubscribe on component unmount to avoid leaking channels.
 - Gates are HTML5 drag sources from `GatePalette`; drop onto a wire creates a node
 - Circuit state (`nodes`, `edges`) lives entirely in `useCircuitStore` — React Flow's `onNodesChange` / `onEdgesChange` must call `setNodes` / `setEdges`
 - Running a circuit: POST circuit definition to `/api/v1/circuits/{id}/execute`, then await Supabase Realtime `result` event
-- BottomPanel tabs for results: **Probabilities** · **State Vector** · **QASM**
+- Results render inline via `CircuitResultsPanel` (in `CentralWorkspace`'s lesson/circuit/code/simulation tabs) — a fixed layout, not tabs: a measurement-probability chart (`ProbabilityChart`) + state-vector table (`StateVectorTable`) side by side with a Bloch-sphere visualization (`StateSphereVisualization`) and a key-insight callout. `QASMViewer` exists under `components/visualization/` but isn't wired into `CircuitResultsPanel`.
 
 ---
 
@@ -213,11 +221,10 @@ Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `.
 
 ## Keyboard Shortcuts
 
+Circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no longer an app-wide shortcut hook (`useKeyboardShortcuts` was retired along with `AppShell`; it drove `Ctrl+B`/`Ctrl+J`/`Ctrl+1…6` for the old TutorFAB/BottomPanel/workspace-switcher, none of which exist anymore). The hook takes an `enabled` flag and is called from `CentralWorkspace`, active only when `lockedTab === "circuit"` (i.e. on the standalone `/circuit` route) — not when the circuit tab is just one of several visible in the embedded `/dashboard` preview:
+
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+B` | Toggle Tutor FAB (AI Tutor overlay) |
-| `Ctrl+J` | Toggle BottomPanel (Simulation / Console) |
-| `Ctrl+1…6` | Switch workspace by index |
 | `Space` (circuit canvas) | Run simulation |
 | `Delete` (circuit canvas) | Remove selected gate |
 | `H / X / C / M` (circuit canvas) | Place H / X / CX / Measurement gate |

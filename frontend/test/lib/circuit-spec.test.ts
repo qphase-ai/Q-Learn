@@ -5,6 +5,7 @@ import {
   nodesToCircuitSpec,
   cellFromXY,
   xyFromCell,
+  circuitSpecToQiskitSource,
   GRID,
 } from "@/lib/circuit-spec";
 
@@ -85,5 +86,58 @@ describe("cellFromXY / xyFromCell round-trip", () => {
     const result = cellFromXY(-100, -100);
     expect(result.qubit).toBeGreaterThanOrEqual(0);
     expect(result.column).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("circuitSpecToQiskitSource", () => {
+  it("renders a QuantumCircuit constructor line with the right qubit/bit counts", () => {
+    const source = circuitSpecToQiskitSource({ qubits: 2, classical_bits: 2, gates: [] });
+    expect(source).toContain("qc = QuantumCircuit(2, 2)");
+  });
+
+  it("maps single-qubit gates to qc.<method>(target)", () => {
+    const source = circuitSpecToQiskitSource({
+      qubits: 1,
+      classical_bits: 1,
+      gates: [{ type: "H", targets: [0] }],
+    });
+    expect(source).toContain("qc.h(0)");
+  });
+
+  it("maps a two-qubit CX gate to qc.cx(control, target)", () => {
+    const source = circuitSpecToQiskitSource({
+      qubits: 2,
+      classical_bits: 2,
+      gates: [{ type: "CX", control: 0, targets: [1] }],
+    });
+    expect(source).toContain("qc.cx(0, 1)");
+  });
+
+  it("maps measurement gates to a single qc.measure([...], [...]) line", () => {
+    const source = circuitSpecToQiskitSource({
+      qubits: 2,
+      classical_bits: 2,
+      gates: [
+        { type: "M", targets: [0], classical: [0] },
+        { type: "M", targets: [1], classical: [1] },
+      ],
+    });
+    expect(source).toContain("qc.measure([0,1], [0,1])");
+  });
+
+  it("emits gate lines in the order given, followed by one measure line", () => {
+    const source = circuitSpecToQiskitSource({
+      qubits: 2,
+      classical_bits: 2,
+      gates: [
+        { type: "H", targets: [0] },
+        { type: "CX", control: 0, targets: [1] },
+        { type: "M", targets: [0], classical: [0] },
+        { type: "M", targets: [1], classical: [1] },
+      ],
+    });
+    const lines = source.split("\n");
+    expect(lines.indexOf("qc.h(0)")).toBeLessThan(lines.indexOf("qc.cx(0, 1)"));
+    expect(lines[lines.length - 1]).toBe("qc.measure([0,1], [0,1])");
   });
 });

@@ -97,3 +97,58 @@ export function nodesToCircuitSpec(
     gates,
   };
 }
+
+// ---------------------------------------------------------------------------
+// CircuitSpec → illustrative Qiskit source (for the dashboard's read-only
+// "Circuit Code" panel — the backend only returns QASM, not Python source).
+// ---------------------------------------------------------------------------
+
+const SINGLE_QUBIT_METHOD: Partial<Record<GateType, string>> = {
+  H: "h",
+  X: "x",
+  Y: "y",
+  Z: "z",
+  S: "s",
+  T: "t",
+  I: "id",
+};
+
+const TWO_QUBIT_METHOD: Partial<Record<GateType, string>> = {
+  CX: "cx",
+  CZ: "cz",
+  SWAP: "swap",
+};
+
+/** Render a `CircuitSpec` as illustrative Qiskit Python source. Pure/deterministic. */
+export function circuitSpecToQiskitSource(spec: CircuitSpec): string {
+  const lines: string[] = [
+    "from qiskit import QuantumCircuit",
+    "from qiskit_aer import AerSimulator",
+    "",
+    `qc = QuantumCircuit(${spec.qubits}, ${spec.classical_bits})`,
+  ];
+
+  const measureTargets: number[] = [];
+
+  for (const gate of spec.gates) {
+    const target = gate.targets[0];
+    if (gate.type === "M") {
+      measureTargets.push(...gate.targets);
+      continue;
+    }
+    if (gate.control !== undefined && TWO_QUBIT_METHOD[gate.type as GateType]) {
+      lines.push(`qc.${TWO_QUBIT_METHOD[gate.type as GateType]}(${gate.control}, ${target})`);
+      continue;
+    }
+    const method = SINGLE_QUBIT_METHOD[gate.type as GateType];
+    if (method) {
+      lines.push(`qc.${method}(${target})`);
+    }
+  }
+
+  if (measureTargets.length > 0) {
+    lines.push(`qc.measure(${JSON.stringify(measureTargets)}, ${JSON.stringify(measureTargets)})`);
+  }
+
+  return lines.join("\n");
+}
