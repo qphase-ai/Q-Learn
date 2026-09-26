@@ -31,8 +31,10 @@ interface NavItem {
 
 export default function DashboardActivityBar({
   onOpenTutor,
+  dim = false,
 }: {
   onOpenTutor?: () => void;
+  dim?: boolean;
 }) {
   const pathname = usePathname();
   const active = workspaceFromPathname(pathname ?? "");
@@ -54,7 +56,9 @@ export default function DashboardActivityBar({
   return (
     <nav
       aria-label="Dashboard navigation"
-      className="flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-surface py-3"
+      className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-surface py-3 transition-opacity ${
+        dim ? "opacity-30" : ""
+      }`}
     >
       <div className="flex flex-col items-center gap-1">
         {navItems.map((item) => (
