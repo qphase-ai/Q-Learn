@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useLearningStore } from "@/stores/learningStore";
 import { useTutorStore } from "@/stores/tutorStore";
 import { useCourseBootstrap } from "@/hooks/useCourseBootstrap";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
