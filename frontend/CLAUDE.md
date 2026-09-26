@@ -69,12 +69,12 @@ Inside `LabShell`'s children, `/dashboard` renders the full `CentralWorkspace` w
 | Zone | Content |
 |------|---------|
 | `DashboardHeader` | Top bar — brand, search, backend status, theme toggle, user menu |
-| `DashboardActivityBar` | Left rail — mode icons (`dashboard \| learn \| circuit \| code \| quiz \| settings`); dims when `activityBarDim` is set (quiz focus mode) |
+| `DashboardActivityBar` | Left rail — nav items Learn / Circuits / Code / Practice / Progress / AI Tutor, plus Docs / Feedback / Settings utility icons; dims when `activityBarDim` is set (quiz focus mode). No separate "Dashboard" nav entry — `/dashboard` isn't linked from the activity bar. |
 | `CurriculumSidebar` | Left complementary panel — course/module/lesson tree; omitted when `sidebarCollapsed` |
 | Center content (`children`) | The route's main content — `CentralWorkspace` for `/dashboard`/`/learn`/`/circuit`/`/code`, `QuizWorkspace` for `/quiz` |
 | `DashboardTutorPanel` | Right complementary panel — AI Tutor chat/hints/next-step tabs; omitted when `tutorCollapsed` |
 
-There is no separate `BottomPanel`/`StatusBar`/`TutorFAB` zone anymore — simulation results render inline where needed (`CircuitResultsPanel` in `CentralWorkspace`'s circuit/simulation tabs), and there's no floating tutor FAB (the tutor panel is a persistent column, toggled via `useShellStore.toggleTutor`).
+There is no separate `BottomPanel`/`StatusBar`/`TutorFAB` zone anymore — simulation results render inline where needed (`CircuitResultsPanel` in `CentralWorkspace`'s lesson/circuit/code/simulation tabs), and there's no floating tutor FAB. The tutor panel's visibility is a `LabShell` prop (`tutorCollapsed`), not shell-store state — `useShellStore`'s `tutorOpen`/`toggleTutor` are dead (nothing reads `tutorOpen`; only `tutorStore.sendMessage` writes it, as a no-op).
 
 ---
 
@@ -147,7 +147,7 @@ Unsubscribe on component unmount to avoid leaking channels.
 - Gates are HTML5 drag sources from `GatePalette`; drop onto a wire creates a node
 - Circuit state (`nodes`, `edges`) lives entirely in `useCircuitStore` — React Flow's `onNodesChange` / `onEdgesChange` must call `setNodes` / `setEdges`
 - Running a circuit: POST circuit definition to `/api/v1/circuits/{id}/execute`, then await Supabase Realtime `result` event
-- Results render inline via `CircuitResultsPanel` (in `CentralWorkspace`'s circuit/simulation tabs): **Probabilities** · **State Vector** · **QASM** tabs, backed by `ProbabilityChart`, `StateVectorTable`, `QASMViewer`
+- Results render inline via `CircuitResultsPanel` (in `CentralWorkspace`'s lesson/circuit/code/simulation tabs) — a fixed layout, not tabs: a measurement-probability chart (`ProbabilityChart`) + state-vector table (`StateVectorTable`) side by side with a Bloch-sphere visualization (`StateSphereVisualization`) and a key-insight callout. `QASMViewer` exists under `components/visualization/` but isn't wired into `CircuitResultsPanel`.
 
 ---
 
@@ -221,7 +221,7 @@ Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `.
 
 ## Keyboard Shortcuts
 
-Circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no longer an app-wide shortcut hook (`useKeyboardShortcuts` was retired along with `AppShell`; it drove `Ctrl+B`/`Ctrl+J`/`Ctrl+1…6` for the old TutorFAB/BottomPanel/workspace-switcher, none of which exist anymore):
+Circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no longer an app-wide shortcut hook (`useKeyboardShortcuts` was retired along with `AppShell`; it drove `Ctrl+B`/`Ctrl+J`/`Ctrl+1…6` for the old TutorFAB/BottomPanel/workspace-switcher, none of which exist anymore). The hook takes an `enabled` flag and is called from `CentralWorkspace`, active only when `lockedTab === "circuit"` (i.e. on the standalone `/circuit` route) — not when the circuit tab is just one of several visible in the embedded `/dashboard` preview:
 
 | Shortcut | Action |
 |----------|--------|

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CircuitBoard,
+  Code2,
   ListChecks,
   BarChart3,
   Sparkles,
@@ -42,6 +43,7 @@ export default function DashboardActivityBar({
   const navItems: NavItem[] = [
     { label: "Learn", icon: BookOpen, href: "/learn" },
     { label: "Circuits", icon: CircuitBoard, href: "/circuit" },
+    { label: "Code", icon: Code2, href: "/code" },
     { label: "Practice", icon: ListChecks, href: "/quiz" },
     { label: "Progress", icon: BarChart3, disabledHint: "Progress overview coming soon" },
     { label: "AI Tutor", icon: Sparkles, onClick: onOpenTutor },

@@ -12,4 +12,13 @@ describe("DashboardActivityBar", () => {
     );
     expect(screen.getByLabelText("Dashboard navigation")).toHaveClass("opacity-30");
   });
+
+  it("includes a Code nav entry linking to /code", () => {
+    render(
+      <TooltipProvider>
+        <DashboardActivityBar />
+      </TooltipProvider>
+    );
+    expect(screen.getByRole("link", { name: /code/i })).toHaveAttribute("href", "/code");
+  });
 });
