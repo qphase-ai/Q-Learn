@@ -12,7 +12,8 @@ vi.mock("@/components/learn/LessonContent", () => ({
 vi.mock("@/components/circuit/GatePalette", () => ({ default: () => <div>GatePaletteMock</div> }));
 vi.mock("@/components/circuit/CircuitCanvas", () => ({ default: () => <div>CircuitCanvasMock</div> }));
 vi.mock("@/components/circuit/CircuitToolbar", () => ({ default: () => <div>CircuitToolbarMock</div> }));
-vi.mock("@/components/dashboard/CircuitCodePanel", () => ({ default: () => <div>CircuitCodeMock</div> }));
+vi.mock("@/components/dashboard/FileTreePanel", () => ({ default: () => <div>FileTreeMock</div> }));
+vi.mock("@/components/dashboard/MonacoCodePanel", () => ({ default: () => <div>MonacoCodeMock</div> }));
 vi.mock("@/components/dashboard/CircuitResultsPanel", () => ({
   default: () => <div>ResultsPanelMock</div>,
 }));

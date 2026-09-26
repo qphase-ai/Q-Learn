@@ -20,7 +20,8 @@ import ConceptCard from "@/components/dashboard/ConceptCard";
 import GatePalette from "@/components/circuit/GatePalette";
 import CircuitCanvas from "@/components/circuit/CircuitCanvas";
 import CircuitToolbar from "@/components/circuit/CircuitToolbar";
-import CircuitCodePanel from "@/components/dashboard/CircuitCodePanel";
+import FileTreePanel from "@/components/dashboard/FileTreePanel";
+import MonacoCodePanel from "@/components/dashboard/MonacoCodePanel";
 import CircuitResultsPanel from "@/components/dashboard/CircuitResultsPanel";
 
 type CentralTab = "lesson" | "circuit" | "code" | "simulation" | "practice";
@@ -150,8 +151,11 @@ export default function CentralWorkspace({
       )}
 
       {tab === "code" && (
-        <div className={lockedTab ? "flex-1" : "h-[420px]"}>
-          <CircuitCodePanel />
+        <div className={`flex overflow-hidden rounded-xl ${lockedTab ? "flex-1" : "h-[420px] border border-white/10"}`}>
+          {lockedTab && <FileTreePanel activeFile="circuit.py" />}
+          <div className="flex-1">
+            <MonacoCodePanel />
+          </div>
         </div>
       )}
 
