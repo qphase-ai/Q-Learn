@@ -43,9 +43,6 @@ beforeEach(() => {
   useAuthStore.setState({ jwt: "t", user: null, isLoading: false });
 
   useShellStore.setState({
-    bottomPanelOpen: false,
-    bottomPanelTab: "probabilities",
-    focusMode: false,
     activeWorkspace: "circuit",
   });
 
