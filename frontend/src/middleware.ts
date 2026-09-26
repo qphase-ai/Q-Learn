@@ -7,7 +7,11 @@ const PROTECTED_ROUTES = [
   "/circuit",
   "/code",
   "/quiz",
+  "/progress",
   "/settings",
+  "/pricing",
+  "/docs",
+  "/feedback",
 ];
 
 const AUTH_ROUTES = ["/auth/login", "/auth/register"];
