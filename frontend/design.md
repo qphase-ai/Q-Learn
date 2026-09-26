@@ -160,12 +160,26 @@ Base: 14px root. Monospace everywhere except lesson prose. Math notation rendere
 
 ## Workspace Layouts
 
-### Dashboard
+### Dashboard (Integrated Quantum Learning Laboratory)
 
-Two-column layout. BottomPanel stays closed.
+Multi-column VS Code-style learning studio that unifies curriculum tracking, active concept learning, circuit construction, deterministic simulation, and real-time AI tutoring:
 
-- **Left 40%:** Welcome greeting + CTA, Learning Path Timeline (vertical scrollable level list)
-- **Right 60%:** Skill Mastery chart (horizontal bars per concept), Next Activity Card (deep-links into workspace), Recent Activity Feed
+- **Top Navigation Bar (`DashboardHeader`):** Full-width header (56px) featuring the Q-Learn quantum brand, central global search with `⌘ K` keyboard shortcut badge, live backend health status (`● API Online`), Level 3 Progress gradient bar (`60%`), theme switcher (dark/light), and user profile badge with dropdown menu.
+- **Left Activity Bar (`DashboardActivityBar`):** Vertical mode switcher (68px) with quick navigation icons (`Learn` [active purple pill], `Circuits`, `Practice`, `Progress`, `AI Tutor`) and bottom utilities (`👑 Upgrade` button with gold gradient border, `Docs`, `Feedback`, `Settings`).
+- **Quantum Curriculum Sidebar (`CurriculumSidebar`):** 250px accordion managing 12 learning levels from fundamentals to Shor's algorithm:
+  - Level 1 & 2: Completed state with green checkmark circles.
+  - Level 3 (*Quantum Gates and Circuits*): Active and expanded with electric purple accent bar, `3/6` lesson badge, and interactive sub-items (`3.1 Single Qubit Gates` through `3.6 Practice Problems`, highlighting `3.2 Multi-Qubit Gates` with cyan/purple selection indicator).
+  - Levels 4–12: Progressive lock states.
+- **Central Learning Workspace (`CentralWorkspace`):** Main interactive workspace (scrollable, flex-1) structured into:
+  - *Workspace Toolbar & Breadcrumbs:* `Level 3 > 3.2 Multi-Qubit Gates` breadcrumb with action buttons (`▶ Run Simulation` [electric purple glow], `✨ Explain Circuit`, `≡ Practice`).
+  - *Lesson Overview:* Lesson title and summary text.
+  - *Workspace Tabs:* Pill-style switcher (`Lesson`, `Circuit`, `Code`, `Simulation`, `Practice`).
+  - *Concept Explainer Card:* CNOT gate & entanglement theory card with Dirac state transition equations and SVG schematic of control ($q_0$) and target ($q_1$) qubits.
+  - *Split Circuit & Code Studio:* Side-by-side split featuring:
+    - *Quantum Circuit Canvas:* Undo/redo/clear controls, gate palette bar (`[H] [X] [Y] [Z] [S] [T] [+ CNOT] [Measure ▾]`), and 2-qubit interactive wire layout.
+    - *Circuit Code (Qiskit):* Syntax-highlighted Python editor with line numbers and 1-click clipboard copy action.
+  - *Simulation Results Panel:* Real-time execution telemetry displaying measurement probabilities bar chart ($|00\rangle, |01\rangle, |10\rangle, |11\rangle$), collapsible KaTeX Dirac state vector formula ($|\psi\rangle = \frac{1}{\sqrt{2}}(|10\rangle + |11\rangle)$), 3D Quantum State Bloch sphere (`StateSphereVisualization`) with coordinate axes and orbital latitude/longitude rings, and key insight callout.
+- **Right AI Tutor Panel (`DashboardTutorPanel`):** 340px docked tutoring panel featuring live status indicator (`● Online`), mode tabs (`Chat`, `Explain`, `Hints`, `Next Steps`), "Explain My Circuit" action hero card, step-by-step circuit explanation breakdown, "Why this is important?" callout, "Next Step Recommendation" challenge card, and follow-up question chat input.
 
 ### Learn
 
