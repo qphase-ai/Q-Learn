@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import DashboardTutorPanel from "@/components/dashboard/DashboardTutorPanel";
+import DashboardTutorPanel, { type AskableTab } from "@/components/dashboard/DashboardTutorPanel";
 import { useTutorStore } from "@/stores/tutorStore";
 
 vi.mock("katex/dist/katex.min.css", () => ({}));
@@ -67,7 +67,7 @@ describe("DashboardTutorPanel", () => {
       <DashboardTutorPanel
         activeTab="hints"
         onTabChange={vi.fn()}
-        askedTabs={new Set(["hints"])}
+        askedTabs={new Set<AskableTab>(["hints"])}
         onAsk={vi.fn()}
         askError={null}
       />
