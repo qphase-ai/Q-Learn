@@ -2,7 +2,7 @@
 
 import { Lightbulb } from "lucide-react";
 
-/** Costs mastery points, one hint per question, per design.md's quiz spec. */
+/** One hint per question; showing it does not affect mastery scoring. */
 export default function HintButton({
   hint,
   used,
@@ -29,7 +29,7 @@ export default function HintButton({
         className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-warning hover:bg-warning/10"
       >
         <Lightbulb size={13} aria-hidden />
-        Show hint (costs mastery points)
+        Show hint
       </button>
     </div>
   );
