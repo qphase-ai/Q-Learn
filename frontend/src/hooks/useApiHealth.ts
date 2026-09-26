@@ -16,7 +16,8 @@ export function useApiHealth(): ApiHealth {
       .then((res) => {
         if (!cancelled) setHealth(res.ok ? "online" : "offline");
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn("useApiHealth: health check failed", err);
         if (!cancelled) setHealth("offline");
       });
     return () => {

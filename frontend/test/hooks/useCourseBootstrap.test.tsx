@@ -62,10 +62,29 @@ describe("useCourseBootstrap", () => {
     await waitFor(() => expect(loadLesson).toHaveBeenCalledWith("l0"));
   });
 
-  it("onRetry re-calls loadCourses and clears the error", async () => {
+  it("onRetry re-calls loadCourses", async () => {
     const { result } = renderHook(() => useCourseBootstrap());
     loadCourses.mockClear();
     result.current.onRetry();
     expect(loadCourses).toHaveBeenCalledOnce();
+  });
+
+  it("sets coursesError when loadCourses rejects, and onRetry clears it on success", async () => {
+    loadCourses.mockRejectedValueOnce(new Error("network down"));
+    const { result } = renderHook(() => useCourseBootstrap());
+
+    await waitFor(() => expect(result.current.coursesError).toBe("network down"));
+
+    result.current.onRetry();
+    await waitFor(() => expect(result.current.coursesError).toBeNull());
+  });
+
+  it("sets coursesError when the course-detail fetch fails after the course list loads", async () => {
+    loadCourse.mockRejectedValueOnce(new Error("course fetch failed"));
+    useLearningStore.setState({
+      courses: [{ id: "course-1", title: "Quantum Computing", description: null, difficulty: "beginner" }],
+    });
+    const { result } = renderHook(() => useCourseBootstrap());
+    await waitFor(() => expect(result.current.coursesError).toBe("course fetch failed"));
   });
 });

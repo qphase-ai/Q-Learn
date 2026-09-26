@@ -39,7 +39,10 @@ export function useCourseBootstrap() {
 
   useEffect(() => {
     if (!coursesLoading && !activeCourse && courses.length > 0) {
-      void loadCourse(courses[0].id);
+      loadCourse(courses[0].id).catch((err) => {
+        console.error("useCourseBootstrap: failed to load course", err);
+        setCoursesError(err instanceof Error ? err.message : "Failed to load course");
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coursesLoading, activeCourse, courses]);
@@ -48,16 +51,23 @@ export function useCourseBootstrap() {
     if (!activeCourse || currentLessonId) return;
     const modules = sortedModules(activeCourse);
     let fallback: string | null = null;
+    let target: string | null = null;
     for (const mod of modules) {
       for (const lesson of sortedLessons(mod)) {
         if (!fallback) fallback = lesson.id;
         if (!isLessonCompleted(lessonProgress, lesson.id)) {
-          void loadLesson(lesson.id);
-          return;
+          target = lesson.id;
+          break;
         }
       }
+      if (target) break;
     }
-    if (fallback) void loadLesson(fallback);
+    const lessonId = target ?? fallback;
+    if (!lessonId) return;
+    loadLesson(lessonId).catch((err) => {
+      console.error("useCourseBootstrap: failed to load lesson", err);
+      setCoursesError(err instanceof Error ? err.message : "Failed to load lesson");
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCourse, currentLessonId]);
 
