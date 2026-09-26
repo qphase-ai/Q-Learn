@@ -8,6 +8,7 @@ import DashboardTutorPanel, {
   type AskableTab,
   type TutorTab,
 } from "@/components/dashboard/DashboardTutorPanel";
+import AuthHydrator from "@/components/shell/AuthHydrator";
 import { useTutorStore } from "@/stores/tutorStore";
 
 const CANNED_PROMPTS: Record<AskableTab, string> = {
@@ -60,6 +61,7 @@ export default function LabShell({
 
   return (
     <div className="flex h-screen flex-col">
+      <AuthHydrator />
       <DashboardHeader />
       <div className="flex flex-1 overflow-hidden">
         <DashboardActivityBar

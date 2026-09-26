@@ -6,6 +6,7 @@ import { useTutorStore } from "@/stores/tutorStore";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/learn",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("@/components/dashboard/DashboardHeader", () => ({
@@ -31,6 +32,9 @@ vi.mock("@/components/dashboard/DashboardTutorPanel", () => ({
     </div>
   ),
 }));
+vi.mock("@/components/shell/AuthHydrator", () => ({
+  default: () => <div>AuthHydratorMock</div>,
+}));
 
 const sendMessage = vi.fn().mockResolvedValue(undefined);
 
@@ -47,6 +51,7 @@ describe("LabShell", () => {
       </LabShell>
     );
     expect(screen.getByText("HeaderMock")).toBeInTheDocument();
+    expect(screen.getByText("AuthHydratorMock")).toBeInTheDocument();
     expect(screen.getByText("retry-courses")).toBeInTheDocument();
     expect(screen.getByText("active-tab:chat")).toBeInTheDocument();
     expect(screen.getByText("ContentSlot")).toBeInTheDocument();
