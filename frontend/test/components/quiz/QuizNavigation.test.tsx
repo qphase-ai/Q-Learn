@@ -7,14 +7,29 @@ describe("QuizNavigation", () => {
   it("disables Previous on the first question and calls onNext for Next", async () => {
     const user = userEvent.setup();
     const onNext = vi.fn();
-    render(<QuizNavigation canGoBack={false} isLast={false} onBack={vi.fn()} onNext={onNext} />);
+    render(
+      <QuizNavigation
+        canGoBack={false}
+        canGoNext
+        isLast={false}
+        onBack={vi.fn()}
+        onNext={onNext}
+      />
+    );
     expect(screen.getByRole("button", { name: /previous/i })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: /^next$/i }));
     expect(onNext).toHaveBeenCalledOnce();
   });
 
+  it("disables Next until canGoNext is true", () => {
+    render(
+      <QuizNavigation canGoBack canGoNext={false} isLast={false} onBack={vi.fn()} onNext={vi.fn()} />
+    );
+    expect(screen.getByRole("button", { name: /^next$/i })).toBeDisabled();
+  });
+
   it("shows Submit instead of Next on the last question", () => {
-    render(<QuizNavigation canGoBack isLast onBack={vi.fn()} onNext={vi.fn()} />);
+    render(<QuizNavigation canGoBack canGoNext isLast onBack={vi.fn()} onNext={vi.fn()} />);
     expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
   });
 });

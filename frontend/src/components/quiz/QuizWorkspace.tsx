@@ -9,8 +9,18 @@ import AnswerOptions from "@/components/quiz/AnswerOptions";
 import HintButton from "@/components/quiz/HintButton";
 import QuizNavigation from "@/components/quiz/QuizNavigation";
 import AITutorPanel from "@/components/tutor/AITutorPanel";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function QuizWorkspace() {
+export default function QuizWorkspace({
+  coursesLoading = false,
+  coursesError = null,
+  onRetry,
+}: {
+  coursesLoading?: boolean;
+  coursesError?: string | null;
+  onRetry?: () => void;
+}) {
   const activeLesson = useLearningStore((s) => s.activeLesson);
   const quiz = useQuizStore((s) => s.quiz);
   const currentIndex = useQuizStore((s) => s.currentIndex);
@@ -29,6 +39,27 @@ export default function QuizWorkspace() {
     if (activeLesson) loadQuizForLesson(activeLesson);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLesson?.id]);
+
+  if (coursesError) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-sm text-error">Couldn&apos;t load your course.</p>
+        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      </main>
+    );
+  }
+
+  if (coursesLoading) {
+    return (
+      <main className="flex flex-1 flex-col gap-4 p-8">
+        <Skeleton className="h-6 w-1/3 rounded-lg" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+      </main>
+    );
+  }
 
   if (!activeLesson || quiz.length === 0) {
     return (
@@ -86,6 +117,7 @@ export default function QuizWorkspace() {
       />
       <QuizNavigation
         canGoBack={currentIndex > 0}
+        canGoNext={answers[question.id] !== undefined}
         isLast={isLast}
         onBack={() => useQuizStore.setState({ currentIndex: currentIndex - 1 })}
         onNext={handleNext}

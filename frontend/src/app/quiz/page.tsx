@@ -14,7 +14,13 @@ export default function QuizPage() {
       activityBarDim
       sidebarProps={{ loading: coursesLoading, error: coursesError, onRetry }}
     >
-      {() => <QuizWorkspace />}
+      {() => (
+        <QuizWorkspace
+          coursesLoading={coursesLoading}
+          coursesError={coursesError}
+          onRetry={onRetry}
+        />
+      )}
     </LabShell>
   );
 }

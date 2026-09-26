@@ -42,6 +42,29 @@ describe("QuizWorkspace", () => {
     expect(screen.getByText("Question 2 of 2")).toBeInTheDocument();
   });
 
+  it("disables Next until the current question is answered", () => {
+    render(<QuizWorkspace />);
+    expect(screen.getByRole("button", { name: /^next$/i })).toBeDisabled();
+  });
+
+  it("scores a wrong answer as 0 for that concept and reflects a partial score", async () => {
+    const user = userEvent.setup();
+    render(<QuizWorkspace />);
+
+    const q1 = useQuizStore.getState().quiz[0];
+    const wrongAnswer = q1.options.find((o) => o !== q1.correct_answer)!;
+    await user.click(screen.getByRole("radio", { name: wrongAnswer }));
+    await user.click(screen.getByRole("button", { name: /^next$/i }));
+
+    const q2 = useQuizStore.getState().quiz[1];
+    await user.click(screen.getByRole("radio", { name: q2.correct_answer }));
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(useQuizStore.getState().score).toBe(50);
+    expect(updateMastery).toHaveBeenCalledWith("c1", 0);
+    expect(updateMastery).toHaveBeenCalledWith("c2", 1);
+  });
+
   it("submitting the last question scores the quiz and updates mastery per concept", async () => {
     const user = userEvent.setup();
     render(<QuizWorkspace />);

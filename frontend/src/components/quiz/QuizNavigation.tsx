@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 
 export default function QuizNavigation({
   canGoBack,
+  canGoNext,
   isLast,
   onBack,
   onNext,
 }: {
   canGoBack: boolean;
+  canGoNext: boolean;
   isLast: boolean;
   onBack: () => void;
   onNext: () => void;
@@ -18,7 +20,7 @@ export default function QuizNavigation({
       <Button type="button" variant="outline" disabled={!canGoBack} onClick={onBack}>
         Previous
       </Button>
-      <Button type="button" onClick={onNext}>
+      <Button type="button" disabled={!canGoNext} onClick={onNext}>
         {isLast ? "Submit" : "Next"}
       </Button>
     </div>
