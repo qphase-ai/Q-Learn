@@ -18,6 +18,11 @@ vi.mock("@/components/dashboard/CircuitResultsPanel", () => ({
   default: () => <div>ResultsPanelMock</div>,
 }));
 
+const useCircuitShortcuts = vi.fn();
+vi.mock("@/hooks/useCircuitShortcuts", () => ({
+  useCircuitShortcuts: (enabled?: boolean) => useCircuitShortcuts(enabled),
+}));
+
 const course: CourseDetail = {
   id: "course-1",
   title: "Quantum Computing",
@@ -52,6 +57,7 @@ const onExplainCircuit = vi.fn();
 beforeEach(() => {
   runSimulation.mockClear();
   onExplainCircuit.mockClear();
+  useCircuitShortcuts.mockClear();
   useLearningStore.setState({
     activeCourse: course,
     activeLesson,
@@ -173,5 +179,48 @@ describe("CentralWorkspace", () => {
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="code" />);
     expect(screen.getByText("FileTreeMock")).toBeInTheDocument();
     expect(screen.getByText("MonacoCodeMock")).toBeInTheDocument();
+  });
+
+  it("only enables circuit keyboard shortcuts when lockedTab='circuit'", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(useCircuitShortcuts).toHaveBeenCalledWith(true);
+  });
+
+  it("does not enable circuit keyboard shortcuts on other locked tabs", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="code" />);
+    expect(useCircuitShortcuts).toHaveBeenCalledWith(false);
+  });
+
+  it("does not enable circuit keyboard shortcuts in the embedded dashboard preview", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
+    expect(useCircuitShortcuts).toHaveBeenCalledWith(false);
+  });
+
+  it("hides Run Simulation on the locked code tab", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="code" />);
+    expect(screen.queryByRole("button", { name: /run simulation/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps Run Simulation on the locked lesson tab and shows results inline once run", () => {
+    useCircuitStore.setState({ runState: "success" });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="lesson" />);
+    expect(screen.getByRole("button", { name: /run simulation/i })).toBeInTheDocument();
+    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
+  });
+
+  it("hides results on the locked lesson tab before any run", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="lesson" />);
+    expect(screen.queryByText("ResultsPanelMock")).not.toBeInTheDocument();
+  });
+
+  it("shows results below the editor on the locked code tab once a run has happened", () => {
+    useCircuitStore.setState({ runState: "success" });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="code" />);
+    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
+  });
+
+  it("the Practice button links straight to /quiz on locked routes", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="lesson" />);
+    expect(screen.getByRole("link", { name: /practice/i })).toHaveAttribute("href", "/quiz");
   });
 });

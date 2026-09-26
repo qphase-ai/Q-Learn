@@ -9,8 +9,17 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return tag === "input" || tag === "textarea" || target.isContentEditable;
 }
 
-export function useCircuitShortcuts(): void {
+/**
+ * Wires Space/Delete/H/X/C/M shortcuts for the circuit canvas. Pass
+ * `enabled: false` to mount the listener without activating it — used on
+ * `/circuit` (`lockedTab === "circuit"`) so the shortcuts don't also fire
+ * when the circuit tab is just one of several visible in the embedded
+ * dashboard preview.
+ */
+export function useCircuitShortcuts(enabled = true): void {
   useEffect(() => {
+    if (!enabled) return;
+
     function onKeyDown(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (isTypingTarget(e.target)) return;
@@ -38,5 +47,5 @@ export function useCircuitShortcuts(): void {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [enabled]);
 }

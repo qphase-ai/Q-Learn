@@ -5,6 +5,7 @@ import { Play, Sparkles, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { useLearningStore } from "@/stores/learningStore";
 import { useCircuitStore } from "@/stores/circuitStore";
+import { useCircuitShortcuts } from "@/hooks/useCircuitShortcuts";
 import {
   findModuleIndexForLesson,
   firstSentence,
@@ -46,6 +47,12 @@ export default function CentralWorkspace({
   const tab = lockedTab ?? internalTab;
   const setTab = setInternalTab;
 
+  // Only active on the standalone /circuit route (`lockedTab === "circuit"`)
+  // — not when the circuit tab is just one of several visible in the
+  // embedded dashboard preview, where a global Space/Delete shortcut would
+  // be surprising.
+  useCircuitShortcuts(lockedTab === "circuit");
+
   const modules = activeCourse ? sortedModules(activeCourse) : [];
   const moduleIndex = findModuleIndexForLesson(modules, currentLessonId);
   const activeModule = moduleIndex >= 0 ? modules[moduleIndex] : null;
@@ -86,18 +93,29 @@ export default function CentralWorkspace({
           <span className="text-xs text-muted-foreground">{breadcrumb}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <Button type="button" size="sm" onClick={handleRunSimulation} disabled={runState === "running"}>
-            <Play size={14} aria-hidden />
-            {runState === "running" ? "Running…" : "Run Simulation"}
-          </Button>
+          {lockedTab !== "code" && (
+            <Button type="button" size="sm" onClick={handleRunSimulation} disabled={runState === "running"}>
+              <Play size={14} aria-hidden />
+              {runState === "running" ? "Running…" : "Run Simulation"}
+            </Button>
+          )}
           <Button type="button" size="sm" variant="outline" onClick={onExplainCircuit}>
             <Sparkles size={14} aria-hidden />
             Explain Circuit
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => setTab("practice")}>
-            <ListChecks size={14} aria-hidden />
-            Practice
-          </Button>
+          {lockedTab ? (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/quiz">
+                <ListChecks size={14} aria-hidden />
+                Practice
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={() => setTab("practice")}>
+              <ListChecks size={14} aria-hidden />
+              Practice
+            </Button>
+          )}
         </div>
       </div>
 
@@ -124,6 +142,7 @@ export default function CentralWorkspace({
             <ConceptCard key={concept.id} concept={concept} />
           ))}
           <LessonContent />
+          {lockedTab === "lesson" && runState !== "idle" && <CircuitResultsPanel />}
         </div>
       )}
 
@@ -151,11 +170,18 @@ export default function CentralWorkspace({
       )}
 
       {tab === "code" && (
-        <div className={`flex overflow-hidden rounded-xl ${lockedTab ? "flex-1" : "h-[420px] border border-white/10"}`}>
-          {lockedTab && <FileTreePanel activeFile="circuit.py" />}
-          <div className="flex-1">
-            <MonacoCodePanel />
+        <div className={`flex flex-col gap-4 ${lockedTab ? "flex-1 overflow-y-auto" : ""}`}>
+          <div
+            className={`flex overflow-hidden rounded-xl ${
+              lockedTab ? "h-[420px] flex-shrink-0" : "h-[420px] border border-white/10"
+            }`}
+          >
+            {lockedTab && <FileTreePanel activeFile="circuit.py" />}
+            <div className="flex-1">
+              <MonacoCodePanel />
+            </div>
           </div>
+          {lockedTab === "code" && runState !== "idle" && <CircuitResultsPanel />}
         </div>
       )}
 
