@@ -16,6 +16,7 @@ class TutorChatRequest(BaseModel):
     message: str
     session_id: uuid.UUID
     lesson_id: uuid.UUID | None = None
+    circuit_context: str | None = None
 
 
 class TutorChatAccepted(BaseModel):

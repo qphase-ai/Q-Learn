@@ -13,7 +13,7 @@ interface TutorStore {
   addMessage: (message: TutorMessage) => void;
   setStreaming: (streaming: boolean) => void;
   clearMessages: () => void;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (message: string, circuitContext?: string) => Promise<void>;
 }
 
 export const useTutorStore = create<TutorStore>((set) => ({
@@ -34,7 +34,7 @@ export const useTutorStore = create<TutorStore>((set) => ({
    * turn we stream into, then fire the 202 request. `complete` closes the
    * channel, sets citations, and opens the RightPanel.
    */
-  sendMessage: async (message) => {
+  sendMessage: async (message, circuitContext?) => {
     const sessionId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
 
@@ -93,6 +93,7 @@ export const useTutorStore = create<TutorStore>((set) => ({
           message,
           session_id: sessionId,
           lesson_id: lessonId,
+          circuit_context: circuitContext ?? null,
         }),
         token,
       });

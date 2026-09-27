@@ -103,6 +103,7 @@ async def run_and_stream(
     user_id: uuid.UUID,
     message: str,
     lesson_id: uuid.UUID | None,
+    circuit_context: str | None = None,
 ) -> None:
     """Retrieve → stream tokens → persist assistant message → publish `complete`.
 
@@ -125,8 +126,12 @@ async def run_and_stream(
             all_msgs = history_result.scalars().all()
             prior_messages = list(all_msgs[:-1])[-20:]  # cap at 20 rows (10 turns)
 
+            tutor_context = {}
+            if circuit_context:
+                tutor_context["circuit"] = circuit_context
+
             content = ""
-            async for token in stream_tutor_answer(message, chunks, prior_messages=prior_messages):
+            async for token in stream_tutor_answer(message, chunks, context=tutor_context or None, prior_messages=prior_messages):
                 content += token
                 await publish_tutor_token(str(session_id), token)
 

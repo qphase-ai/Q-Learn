@@ -10,6 +10,8 @@ import DashboardTutorPanel, {
 } from "@/components/dashboard/DashboardTutorPanel";
 import AuthHydrator from "@/components/shell/AuthHydrator";
 import { useTutorStore } from "@/stores/tutorStore";
+import { useCircuitStore } from "@/stores/circuitStore";
+import { nodesToCircuitSpec, circuitSpecToQiskitSource } from "@/lib/circuit-spec";
 
 const CANNED_PROMPTS: Record<AskableTab, string> = {
   explain: "Explain my circuit",
@@ -47,9 +49,24 @@ export default function LabShell({
   function askTutor(tab: AskableTab) {
     setActiveTutorTab(tab);
     setTutorAskError(null);
+
+    let circuitContext: string | undefined;
+    if (tab === "explain") {
+      const { nodes, qubitCount, results } = useCircuitStore.getState();
+      const spec = nodesToCircuitSpec(nodes, qubitCount);
+      let source = circuitSpecToQiskitSource(spec);
+      if (results?.probabilities) {
+        const probs = Object.entries(results.probabilities)
+          .map(([state, p]) => `  ${state}: ${(p * 100).toFixed(1)}%`)
+          .join("\n");
+        source += `\n\n# Last simulation results (probabilities):\n${probs}`;
+      }
+      circuitContext = source;
+    }
+
     useTutorStore
       .getState()
-      .sendMessage(CANNED_PROMPTS[tab])
+      .sendMessage(CANNED_PROMPTS[tab], circuitContext)
       .then(() => {
         setAskedTutorTabs((prev) => new Set(prev).add(tab));
       })

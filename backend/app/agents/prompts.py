@@ -25,3 +25,19 @@ Retrieved context:
 # Default slot values when the caller doesn't specify level/concept.
 TUTOR_DEFAULT_LEVEL = "beginner"
 TUTOR_DEFAULT_CONCEPT = "quantum computing"
+
+TUTOR_CIRCUIT_BLOCK = """
+
+The student is asking about their current quantum circuit. Here is the circuit
+expressed as Qiskit Python code:
+
+```python
+{circuit}
+```
+
+Explain what this circuit does step by step. Describe each gate's effect on the
+qubits, trace the state transformations, and explain what measurement results the
+student should expect. Use the gate names and qubit indices from the code above.
+If the circuit is empty (no gates), tell the student their circuit has no gates yet
+and suggest what they could add.
+"""

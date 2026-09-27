@@ -12,6 +12,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.agents.llm import get_llm
 from app.agents.prompts import (
     TUTOR_SYSTEM_PROMPT,
+    TUTOR_CIRCUIT_BLOCK,
     TUTOR_DEFAULT_LEVEL,
     TUTOR_DEFAULT_CONCEPT,
 )
@@ -47,6 +48,10 @@ async def stream_tutor_answer(
         concept=context.get("concept", TUTOR_DEFAULT_CONCEPT),
         context=_format_context(retrieved_chunks),
     )
+
+    circuit_data = context.get("circuit")
+    if circuit_data:
+        system += TUTOR_CIRCUIT_BLOCK.format(circuit=circuit_data)
 
     history = []
     for msg in (prior_messages or []):

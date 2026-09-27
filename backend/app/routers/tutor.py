@@ -25,7 +25,7 @@ async def chat(
 ):
     session_id = await start_message(db, current_user.id, body)
     background.add_task(
-        run_and_stream, session_id, current_user.id, body.message, body.lesson_id
+        run_and_stream, session_id, current_user.id, body.message, body.lesson_id, body.circuit_context
     )
     return StandardResponse(
         data=TutorChatAccepted(session_id=session_id, status="pending")
