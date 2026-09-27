@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CourseSummary, CourseDetail, LessonDetail } from "@/types";
 import { apiFetch } from "@/lib/api";
+import { getAccessToken } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
 interface LearningStore {
@@ -53,19 +54,19 @@ export const useLearningStore = create<LearningStore>()(
 
       // ── New async actions ────────────────────────────────────────────────
       loadCourses: async () => {
-        const token = useAuthStore.getState().jwt ?? undefined;
+        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         const courses = await apiFetch<CourseSummary[]>("/api/v1/courses", { token });
         set({ courses });
       },
 
       loadCourse: async (id) => {
-        const token = useAuthStore.getState().jwt ?? undefined;
+        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         const activeCourse = await apiFetch<CourseDetail>(`/api/v1/courses/${id}`, { token });
         set({ activeCourse });
       },
 
       loadLesson: async (id) => {
-        const token = useAuthStore.getState().jwt ?? undefined;
+        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         const activeLesson = await apiFetch<LessonDetail>(`/api/v1/lessons/${id}`, { token });
         set({ activeLesson, currentLessonId: id });
       },
@@ -73,7 +74,7 @@ export const useLearningStore = create<LearningStore>()(
       markProgress: async (lessonId, pct) => {
         // Optimistic update
         set((s) => ({ lessonProgress: { ...s.lessonProgress, [lessonId]: pct } }));
-        const token = useAuthStore.getState().jwt ?? undefined;
+        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         await apiFetch(`/api/v1/lessons/${lessonId}/progress`, {
           method: "PUT",
           body: JSON.stringify({

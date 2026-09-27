@@ -42,6 +42,24 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
  * avoid leaking channels (never poll the API for these).
  */
 
+/**
+ * Return a currently-valid Supabase access token for authorizing backend calls.
+ *
+ * supabase-js keeps the session's access token refreshed in its own storage;
+ * reading it here (rather than a value persisted once at login) avoids sending
+ * an expired JWT — which the API rejects with 401 after the ~1h token lifetime.
+ * Returns undefined when there is no session (caller falls back / stays
+ * unauthenticated).
+ */
+export async function getAccessToken(): Promise<string | undefined> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function subscribeToCircuitResult<T = unknown>(
   circuitId: string,
   onResult: (payload: T) => void

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { Node, Edge } from "@xyflow/react";
 import type { GateType, GateNodeData, SimulationResult } from "@/types";
 import { nodesToCircuitSpec, xyFromCell } from "@/lib/circuit-spec";
-import { subscribeToCircuitResult } from "@/lib/supabase";
+import { subscribeToCircuitResult, getAccessToken } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -156,7 +156,7 @@ export const useCircuitStore = create<CircuitStore>((set, get) => ({
           shots: 1024,
           name: get().circuitName,
         }),
-        token: useAuthStore.getState().jwt ?? undefined,
+        token: (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

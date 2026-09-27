@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Citation, TutorMessage } from "@/types";
 import { apiFetch } from "@/lib/api";
-import { subscribeToTutor } from "@/lib/supabase";
+import { subscribeToTutor, getAccessToken } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import { useLearningStore } from "@/stores/learningStore";
 import { useShellStore } from "@/stores/shellStore";
@@ -39,7 +39,7 @@ export const useTutorStore = create<TutorStore>((set) => ({
     const assistantId = crypto.randomUUID();
 
     // Snapshot cross-domain state (no store-to-store imports at module scope).
-    const token = useAuthStore.getState().jwt ?? undefined;
+    const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
     const lessonId = useLearningStore.getState().currentLessonId;
 
     set((s) => ({
