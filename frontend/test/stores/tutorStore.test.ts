@@ -27,6 +27,7 @@ vi.mock("@/lib/supabase", () => ({
       };
     }
   ),
+  getAccessToken: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/api", () => ({
