@@ -110,7 +110,7 @@ describe("LabShell", () => {
       </LabShell>
     );
     await user.click(screen.getByText("trigger-explain"));
-    expect(sendMessage).toHaveBeenCalledWith("Explain my circuit");
+    expect(sendMessage).toHaveBeenCalledWith("Explain my circuit", expect.any(String));
     await waitFor(() => expect(screen.getByText("active-tab:explain")).toBeInTheDocument());
   });
 
