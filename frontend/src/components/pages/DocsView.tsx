@@ -47,13 +47,6 @@ const EXTERNAL: DocLink[] = [
     external: true,
     icon: ExternalLink,
   },
-  {
-    title: "Q-Learn on GitHub",
-    description: "Source, architecture docs, and issue tracker.",
-    href: "https://github.com/qphase-ai/Q-Learn",
-    external: true,
-    icon: ExternalLink,
-  },
 ];
 
 export default function DocsView() {
