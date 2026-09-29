@@ -393,7 +393,7 @@ legacy tables → export JSON → import to Payload → validate → frontend re
 
 1. Stand up the CMS.
 2. Define collections and blocks.
-3. Migrate existing course/module/lesson content, creating a `content_refs` row per lesson.
+3. Migrate existing course/module/lesson content. For each lesson, create a `content_refs` row reusing the lesson's UUID as `content_refs.id` (with a `legacy:<uuid>` placeholder `payload_id`), backfill `student_progress.lesson_id` and `quiz_questions.lesson_id`, and re-point both foreign-key constraints at `content_refs.id` before switching reads. (Implemented in migration `d4e5f6a7b8c9`.)
 4. Validate migrated content against the source.
 5. Integrate the student frontend behind a flag.
 6. Switch production reads.
