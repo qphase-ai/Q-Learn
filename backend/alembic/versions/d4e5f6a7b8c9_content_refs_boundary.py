@@ -68,6 +68,15 @@ def upgrade() -> None:
         SET search_path = public
         AS $$
         BEGIN
+            IF TG_OP = 'DELETE' THEN
+                -- Drop only the still-unbound legacy ref; a ref already bound
+                -- to a real Payload id is kept so learner state survives.
+                DELETE FROM content_refs
+                WHERE id = OLD.id
+                  AND kind = 'lesson'
+                  AND payload_id = 'legacy:' || OLD.id::text;
+                RETURN OLD;
+            END IF;
             INSERT INTO content_refs (id, payload_id, kind)
             VALUES (NEW.id, 'legacy:' || NEW.id::text, 'lesson')
             ON CONFLICT DO NOTHING;
@@ -77,7 +86,7 @@ def upgrade() -> None:
         """
     )
     op.execute(
-        f"CREATE TRIGGER {SYNC_TRIGGER} AFTER INSERT ON lessons "
+        f"CREATE TRIGGER {SYNC_TRIGGER} AFTER INSERT OR DELETE ON lessons "
         f"FOR EACH ROW EXECUTE FUNCTION {SYNC_FUNCTION}()"
     )
 
