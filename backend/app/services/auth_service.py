@@ -7,7 +7,7 @@ data — role and subscription status — which Supabase does not track.
 
 Supabase signs access tokens with either the legacy shared HS256 secret or, for
 projects using JWT signing keys, an asymmetric key (ES256/RS256) published via
-JWKS. We verify by whatever algorithm the token declares, so both work.
+JWKS. HS256 verification is enabled only when a shared secret is configured.
 """
 import uuid
 
@@ -65,6 +65,8 @@ class AuthService:
         key: str | dict
         if alg == "HS256":
             key = self.settings.supabase_jwt_secret
+            if not key:
+                raise UnauthorizedError("Invalid or expired token")
         elif alg in _ASYMMETRIC_ALGS:
             kid = header.get("kid")
             if not kid:

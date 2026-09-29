@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock
 
 import pytest
 from cryptography.hazmat.primitives import serialization
@@ -25,7 +26,7 @@ def make_supabase_token(user_id: str, email: str, *, secret: str | None = None) 
             "role": "authenticated",
             "exp": datetime.now(timezone.utc) + timedelta(hours=1),
         },
-        secret or settings.supabase_jwt_secret,
+        settings.supabase_jwt_secret if secret is None else secret,
         algorithm="HS256",
     )
 
@@ -176,13 +177,36 @@ async def test_me_rejects_token_signed_with_wrong_secret(client: AsyncClient):
     assert response.status_code == 401
 
 
+@pytest.mark.parametrize("signing_secret", ["", "attacker-controlled-secret"])
+async def test_me_rejects_hs256_without_configured_secret(
+    client: AsyncClient, monkeypatch, fake_db, signing_secret: str
+):
+    monkeypatch.setattr(get_settings(), "supabase_jwt_secret", "")
+    sync_user = AsyncMock(side_effect=AssertionError("Unverified token reached user sync"))
+    monkeypatch.setattr(auth_service.AuthService, "_sync_user", sync_user)
+    token = make_supabase_token(
+        str(uuid.uuid4()), "forged@qlearn.dev", secret=signing_secret
+    )
+
+    response = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "UNAUTHORIZED"
+    sync_user.assert_not_awaited()
+    assert fake_db == {}
+
+
 async def test_me_requires_token(client: AsyncClient):
     response = await client.get("/api/v1/auth/me")
     assert response.status_code in (401, 403)
 
 
-async def test_me_accepts_es256_token_from_cached_jwks(client: AsyncClient, monkeypatch):
+@pytest.mark.parametrize("shared_secret", ["", "configured-secret"])
+async def test_me_accepts_es256_token_from_cached_jwks(
+    client: AsyncClient, monkeypatch, shared_secret: str
+):
     """ES256 tokens (Supabase JWT signing keys) verify against the JWKS."""
+    monkeypatch.setattr(get_settings(), "supabase_jwt_secret", shared_secret)
     kid = "test-es256-cached"
     priv_pem, pub_jwk = make_es256_keypair(kid)
     monkeypatch.setitem(auth_service._jwks_cache, kid, pub_jwk)
@@ -195,8 +219,12 @@ async def test_me_accepts_es256_token_from_cached_jwks(client: AsyncClient, monk
     assert response.json()["data"]["id"] == user_id
 
 
-async def test_me_fetches_jwks_for_es256_on_cache_miss(client: AsyncClient, monkeypatch):
+@pytest.mark.parametrize("shared_secret", ["", "configured-secret"])
+async def test_me_fetches_jwks_for_es256_on_cache_miss(
+    client: AsyncClient, monkeypatch, shared_secret: str
+):
     """An unknown kid triggers a one-time JWKS fetch, then verifies."""
+    monkeypatch.setattr(get_settings(), "supabase_jwt_secret", shared_secret)
     kid = "test-es256-fetch"
     priv_pem, pub_jwk = make_es256_keypair(kid)
     auth_service._jwks_cache.clear()
