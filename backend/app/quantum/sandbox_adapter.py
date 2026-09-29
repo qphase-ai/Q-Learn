@@ -1,7 +1,9 @@
 import json
 import time
 from app.quantum.base import QuantumBackend, CircuitSpec, CompiledCircuit, ExecutionResult
+from app.quantum.sandbox_runner import SandboxRunner
 from app.config import get_settings
+from app.exceptions import SandboxExecutionError
 
 QISKIT_SCRIPT_TEMPLATE = """
 import json, sys
@@ -36,6 +38,7 @@ print(json.dumps(output))
 class QiskitAerAdapter(QuantumBackend):
     def __init__(self):
         self.settings = get_settings()
+        self._runner = SandboxRunner()
 
     async def compile(self, circuit: CircuitSpec) -> CompiledCircuit:
         qasm = self._spec_to_qasm(circuit)
@@ -54,21 +57,29 @@ class QiskitAerAdapter(QuantumBackend):
         return len(errors) == 0, errors
 
     async def execute(self, circuit: CompiledCircuit, shots: int = 1024) -> ExecutionResult:
-        from vercel_sandbox import AsyncSandbox
-
         code = QISKIT_SCRIPT_TEMPLATE.format(qasm=circuit.qasm, shots=shots)
         start = time.monotonic()
 
-        async with await AsyncSandbox.fork(
-            source_sandbox=self.settings.sandbox_base_name,
-            network_policy={"mode": "deny-all"},
-            resources={"vcpus": "1", "memory": "512"},
-            timeout=self.settings.sandbox_timeout,
-        ) as sandbox:
-            result = await sandbox.run_command("python", ["-c", code])
+        result = await self._runner.run_python(code, self.settings.sandbox_timeout)
 
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        output = json.loads(result.stdout)
+
+        # Surface sandbox/script failures as a typed error instead of letting a
+        # bad/empty stdout blow up json.loads. run_and_publish catches this and
+        # records status="failed" with the stderr text.
+        if result.exit_code != 0 or not result.stdout.strip():
+            raise SandboxExecutionError(
+                "Quantum circuit execution failed in sandbox",
+                details=(result.stderr or result.stdout or "no output").strip()[:2000],
+            )
+
+        try:
+            output = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise SandboxExecutionError(
+                "Sandbox returned unparseable output",
+                details=f"{exc}: {result.stdout.strip()[:2000]}",
+            ) from exc
 
         return ExecutionResult(
             statevector=output.get("statevector"),

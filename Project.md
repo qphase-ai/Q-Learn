@@ -184,7 +184,7 @@ flowchart TD
         end
 
         subgraph VercelSandbox["Vercel Sandbox (Hobby)"]
-            MicroVM["Isolated microVM\npython3.13 • deny-all network\nQiskit Aer + Student Python"]
+            MicroVM["Isolated microVM\nQiskit image/snapshot\nQiskit Aer + Student Python"]
         end
 
         subgraph External["External"]
@@ -224,11 +224,11 @@ Six primary layers:
    - **Notification Service**: In-app notifications, emails, event triggers
 
 3. **Quantum Backend Layer** — Adapter pattern with standard methods (`compile()`, `validate()`, `execute()`, `get_statevector()`, `get_probabilities()`, `get_measurements()`):
-   - `QiskitAerAdapter` (MVP) — runs Qiskit Aer inside a Vercel Sandbox microVM via `AsyncSandbox.fork()`; FastAPI never executes Qiskit in-process
+   - `QiskitAerAdapter` (MVP) — runs Qiskit Aer inside a Vercel Sandbox microVM via `SandboxRunner.run_python()`; FastAPI never executes Qiskit in-process
    - `PennyLaneAdapter` (Phase 2)
    - `CirqAdapter` (Phase 2)
 
-4. **Code Execution Sandbox** — Vercel Sandbox (managed microVM) for **all compute-heavy execution** — both student code and quantum circuit simulation. Network policy: `deny-all`. Resource limits: 512 MB RAM, 1 vCPU, 30s timeout. Qiskit Aer pre-installed via persistent `qlearn-python-base` snapshot; fork per execution avoids cold-start. FastAPI remains I/O-bound throughout — no CPU work in-process.
+4. **Code Execution Sandbox** — Vercel Sandbox (managed microVM) for **all compute-heavy execution** — both student code and quantum circuit simulation, through the single `SandboxRunner` seam. Isolation via microVM + deny-all outbound network (`network_policy=NetworkPolicy.deny_all()`, SDK 0.7.0; a Secure Compute `network_id` can be attached for selective egress). Resource limits: 512 MB RAM, 1 vCPU, 30s timeout. Qiskit Aer pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`) so each `create_sandbox()` avoids cold-start. FastAPI remains I/O-bound throughout — no CPU work in-process.
 
 5. **External AI & Knowledge Sources** — LLM via ChatLiteLLM with smart routing and fallback (primary + ordered fallbacks via `get_llm()`; any LiteLLM-supported provider), official SDK documentation, academic papers, trusted educational resources.
 
@@ -250,9 +250,9 @@ sequenceDiagram
     participant LLM as LLM Provider
 
     FE->>API: HTTPS REST request
-    API->>VM: AsyncSandbox.fork() — circuit simulation (Qiskit Aer)
+    API->>VM: SandboxRunner.run_python() — circuit simulation (Qiskit Aer)
     VM-->>API: JSON (statevector · probabilities · measurements)
-    API->>VM: AsyncSandbox.fork() — student Python code
+    API->>VM: SandboxRunner.run_python() — student Python code
     VM-->>API: stdout / stderr
     API->>RT: publish circuit:{id} / tutor:{id} event
     RT-->>FE: broadcast via Supabase JS SDK
@@ -654,7 +654,7 @@ flowchart TD
     JSON["Framework-independent circuit JSON\n{qubits, classical_bits, gates[]}"]
     API["FastAPI\nPOST /simulations/execute"]
     ADAPTER["QiskitAerAdapter\ncompile to QASM · validate · render script"]
-    FORK["AsyncSandbox.fork(qlearn-python-base)\nVercel Sandbox microVM"]
+    FORK["SandboxRunner.run_python()\nVercel Sandbox microVM (Qiskit snapshot/image)"]
     SIM["Qiskit AerSimulator\nstatevector + shots — inside microVM"]
     RESULT["Normalized ExecutionResult\nstatevector · probabilities · measurements · time"]
     STORE["PostgreSQL\ncircuit_executions table"]
@@ -674,10 +674,10 @@ flowchart TD
 - FastAPI never runs Qiskit in-process — all CPU work is inside the Vercel Sandbox microVM
 
 **Code Execution Sandbox** (for student-submitted Python):
-- Vercel Sandbox managed microVM — same infrastructure as quantum execution
-- Network policy: `deny-all` — no internet access from microVM
+- Vercel Sandbox managed microVM — same `SandboxRunner` seam as quantum execution
+- Isolation via microVM + deny-all outbound network (`network_policy=NetworkPolicy.deny_all()`; Secure Compute `network_id` for selective egress)
 - Resource limits: 512 MB RAM, 1 vCPU, 30s timeout
-- Qiskit Aer pre-installed via `qlearn-python-base` snapshot
+- Qiskit Aer pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`)
 - Never executes inside the main API process
 
 ---
@@ -779,8 +779,8 @@ flowchart LR
 - [ ] GitHub Actions CI/CD
 - [ ] Database schema creation (Alembic migrations)
 - [ ] Supabase Auth integration (register, login, JWT, RBAC)
-- [ ] Vercel Sandbox base snapshot (`qlearn-python-base`) with Qiskit Aer
-- [ ] `QiskitAerAdapter` via `AsyncSandbox.fork()` — quantum execution through Vercel Sandbox
+- [ ] Vercel Sandbox Qiskit-ready snapshot/image (`SANDBOX_SNAPSHOT_ID` / `SANDBOX_IMAGE`) with Qiskit Aer
+- [ ] `QiskitAerAdapter` via `SandboxRunner.run_python()` — quantum execution through Vercel Sandbox
 - [ ] Supabase Realtime publish pattern — FastAPI publishes events; frontend subscribes via JS SDK
 - [ ] LangGraph `AsyncPostgresSaver` checkpointer — agent state in PostgreSQL
 - [ ] Basic project documentation

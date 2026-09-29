@@ -39,7 +39,7 @@ API docs at `http://localhost:8000/docs` · Health check: `GET /health`
 
 **Request flow:** `Router → Service → Repository → SQLAlchemy model → PostgreSQL`
 
-External compute (quantum simulation, student code) exits the process via `AsyncSandbox.fork()` — FastAPI stays I/O-bound.
+External compute (quantum simulation, student code) exits the process via `SandboxRunner` (Vercel Sandbox microVM) — FastAPI stays I/O-bound.
 
 ### Module map (`app/`)
 
@@ -86,7 +86,7 @@ async def my_route(db: AsyncSession = Depends(get_db)): ...
 ```
 
 ### Quantum execution
-Never call Qiskit inside the API process. Go through `QuantumExecutionService` which delegates to `QiskitAerAdapter` → `AsyncSandbox.fork("qlearn-python-base")`. All quantum backends must implement `QuantumBackend` (`app/quantum/base.py`).
+Never call Qiskit inside the API process. Go through `QuantumExecutionService` which delegates to `QiskitAerAdapter` → `SandboxRunner.run_python()` (the sole Vercel SDK seam in `app/quantum/sandbox_runner.py`) → `vercel.sandbox.create_sandbox()`. All quantum backends must implement `QuantumBackend` (`app/quantum/base.py`).
 
 ### Realtime events
 FastAPI publishes to Supabase Realtime channels via the Python SDK. The frontend subscribes via Supabase JS SDK. There are no WebSocket endpoints on the API.
@@ -126,7 +126,7 @@ Tests live in `tests/`. Framework: `pytest` + `pytest-asyncio` (async mode: `aut
 | Type | What to cover |
 |------|--------------|
 | Unit | Circuit validation, BKT mastery calculations, schema transformations |
-| Integration | API routes + real DB, RAG pipeline, `QiskitAerAdapter` (mock `AsyncSandbox.fork()`) |
+| Integration | API routes + real DB, RAG pipeline, `QiskitAerAdapter` (mock `SandboxRunner.run_python()`) |
 | E2E | Full student journey: login → lesson → circuit → execute → quiz → progress |
 
 ---

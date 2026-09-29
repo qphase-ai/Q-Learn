@@ -83,7 +83,7 @@ HTTP Request → FastAPI Router → Service → Repository → PostgreSQL
 
 ### Key design decisions
 
-**No in-process Qiskit.** All quantum simulation and student code execution runs inside a Vercel Sandbox microVM via `AsyncSandbox.fork("qlearn-python-base")`. FastAPI remains I/O-bound under concurrent load.
+**No in-process Qiskit.** All quantum simulation and student code execution runs inside a Vercel Sandbox microVM via `SandboxRunner.run_python()` → `vercel.sandbox.create_sandbox()`. FastAPI remains I/O-bound under concurrent load.
 
 **No WebSocket endpoints.** Real-time events (circuit results, tutor tokens, progress updates) flow through Supabase Realtime pub/sub. FastAPI publishes; the frontend subscribes via the Supabase JS SDK. This eliminates the multi-replica sticky-session problem.
 
@@ -148,7 +148,7 @@ QuantumBackend
 
 `QiskitAerAdapter.execute()` serializes the circuit to a self-contained Python script, forks a Vercel Sandbox microVM, runs Qiskit Aer, and deserializes the JSON result. The API never imports Qiskit.
 
-**Sandbox constraints:** deny-all network, 512 MB RAM, 30-second timeout, Qiskit pre-installed via `qlearn-python-base` snapshot.
+**Sandbox constraints:** microVM isolation, 512 MB RAM, 30-second timeout, Qiskit pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`).
 
 ---
 
@@ -221,7 +221,7 @@ pytest --cov=app --cov-report=term-missing     # with coverage
 ```
 
 **Unit tests** — circuit validation, BKT calculations, schema transforms  
-**Integration tests** — API + PostgreSQL, RAG pipeline, `QiskitAerAdapter` (mock `AsyncSandbox.fork()`)  
+**Integration tests** — API + PostgreSQL, RAG pipeline, `QiskitAerAdapter` (mock `SandboxRunner.run_python()`)  
 **E2E** — full student journey: login → lesson → circuit → execute → quiz → progress
 
 ---

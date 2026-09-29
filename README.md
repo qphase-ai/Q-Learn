@@ -44,7 +44,7 @@ Three-tier: **Presentation (Vercel)** → **Application (Railway/FastAPI)** → 
 
 Key design decisions:
 - **No WebSocket endpoints on FastAPI** — real-time events flow via Supabase Realtime pub/sub; FastAPI publishes, frontend subscribes via Supabase JS SDK
-- **No in-process Qiskit** — all circuit simulation and student code runs inside a Vercel Sandbox microVM (`AsyncSandbox.fork(qlearn-python-base)`); FastAPI stays I/O-bound
+- **No in-process Qiskit** — all circuit simulation and student code runs inside a Vercel Sandbox microVM (`SandboxRunner.run_python()` → `vercel.sandbox.create_sandbox()`); FastAPI stays I/O-bound
 - **Agent state in PostgreSQL** — LangGraph uses `AsyncPostgresSaver`; agent sessions survive restarts and scale across replicas
 - **No Redis in Phase 0–1** — deferred until profiling shows a specific hot path
 

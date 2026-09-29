@@ -92,7 +92,9 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `LLM_MAX_TOKENS` | Default `2048` |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Set only for providers you use |
 | `VERCEL_TOKEN` / `VERCEL_TEAM_ID` | Vercel Sandbox SDK credentials |
-| `SANDBOX_BASE_NAME` | Base snapshot name (`qlearn-python-base`) |
+| `SANDBOX_SNAPSHOT_ID` | Qiskit-ready snapshot to restore per run (preferred) |
+| `SANDBOX_IMAGE` | Custom OCI image with Qiskit preinstalled (alternative to snapshot) |
+| `SANDBOX_VCPUS` / `SANDBOX_MEMORY` | Sandbox resources (default 1 vCPU / 512 MB) |
 | `SANDBOX_TIMEOUT` | microVM timeout in ms (default: `30000`) |
 | `CORS_ORIGINS` | Allowed frontend origins (Vercel URL) |
 

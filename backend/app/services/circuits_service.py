@@ -164,11 +164,16 @@ async def run_and_publish(
             }
 
         except Exception as exc:  # noqa: BLE001 — background task, never re-raise
+            # Sandbox diagnostics (stderr/stdout/parse errors) can contain internal
+            # paths and runtime detail, so they go to the SERVER LOG only (bounded).
+            # The persisted + realtime-published `error_message` stays the generic
+            # exception message so it is never leaked to the client (CWE-209).
             logger.exception(
                 "circuit_execution_failed",
                 circuit_id=str(circuit_id),
                 execution_id=str(execution_id),
                 error=str(exc),
+                details=str(getattr(exc, "details", None) or "")[:2000],
             )
             error_msg = str(exc)
 

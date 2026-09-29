@@ -83,7 +83,7 @@ Pattern: **Router → Service → Repository → SQLAlchemy model → PostgreSQL
 | `core/` | Shared utilities |
 
 **Critical rules:**
-- Never run Qiskit or student code inside the API process — always fork `AsyncSandbox`
+- Never run Qiskit or student code inside the API process — always go through `SandboxRunner.run_python()`
 - Never use `Base.metadata.create_all()` in production — Alembic only
 - Use SQLAlchemy 2.x async patterns throughout
 - Agent prompts/config must not be scattered — centralize in `agents/`
@@ -112,7 +112,7 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 
 | Boundary | Detail |
 |----------|--------|
-| Vercel Sandbox | `AsyncSandbox.fork("qlearn-python-base")` — isolated microVM, deny-all network, 512 MB RAM, 30s timeout |
+| Vercel Sandbox | `SandboxRunner.run_python()` → `vercel.sandbox.create_sandbox()` — isolated microVM, Qiskit snapshot/image, 512 MB RAM, 30s timeout |
 | Supabase Realtime | FastAPI publishes events; frontend subscribes via `@supabase/supabase-js` |
 | LLM provider | ChatLiteLLM (`app/agents/llm.py`) — `get_llm()` returns primary + `.with_fallbacks()`; model strings via LiteLLM format |
 | pgvector | dim=384 embeddings in `knowledge_embeddings` table |
@@ -136,7 +136,7 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 ## Testing
 
 - Unit tests: circuit validation, BKT calculations, service endpoints (mocked dependencies)
-- Integration tests: API + PostgreSQL, RAG pipeline, `QiskitAerAdapter` (mock `AsyncSandbox.fork()`)
+- Integration tests: API + PostgreSQL, RAG pipeline, `QiskitAerAdapter` (mock `SandboxRunner.run_python()`)
 - E2E: full student journey (login → lesson → circuit → execute → quiz → evaluation → progress)
 
 See `docs/quantum-execution.md`, `docs/rag-pipeline.md`, `docs/agents.md`, `docs/sandbox.md` for the boundaries each test type covers.

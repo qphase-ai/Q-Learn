@@ -43,9 +43,21 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""    # OPENROUTER_API_KEY
 
     # Vercel Sandbox
+    # Auth: VERCEL_TOKEN (+ optional VERCEL_TEAM_ID / VERCEL_PROJECT_ID) — read by
+    # the SDK via the environment; also surfaced here for explicit passing.
     vercel_token: str = ""
     vercel_team_id: str = ""
-    sandbox_base_name: str = "qlearn-python-base"
+    vercel_project_id: str = ""
+    # Qiskit-ready runtime. Set exactly one of these so forks start warm (no
+    # per-run `pip install`):
+    #   - sandbox_snapshot_id: restore from a snapshot that has qiskit/qiskit-aer
+    #   - sandbox_image:       a custom OCI image with qiskit/qiskit-aer preinstalled
+    # If both are empty the runner falls back to the default image (dev only —
+    # the script will fail unless qiskit is otherwise available).
+    sandbox_snapshot_id: str = ""
+    sandbox_image: str = ""
+    sandbox_vcpus: int = 1
+    sandbox_memory: int = 512  # MB
     sandbox_timeout: int = 30000  # ms
 
     # Rate limiting

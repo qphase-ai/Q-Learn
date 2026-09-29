@@ -15,11 +15,11 @@ sequenceDiagram
     FE->>API: HTTPS REST request
 
     Note over API,VM: 2 — Circuit simulation
-    API->>VM: AsyncSandbox.fork() + Qiskit script
+    API->>VM: SandboxRunner.run_python() + Qiskit script
     VM-->>API: JSON (statevector · probabilities · measurements)
 
     Note over API,VM: 3 — Student code execution
-    API->>VM: AsyncSandbox.fork() + student Python
+    API->>VM: SandboxRunner.run_python() + student Python
     VM-->>API: stdout / stderr
 
     Note over API,RT: 4 — Publish real-time event
@@ -43,8 +43,8 @@ sequenceDiagram
 | # | Flow | Transport |
 |---|------|-----------|
 | 1 | Frontend → API Gateway | HTTPS REST |
-| 2 | Backend → Vercel Sandbox (circuit simulation) | Vercel Sandbox SDK — `AsyncSandbox.fork()` |
-| 3 | Backend → Vercel Sandbox (student code) | Vercel Sandbox SDK — `AsyncSandbox.fork()` |
+| 2 | Backend → Vercel Sandbox (circuit simulation) | Vercel Sandbox SDK — `SandboxRunner.run_python()` |
+| 3 | Backend → Vercel Sandbox (student code) | Vercel Sandbox SDK — `SandboxRunner.run_python()` |
 | 4 | Backend → Supabase Realtime (publish) | Supabase Python client — channel broadcast |
 | 5 | Supabase Realtime → Frontend (subscribe) | Supabase JS SDK WebSocket |
 | 6 | Backend → LLM Provider | HTTPS via ChatLiteLLM — primary model first, fallbacks on failure |

@@ -80,7 +80,7 @@ flowchart TD
         end
 
         subgraph VercelSandbox["Vercel Sandbox (Hobby)"]
-            MicroVM["Isolated microVM\npython3.13 • deny-all network"]
+            MicroVM["Isolated microVM\nqiskit image/snapshot"]
         end
 
         subgraph External["External"]
@@ -740,7 +740,7 @@ class QuantumBackend(ABC):
 
 Qiskit Aer is CPU-bound. Running it inside the FastAPI process would block the event loop under concurrent load. Instead, `QiskitAerAdapter.execute()` serialises the circuit to a self-contained Python script, forks a Vercel Sandbox microVM (same infrastructure as student code execution), runs the script there, and deserialises the JSON result. FastAPI stays I/O-bound throughout.
 
-**Scaling model:** each circuit execution is an isolated `AsyncSandbox.fork()` call. Vercel manages the microVM pool. 10 concurrent circuit executions = 10 concurrent forks; the API process has no CPU load.
+**Scaling model:** each circuit execution is an isolated `SandboxRunner.run_python()` call (one `create_sandbox()` microVM). Vercel manages the microVM pool. 10 concurrent circuit executions = 10 concurrent microVMs; the API process has no CPU load.
 
 ```python
 class QiskitAerAdapter(QuantumBackend):
@@ -757,21 +757,19 @@ class QiskitAerAdapter(QuantumBackend):
         return CompiledCircuit(circuit=circuit, backend="qiskit_aer", qasm=qasm)
 
     async def execute(self, circuit: CompiledCircuit, shots: int = 1024) -> ExecutionResult:
-        """Fork a Vercel Sandbox microVM and run Qiskit Aer there."""
-        from vercel_sandbox import AsyncSandbox
+        """Run Qiskit Aer inside a Vercel Sandbox microVM (via SandboxRunner)."""
         script = _render_qiskit_script(circuit.qasm, shots)  # returns self-contained Python string
 
-        async with await AsyncSandbox.fork(
-            source_sandbox=settings.sandbox_base_name,
-            network_policy={"mode": "deny-all"},
-            resources={"vcpus": "1", "memory": "512"},
-            timeout=settings.sandbox_timeout,
-        ) as sandbox:
-            result = await sandbox.run_command("python", ["-c", script])
-            if result.exit_code != 0:
-                raise QuantumExecutionError(await result.stderr(), backend="qiskit")
-            return _parse_execution_result(await result.stdout())
+        result = await self._runner.run_python(script, settings.sandbox_timeout)
+        if result.exit_code != 0 or not result.stdout.strip():
+            raise SandboxExecutionError("execution failed", details=result.stderr)
+        return _parse_execution_result(result.stdout)
 ```
+
+`SandboxRunner` (`app/quantum/sandbox_runner.py`) is the only module that imports the
+Vercel SDK. It calls `vercel.sandbox.create_sandbox()` with a Qiskit-ready snapshot
+(`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`), runs `python -c <script>` via
+`run_process(..., capture_output=True)`, and returns `{stdout, stderr, exit_code}`.
 
 `_render_qiskit_script` builds a Python string that:
 1. Imports Qiskit from the pre-installed snapshot
@@ -1034,7 +1032,7 @@ Current concept: {concept}
 Both **student code execution** and **quantum circuit simulation** go through Vercel Sandbox. This keeps the FastAPI process I/O-bound and lets Vercel manage concurrency for all compute-heavy work.
 
 ```
-Client → FastAPI → AsyncSandbox.fork() → Vercel microVM (Qiskit pre-installed) → JSON result
+Client → FastAPI → SandboxRunner.run_python() → Vercel microVM (Qiskit pre-installed) → JSON result
 ```
 
 ### Implementation
@@ -1043,39 +1041,33 @@ Client → FastAPI → AsyncSandbox.fork() → Vercel microVM (Qiskit pre-instal
 class SandboxService:
     """Service for secure student code execution via Vercel Sandbox."""
 
+    def __init__(self) -> None:
+        self._runner = SandboxRunner()  # sole Vercel SDK seam
+
     async def execute(self, user_id: uuid, code: str) -> dict:
         """Execute student code in an isolated Vercel Sandbox microVM."""
-        from vercel_sandbox import AsyncSandbox
-
-        async with await AsyncSandbox.fork(
-            source_sandbox="qlearn-python-base",  # Pre-built snapshot with Qiskit installed
-            network_policy={"mode": "deny-all"},
-            resources={"vcpus": "1", "memory": "512"},
-            timeout=30000,  # 30 seconds
-        ) as sandbox:
-            result = await sandbox.run_command("python", ["-c", code])
-            return {
-                "status": "success" if result.exit_code == 0 else "error",
-                "output": await result.stdout(),
-                "error": await result.stderr(),
-                "exit_code": result.exit_code,
-            }
+        result = await self._runner.run_python(code, timeout_ms=30000)
+        return {
+            "status": "success" if result.exit_code == 0 else "error",
+            "output": result.stdout,
+            "error": result.stderr,
+            "exit_code": result.exit_code,
+        }
 ```
 
 ### Security Rules
 
-- **Network policy: deny-all** — student code cannot reach the internet
-- **Isolated microVM** — fully managed by Vercel, no shared process space
-- **Memory limit**: 512MB (configurable)
-- **Timeout**: 30 seconds
-- **Qiskit pre-installed** via persistent `qlearn-python-base` snapshot
+- **Isolation** — isolated microVM, fully managed by Vercel, no shared process space, plus **deny-all outbound network** via `network_policy=NetworkPolicy.deny_all()` (SDK 0.7.0). Use a Secure Compute `network_id` if selective egress is ever needed.
+- **Memory limit**: 512MB (`SANDBOX_MEMORY`, configurable)
+- **Timeout**: 30 seconds (`SANDBOX_TIMEOUT`)
+- **Qiskit pre-installed** via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`)
 - **Hobby plan hard quota** — no billing risk, sandbox pauses when quota exhausted
 
 ---
 
 ## Background Tasks
 
-Background tasks use **FastAPI's built-in `BackgroundTasks`** for lightweight async work. There is no Celery or Redis queue. All compute-heavy work (quantum simulation, student code) is handled asynchronously via the Vercel Sandbox SDK — each execution is a `AsyncSandbox.fork()` call, so FastAPI never does CPU work.
+Background tasks use **FastAPI's built-in `BackgroundTasks`** for lightweight async work. There is no Celery or Redis queue. All compute-heavy work (quantum simulation, student code) is handled asynchronously via the Vercel Sandbox SDK — each execution is a `SandboxRunner.run_python()` call, so FastAPI never does CPU work.
 
 ### Key Background Tasks
 
@@ -1092,7 +1084,7 @@ Background tasks use **FastAPI's built-in `BackgroundTasks`** for lightweight as
 ### Task Status Flow
 
 ```
-request received → AsyncSandbox.fork() / FastAPI BackgroundTask → result → stored in DB
+request received → SandboxRunner.run_python() / FastAPI BackgroundTask → result → stored in DB
 ```
 
 ---
@@ -1346,7 +1338,11 @@ JWT_REFRESH_EXPIRE_DAYS=7
 # Vercel Sandbox (student code execution)
 VERCEL_TOKEN=your-vercel-token
 VERCEL_TEAM_ID=your-team-id
-SANDBOX_BASE_NAME=qlearn-python-base
+# Set one of these to a Qiskit-ready runtime (snapshot preferred):
+SANDBOX_SNAPSHOT_ID=snap_...
+SANDBOX_IMAGE=
+SANDBOX_VCPUS=1
+SANDBOX_MEMORY=512
 SANDBOX_TIMEOUT=30000
 ```
 
@@ -1373,7 +1369,10 @@ class Settings(BaseSettings):
     rate_limit: int = 100
     vercel_token: str
     vercel_team_id: str = ""
-    sandbox_base_name: str = "qlearn-python-base"
+    sandbox_snapshot_id: str = ""
+    sandbox_image: str = ""
+    sandbox_vcpus: int = 1
+    sandbox_memory: int = 512
     sandbox_timeout: int = 30000
 
     class Config:
