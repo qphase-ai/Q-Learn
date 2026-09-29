@@ -192,6 +192,8 @@ erDiagram
 
 `content_refs` is a **boundary, not a second content store**. It holds identity only — no titles, no bodies, no ordering. Payload remains the source of truth for everything authored.
 
+**Legacy backfill.** Migration `d4e5f6a7b8c9` creates one `kind='lesson'` row per existing legacy lesson, reusing the lesson's UUID as `content_refs.id` so no learner-state row or API lesson id changes. Until the Payload import runs, `payload_id` holds the sentinel `legacy:<uuid>`; the import replaces it via `ContentRefService.bind_payload_id`, which never rebinds a ref that already holds a real Payload id.
+
 `skill_mastery.concept_id → concepts.id` is unchanged; concepts stay in FastAPI for v1, because the BKT engine traverses them and they are not authored content.
 
 Resolution logic lives in `backend/app/services/content_ref_service.py`, following the existing `Router → Service → Repository` pattern rather than introducing a new abstraction.

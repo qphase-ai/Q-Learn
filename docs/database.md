@@ -22,7 +22,8 @@ erDiagram
     LESSON }o--o{ CONCEPT : teaches
 
     CONCEPT ||--o{ SKILL_MASTERY : measured_by
-    LESSON ||--o{ LEARNING_PROGRESS : tracked_by
+    CONTENT_REF ||--o{ LEARNING_PROGRESS : tracked_by
+    CONTENT_REF ||--o{ QUIZ_QUESTION : scopes
 
     QUIZ ||--o{ QUIZ_QUESTION : contains
     QUIZ_QUESTION ||--o{ QUIZ_ATTEMPT : receives
@@ -47,8 +48,9 @@ erDiagram
 | `courses` | Course container | title, description, status |
 | `modules` | Course modules | course_id FK, title, position |
 | `lessons` | Individual lessons | module_id FK, title, content, position |
+| `content_refs` | Stable identity for CMS-authored content (integration boundary with Payload) | id (UUID, backend-owned), payload_id TEXT, kind ∈ curriculum/level/module/lesson, UNIQUE(kind, payload_id) |
 | `concepts` | Quantum concepts | name, description, difficulty |
-| `student_progress` | Lesson completion | user_id FK, lesson_id FK, status, completion |
+| `student_progress` | Lesson completion | user_id FK, lesson_id FK → content_refs, status, completion |
 | `skill_mastery` | BKT student model | user_id FK, concept_id FK, mastery_score, confidence |
 | `circuits` | Saved circuits | user_id FK, name, circuit_definition JSON, backend |
 | `circuit_executions` | Execution results | circuit_id FK, status, probabilities, measurements, statevector, time |
