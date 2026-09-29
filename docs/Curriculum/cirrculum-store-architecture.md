@@ -381,6 +381,8 @@ const BlockRegistry = {
 
 Today `frontend/src/components/learn/LessonContent.tsx` renders a lesson as one Markdown string, with a ` ```circuit ` fence parsed into `<CircuitPreview>`. That is a proto-block-system; the registry formalises it. `CircuitBlock` reuses the existing `CircuitPreview` component rather than reimplementing rendering.
 
+**Security requirement:** `TextBlock`/`MarkdownBlock` render author-supplied Markdown/HTML. Any HTML passed to `dangerouslySetInnerHTML` **must** first be run through a strict allowlist sanitizer (e.g. DOMPurify), so a compromised curriculum-author account cannot publish stored XSS that executes in students' browsers. Sanitize on render (and ideally also on save).
+
 ---
 
 ## Migration
