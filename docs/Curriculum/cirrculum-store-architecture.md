@@ -88,7 +88,7 @@ Verified against the npm registry, not from memory. Pin exactly; never install `
 | `@payloadcms/next` | `3.90.2` | peer `next` — see range below |
 | `@payloadcms/db-postgres` | `3.90.2` | peer `payload: 3.90.2` |
 | `@payloadcms/storage-s3` | `3.90.2` | |
-| `next` (cms only) | `16.3.7` | `engines.node: >=20.9.0`, peer `react: ^19` |
+| `next` (cms only) | latest published `16.3.x` (pin exactly once resolved) | `engines.node: >=20.9.0`, peer `react: ^19` |
 | `react` / `react-dom` (cms only) | `^19` | |
 | Node | `>=20.9.0` | |
 

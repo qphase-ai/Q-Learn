@@ -4,7 +4,7 @@ This document evaluates the block-based CMS (`cirrculum-store-architecture.md`) 
 
 > **Updated for the Payload CMS decision.** `cirrculum-store-architecture.md` now specifies **Payload CMS** in a standalone Next.js 16 application at `cms/`, backed by the existing Supabase Postgres in an isolated `payload` schema — not a block CMS hand-rolled inside FastAPI. The scaling analysis below is substantially unchanged, because the *shape* of the content path (cacheable, read-heavy, CDN-fronted, invalidated on publish) is the same either way. What changed is **who serves it**: Payload's REST API rather than a FastAPI Content API, which removes the "build a content service" work from the roadmap and replaces it with "operate a second application." Content-path items are annotated accordingly.
 
-**Assumption used throughout:** 100k registered users → ~10-15k DAU (12%) → ~750-1,500 peak concurrent users (8% of DAU) → ~150-375 concurrent LLM tutor calls and ~50-150 concurrent circuit executions at peak. These are planning assumptions, not measurements, and should be replaced with real numbers once instrumentation exists (see Phase 1 below).
+**Assumption used throughout:** 100k registered users → ~10-15k DAU (12%) → ~800-1,200 peak concurrent users (8% of DAU) → ~150-375 concurrent LLM tutor calls and ~50-150 concurrent circuit executions at peak. These are planning assumptions, not measurements, and should be replaced with real numbers once instrumentation exists (see Phase 1 below).
 
 ## Current State (verified in codebase)
 

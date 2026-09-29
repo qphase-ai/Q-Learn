@@ -91,7 +91,7 @@ graph LR
     Gates --> Qiskit
     Tensor --> Entanglement
     Entanglement --> Deutsch
-    Tensor --> CNOT[Gates]
+    Tensor --> Gates
 
     Simulation --> Entanglement
     Qiskit --> Simulation
@@ -100,7 +100,7 @@ graph LR
     SubD(deutsch)
 ```
 
-The above **Mastery Graph** (conceptually) shows how foundational math and computer concepts lead into quantum topics (qubits, superposition, gates), which in turn underpin multi-qubit ideas (tensor products, entanglement).  Programming tools (Qiskit, circuit simulation) mediate turning these concepts into runnable circuits.  Finally, these feed into quantum algorithms (Deutsch-Josza, Grover, QFT, Shor).  Mastery at each node is required before moving to dependents.
+The above **Mastery Graph** (conceptually) shows how foundational math and computer concepts lead into quantum topics (qubits, superposition, gates), which in turn underpin multi-qubit ideas (tensor products, entanglement).  Programming tools (Qiskit, circuit simulation) mediate turning these concepts into runnable circuits.  Finally, these feed into quantum algorithms (Deutsch–Jozsa, Grover, QFT, Shor).  Mastery at each node is required before moving to dependents.
 
 <!--  For each level, lists of objectives, etc. -->
 
@@ -337,7 +337,7 @@ The above **Mastery Graph** (conceptually) shows how foundational math and compu
 - **Key Topics:** Quantum noise models; fidelity vs error rate; basics of **quantum error correction (QEC)**; concept of redundancy and syndrome extraction; error thresholds (NISQ era).
 - **Hands-On Labs/Projects:** 
   - *Noise Simulation:* Introduce bit-flip or phase-flip errors in a circuit (Qiskit noise backend) and observe its effect on outcomes.
-  - *Repetition Code Circuit:* Implement a 3-qubit code that encodes |ψ⟩ → |ψψψ⟩, apply an error, measure syndrome, and correct.
+  - *Repetition Code Circuit:* Implement the 3-qubit bit-flip code that encodes α|0⟩ + β|1⟩ → α|000⟩ + β|111⟩, apply one bit-flip error, measure the syndrome, and correct it.
   - *Error Correction Quiz:* Given a small error syndrome scenario, decide the correction operation needed.
 - **Prerequisites:** Level 12 (density/noise) and 11 (programming). This is critical before tackling advanced algorithm fidelity and longer computations in L18–L19.
 - **Estimated Time:** ~8–10 hours.
@@ -349,10 +349,10 @@ The above **Mastery Graph** (conceptually) shows how foundational math and compu
 **Focus:** Foundational quantum algorithms and oracles (Deutsch, DJ, BV, Simon).  
 **Objectives:** Introduce the algorithmic method of quantum computing via oracles and superposition.  
 
-- **Learning Objectives:** For each algorithm (Deutsch, Deutsch-Jozsa, Bernstein–Vazirani, Simon’s), understand the *problem*, its classical solution complexity, and the quantum circuit solution. Learn the role of oracles and interference to encode global function properties in one measurement. Appreciate speed-ups: e.g. Deutsch-Josza solves n-bit “constant vs balanced” in 1 query (classically needs >1).
+- **Learning Objectives:** For each algorithm (Deutsch, Deutsch-Jozsa, Bernstein–Vazirani, Simon’s), understand the *problem*, its classical solution complexity, and the quantum circuit solution. Learn the role of oracles and interference to encode global function properties in one measurement. Appreciate speed-ups: e.g. Deutsch–Jozsa solves n-bit “constant vs balanced” in 1 query (classically needs >1).
 - **Key Topics:** Oracle definition; algorithm structure (prepare superposition, apply oracle, inverse transform, measure); examples of phase kickback; comparison of classical vs quantum query complexity; introduction to Hidden Subgroup Problem (Simon’s).
 - **Hands-On Labs/Projects:** 
-  - *Deutsch-Josza Implementation:* Code the DJ algorithm for small n, simulate both constant and balanced cases, verify correct classification in one run.
+  - *Deutsch–Jozsa Implementation:* Code the DJ algorithm for small n, simulate both constant and balanced cases, verify correct classification in one run.
   - *Bernstein-Vazirani Demo:* Given an unknown bitstring, use BV circuit to discover it with one shot.
   - *Simon's Algorithm Exercise:* (Conceptual) Study how interference reveals the period of f(x)=f(x⊕s). Possibly simulate small 2-qubit example.
 - **Prerequisites:** Linear algebra (L3), gates (L6–L7), entanglement (L9), programming (L11). This level establishes “quantum thinking”: algorithms often determine a **global property** of a function in one measurement, using interference.
@@ -433,7 +433,7 @@ The above **Mastery Graph** (conceptually) shows how foundational math and compu
 | **L0–2** | Classical computing fundamentals, math & probability | None (basic arithmetic)      | **Explorer**            |
 | **L3–5** | Linear algebra; intro to quantum states (qubits)   | Algebra, logic (L0–L2)       | **Enthusiast**         |
 | **L6–8** | Quantum gates (single & controlled); measurement & interference | Qubits & states (L4–L5)      | **Circuit Builder**     |
-| **L9–11**| Multi-qubit systems; circuit design; Qiskit programming | Basic circuits (L6–L8), multiqubit (L7–L9) | **Quantum Programmer** |
+| **L9–11**| Multi-qubit systems; circuit design; Qiskit programming | Basic circuits (L6–L8), multiqubit (L7–L8) | **Quantum Programmer** |
 | **L12–14**| Quantum information theory; entanglement apps; QEC intro | Circuits/Qiskit (L10–L11), multi-qubit (L9–L10) | **Quantum Scientist**  |
 | **L15–17**| Quantum algorithms I; Grover; QFT/QPE     | All prior (especially algebra, entanglement) | **Algorithm Engineer**  |
 | **L18–19**| Shor’s algorithm; advanced topics and capstone | Full quantum concepts (L12–L17)   | **Quantum Engineer**    |
