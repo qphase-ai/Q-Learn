@@ -25,9 +25,9 @@ Research into how coding-education/judge platforms scale confirms the direction 
 - **Decoupled content vs. execution paths.** LeetCode-style platforms run independent services — a Problem/Content service, a User service, and a separate Execution service — rather than one monolith. Q-Learn's Router→Service→Repository FastAPI structure already separates these logically; the missing piece is that **content reads and code-execution requests should be treated as fully independent scaling domains** (cached/CDN'd vs. queued/sandboxed), not routed through the same inline request-handling path. ([Design a Coding Platform Like LeetCode](https://www.hellointerview.com/learn/system-design/problem-breakdowns/leetcode), [System Design for a Competitive Coding Platform](https://myappstore.org.in/blog/anup-sharma/system-design-for-a-competitive-coding-platform-leetcode-hackerrank-codeforces-style/))
 - **Async queue in front of execution, not inline.** The universal pattern: the API durably writes submission metadata, pushes a job onto a message broker (Kafka/SQS/RabbitMQ/Redis-backed queue), and immediately returns "accepted" rather than blocking the request. Autoscaling worker fleets consume the queue and drive sandbox lifecycle. This raises the queue's priority from "build once justified" to "design in now, activate as load requires." ([Scaling a LeetCode Code Execution Architecture](https://www.technetexperts.com/scalable-code-execution-architecture/), [Online Judge System Design](https://intervu.dev/blog/online-judge-leetcode-system-design/))
 - **MicroVM isolation, warm pools.** Production judges increasingly use Firecracker microVMs (or gVisor) instead of plain Docker for hardware-level isolation, and keep warm worker pools per runtime to avoid cold-start latency. **Q-Learn's `AsyncSandbox.fork()` from a warm `qlearn-python-base` snapshot is already this exact pattern** (Vercel Sandbox is Firecracker-based) — a genuine architectural strength already in place, not a gap. The gap is only the missing queue/backpressure layer in front of it, and the unverified concurrency ceiling on the Hobby plan. ([System Design: LeetCode — Code Sandbox, Container Isolation](https://crackingwalnuts.com/post/leetcode-system-design))
-- **Headless content API + Redis + CDN for content.** Decoupled/headless CMS architectures universally put a cache (Redis object cache) between the content API and the content DB, and a CDN/edge layer in front of the whole content path, so content reads never touch the database or app servers on the hot path. This confirms the CDN/ISR recommendation for the block-based CMS, and suggests that once the CMS is implemented, **a Redis content cache in front of the Content DB should be considered part of the CMS's initial design**, not a reactive add-on. ([Headless CMS Architecture Guide](https://www.gitnexa.com/blogs/headless-cms-architecture-guide), [What Is a Decoupled CMS](https://pantheon.io/learning-center/headless/decoupled-cms))
+- **Headless content API + Redis + CDN for content.** Decoupled/headless CMS architectures universally put a cache (Redis object cache) between the content API and the content DB, and a CDN/edge layer in front of the whole content path, so content reads never touch the database or app servers on the hot path. This confirms the CDN/ISR recommendation for the block-based CMS. **Note (revised by the Payload decision):** the generic headless-CMS pattern assumes you own the content API; Payload + Next.js edge ISR already absorbs this read traffic, so a Redis content cache is **not** part of the initial CMS design — it is a *measure-first* item (see Phase 2 and the Bottleneck table). ([Headless CMS Architecture Guide](https://www.gitnexa.com/blogs/headless-cms-architecture-guide), [What Is a Decoupled CMS](https://pantheon.io/learning-center/headless/decoupled-cms))
 
-**Net effect:** this research upgrades two items from "react to data" to "build proactively": (a) the execution job queue's design (queue abstraction should exist from the start even if autoscaling is added later), and (b) a Redis content cache as a first-class part of the CMS build — because these two are precisely the components every comparable production system treats as core, not optional, infrastructure.
+**Net effect:** this research upgrades the **execution job queue's design** from "react to data" to "build proactively" — the queue abstraction should exist from the start even if autoscaling is added later, because it is the one component every comparable production system treats as core, not optional, infrastructure. The **Redis content cache is deliberately *not* upgraded**: under Payload + Next.js edge ISR the same read traffic is absorbed at the edge, so it stays a *measure-first* item (instrument Payload read latency in Phase 1, add Redis only if the edge layer proves insufficient). This keeps the recommendation consistent with Phase 2 and the Bottleneck table below. The shared-state Redis for the `ModelRouter` RPM counter is a separate concern and remains a hard prerequisite.
 
 ## Target Architecture Diagram
 
@@ -77,9 +77,11 @@ flowchart TD
     end
 
     Next -- Content Flow --> ContentAPI
-    Next -- Execution Flow --> ExecAPI
+    Next -- "Execution / Progress Flow" --> ExecAPI
     Next -- Tutor Flow --> AgentAPI
-    Next -.->|Auth/Progress reads/writes| UsersDB
+    Next -.->|"Auth only (Supabase Auth)"| UsersDB
+    ExecAPI -- "Progress reads/writes (authz in FastAPI)" --> UsersDB
+    Workers -- "Result writes (service boundary, job-scoped)" --> UsersDB
 
     ContentAPI -- Cache Check --> RedisContent
     RedisContent -- Cache Miss --> ContentDB
@@ -96,8 +98,9 @@ flowchart TD
     AgentAPI -- Publish Tokens --> Realtime
 
     ContentDB -.-> UsersDB
-    Workers -.->|writes| UsersDB
 ```
+
+**Authorization boundary.** Because RLS is enabled with no policies and the backend reaches Postgres via the `service_role` key, the database enforces no per-user access — every authorization decision lives in the application. Two direct-to-`UsersDB` paths therefore carry explicit rules: (1) the browser's only direct link to `UsersDB` is **Supabase Auth**; all learner-progress reads and writes go through **FastAPI**, which checks the caller owns the row before touching it — the frontend never writes progress directly. (2) **Sandbox workers** write results through an authenticated service boundary and may only write rows for the `(user_id, job_id)` they were dispatched for, so a worker cannot write across users. These checks are the load-bearing control; the RLS-bypass hardening is tracked separately below.
 
 ### Legend
 
@@ -136,6 +139,7 @@ flowchart TD
 - Wire up `slowapi` using the existing (currently unused) `rate_limit_per_minute` config.
 - Look up the actual Vercel Sandbox Hobby-plan concurrency limit (dashboard/docs check).
 - Add an application-level semaphore/queue in front of `AsyncSandbox.fork()`, sized below that limit, so overload becomes graceful backpressure instead of opaque failures.
+  - **Capacity reality check.** Vercel's Hobby plan allows on the order of ~10 concurrent sandboxes — one to two orders of magnitude below the ~50–150 peak concurrent executions this document assumes. The semaphore/queue makes overload *graceful* (jobs wait rather than fail) but does **not** create capacity. Reaching the peak-load target therefore **requires a Vercel plan upgrade** (Pro/Enterprise sandbox concurrency), or the peak assumption must be re-scoped. Until then, model the expected **queue wait** against the ~10s execution P95: at N concurrent slots and an offered load above N, wait time grows with (offered − N)/N × P95, which becomes user-visible well before the assumed peak. Quantify this in Phase 1 and treat the plan tier as a gating cost decision, not a Phase 3 optimization.
 - Confirm the Supabase plan tier's pooler connection ceiling against current + planned Railway replica count.
 
 ### Phase 1 — Instrument before deciding anything else
@@ -167,7 +171,7 @@ flowchart TD
 
 ## Open Items to Verify
 
-1. Confirm the Vercel Sandbox Hobby-plan concurrency number and current Supabase plan tier's connection limits directly from account dashboards — the two facts this whole assessment most depends on that aren't in any doc.
+1. Confirm the Vercel Sandbox Hobby-plan concurrency number and current Supabase plan tier's connection limits directly from account dashboards — the two facts this whole assessment most depends on that aren't in any doc. **This directly gates the peak-load target:** if Hobby caps concurrency near ~10 sandboxes against the assumed ~50–150 peak executions, decide explicitly between a **plan upgrade** and a **re-scoped peak assumption**, and record the chosen queue-wait budget against the ~10s P95 (see Phase 0 semaphore note).
 2. Once Phase 0/1 items land, re-run the bottleneck ranking against real instrumentation data rather than the estimated concurrency figures used here.
 3. Share this roadmap with the team to confirm the phasing (especially Phase 2's "build proactively" calls) matches product priorities before committing engineering time.
 4. **Validate the four Payload infrastructure assumptions** before the CMS build: `schemaName` isolation against Supabase, the S3 endpoint's `forcePathStyle` behaviour, `blocksAsJSON` round-tripping of nested `CircuitSpec`, and Payload/Drizzle against the PgBouncer transaction pooler (including whether prepared statements must be disabled, as `backend/app/database.py` already does). These gate the CMS build, and the last one feeds directly into bottleneck #4.
