@@ -17,9 +17,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.exceptions import NotFoundError
+from app.models.content_ref import ContentKind
 from app.models.learning import Course, Lesson, Module
 from app.models.progress import LearningProgress
 from app.schemas.learning import UpdateProgressRequest
+from app.services.content_ref_service import ContentRefService
 
 logger = structlog.get_logger(__name__)
 
@@ -97,7 +99,12 @@ class LearningService:
         """Insert or update the student's progress for a lesson.
 
         Refreshes last_accessed_at on every call.
+        Raises NotFoundError if lesson_id has no content_refs lesson row.
         """
+        # lesson_id is a content_refs id (legacy lesson ids were backfilled
+        # 1:1); reject unknown ids up front rather than via an FK violation.
+        await ContentRefService(self.db).get(lesson_id, ContentKind.LESSON)
+
         result = await self.db.execute(
             select(LearningProgress).where(
                 LearningProgress.user_id == user_id,
