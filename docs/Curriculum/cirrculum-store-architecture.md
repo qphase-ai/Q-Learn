@@ -188,7 +188,7 @@ erDiagram
     SKILL_MASTERY    }o--|| CONCEPTS : measures
 ```
 
-`payload_id` is `TEXT` because Payload's adapter `idType` may be `serial` or `uuid`; `TEXT` accommodates both and is confirmed against the configured value before the migration lands.
+`payload_id` is `TEXT` because Payload's adapter `idType` may be `serial` or `uuid`; `TEXT` was chosen so the Payload `idType` decision (Open item 2) does not block the boundary — it accommodates both.
 
 `content_refs` is a **boundary, not a second content store**. It holds identity only — no titles, no bodies, no ordering. Payload remains the source of truth for everything authored.
 
@@ -397,7 +397,7 @@ legacy tables → export JSON → import to Payload → validate → frontend re
 
 1. Stand up the CMS.
 2. Define collections and blocks.
-3. Migrate existing course/module/lesson content. For each lesson, create a `content_refs` row reusing the lesson's UUID as `content_refs.id` (with a `legacy:<uuid>` placeholder `payload_id`), backfill `student_progress.lesson_id` and `quiz_questions.lesson_id`, and re-point both foreign-key constraints at `content_refs.id` before switching reads. (Planned in migration `d4e5f6a7b8c9`.)
+3. Migrate existing course/module/lesson content. Migration `d4e5f6a7b8c9` already created one `content_refs` row per legacy lesson — reusing the lesson's UUID as `content_refs.id` with a `legacy:<uuid>` placeholder `payload_id`, backfilling `student_progress.lesson_id` and `quiz_questions.lesson_id`, and re-pointing both foreign-key constraints at `content_refs.id`. This step binds each of those rows to its new Payload id via `ContentRefService.bind_payload_id`.
 4. Validate migrated content against the source.
 5. Integrate the student frontend behind a flag.
 6. Switch production reads.

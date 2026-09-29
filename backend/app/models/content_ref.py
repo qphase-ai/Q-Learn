@@ -3,6 +3,10 @@
 Payload owns what a lesson *is*; this table only gives learner-state rows
 (student_progress, quiz_questions) something to foreign-key against.
 Identity only — never titles, bodies, or ordering.
+Invariant: any lesson added to the legacy `lessons` table after migration
+d4e5f6a7b8c9 must also get a matching `content_refs` row (`kind='lesson'`,
+same UUID, `payload_id='legacy:<uuid>'`), otherwise `PUT /lessons/{id}/progress`
+404s for it.
 See docs/Curriculum/cirrculum-store-architecture.md § content_refs.
 """
 import uuid
