@@ -21,8 +21,8 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "bcrypt<4.0.0",
     "python-jose[cryptography]>=3.3.0",
-    # Sandbox
-    "vercel-sandbox>=0.1.0",
+    # Sandbox (Vercel Sandbox Python SDK — beta; import path is `vercel.sandbox`)
+    "vercel-sandbox>=0.0.2",
     # AI / Agents
     "langgraph>=0.2.0",
     "langchain-core>=0.2.0",

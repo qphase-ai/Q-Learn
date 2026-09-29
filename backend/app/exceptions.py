@@ -38,6 +38,15 @@ class ConflictError(QlearnError):
     code = "CONFLICT"
 
 
+class SandboxExecutionError(QlearnError):
+    """Raised when code executed inside the sandbox fails (non-zero exit,
+    empty output, or unparseable result). Carries stderr/diagnostics in
+    ``details`` so the background task can persist and publish it."""
+
+    status_code = 502
+    code = "SANDBOX_EXECUTION_ERROR"
+
+
 async def qlearn_exception_handler(request: Request, exc: QlearnError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,

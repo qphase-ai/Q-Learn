@@ -67,8 +67,8 @@ Before implementing any major feature:
 - [ ] GitHub Actions CI/CD
 - [ ] Database schema creation (Alembic migrations) — see [`docs/database.md`](docs/database.md)
 - [ ] Supabase Auth integration (register, login, JWT, RBAC) — see [`docs/security.md`](docs/security.md)
-- [ ] Vercel Sandbox base snapshot (`qlearn-python-base`) with Qiskit Aer pre-installed
-- [ ] `QiskitAerAdapter` via `AsyncSandbox.fork()` — see [`docs/sandbox.md`](docs/sandbox.md)
+- [ ] Vercel Sandbox Qiskit-ready snapshot/image (`SANDBOX_SNAPSHOT_ID` / `SANDBOX_IMAGE`) with Qiskit Aer pre-installed
+- [ ] `QiskitAerAdapter` via `SandboxRunner.run_python()` — see [`docs/sandbox.md`](docs/sandbox.md)
 - [ ] Supabase Realtime publish pattern (FastAPI publishes; frontend subscribes via JS SDK)
 - [ ] LangGraph `AsyncPostgresSaver` checkpointer — see [`docs/agents.md`](docs/agents.md)
 - [ ] Basic project documentation
@@ -180,7 +180,7 @@ This is a **startup product** (originally a final-year engineering project, now 
 ### Integration Tests
 - API + PostgreSQL (Alembic schema via [`docs/database.md`](docs/database.md))
 - AI service + RAG pipeline (see [`docs/rag-pipeline.md`](docs/rag-pipeline.md))
-- Quantum service + `QiskitAerAdapter` (mock `AsyncSandbox.fork()` — see [`docs/sandbox.md`](docs/sandbox.md))
+- Quantum service + `QiskitAerAdapter` (mock `SandboxRunner.run_python()` — see [`docs/sandbox.md`](docs/sandbox.md))
 - Circuit → simulation → result flow
 - Auth → protected routes (JWT + RBAC — see [`docs/security.md`](docs/security.md))
 

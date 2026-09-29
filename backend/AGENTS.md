@@ -6,7 +6,7 @@ Guidance for AI coding agents working in `backend/`.
 
 ## Orientation
 
-FastAPI backend. All computation that is CPU-bound (quantum simulation, student code) exits the process via `AsyncSandbox.fork()`. FastAPI stays I/O-bound. LangGraph agents use `AsyncPostgresSaver` so state survives restarts and multi-replica deployments.
+FastAPI backend. All computation that is CPU-bound (quantum simulation, student code) exits the process via `SandboxRunner` (Vercel Sandbox microVM). FastAPI stays I/O-bound. LangGraph agents use `AsyncPostgresSaver` so state survives restarts and multi-replica deployments.
 
 Read `design.md` in this directory before any significant change.
 
@@ -100,7 +100,7 @@ return {"success": True, "data": result}          # success
 
 1. Read `docs/quantum-execution.md` and `app/quantum/base.py`
 2. Implement all three abstract methods: `validate()`, `compile()`, `execute()`
-3. `execute()` must fork `AsyncSandbox` — never run computation in-process
+3. `execute()` must run compute via `SandboxRunner.run_python()` — never run computation in-process
 4. Register the new adapter in `QuantumExecutionService._backends`
 5. Do not change the `QuantumBackend` ABC without updating all existing adapters
 
@@ -199,7 +199,7 @@ pytest -k "test_login"         # single test
 pytest --cov=app               # with coverage
 ```
 
-- Mock `AsyncSandbox.fork()` in all tests — never fork real microVMs
+- Mock `SandboxRunner.run_python()` in all tests — never fork real microVMs
 - Use `pytest-asyncio` (already configured with `asyncio_mode = "auto"`)
 - Integration tests use a real test database (PostgreSQL with pgvector)
 - Unit tests: circuit validation, BKT calculations, schema validation — no DB needed
@@ -210,7 +210,7 @@ pytest --cov=app               # with coverage
 
 - Do not add Redis or Celery (deferred to Phase 2 — only after profiling)
 - Do not add in-process LLM streaming that bypasses Supabase Realtime
-- Do not add background workers outside of FastAPI `BackgroundTasks` or `AsyncSandbox.fork()`
+- Do not add background workers outside of FastAPI `BackgroundTasks` or `SandboxRunner`
 - Do not add a new dependency without checking if it's already covered by the stack
 - Do not create a new service file for a single function — extend the appropriate existing service
 - Do not log sensitive data (tokens, passwords, raw user input, LLM responses with PII)

@@ -81,7 +81,7 @@ Each agent has **one clear responsibility**. Do not merge responsibilities betwe
 |------|---------|
 | RAG Retrieval | Search the knowledge base (`backend/app/rag/`) |
 | Quantum Exec | Execute circuits via `QuantumExecutionService` |
-| Code Sandbox | Run student Python via `AsyncSandbox.fork()` |
+| Code Sandbox | Run student Python via `SandboxRunner.run_python()` |
 | Learning Data | Read/write `skill_mastery`, `learning_progress`, `agent_sessions` |
 
 ### State persistence
@@ -130,7 +130,7 @@ Every answer must cite sources. If no relevant chunks are found, say so explicit
 CircuitSpec → QuantumExecutionService.execute()
            → backend.validate()    [raises ValidationError on failure]
            → backend.compile()     [→ CompiledCircuit with QASM]
-           → backend.execute()     [→ AsyncSandbox.fork() → JSON result]
+           → backend.execute()     [→ SandboxRunner.run_python() → JSON result]
            → store in circuit_executions
            → publish to Supabase Realtime circuit:{id}
 ```
@@ -164,8 +164,8 @@ Frontend subscribes:
 | # | From → To | Transport |
 |---|-----------|-----------|
 | 1 | Frontend → FastAPI | HTTPS REST |
-| 2 | FastAPI → Vercel Sandbox (circuit) | `AsyncSandbox.fork()` |
-| 3 | FastAPI → Vercel Sandbox (student code) | `AsyncSandbox.fork()` |
+| 2 | FastAPI → Vercel Sandbox (circuit) | `SandboxRunner.run_python()` |
+| 3 | FastAPI → Vercel Sandbox (student code) | `SandboxRunner.run_python()` |
 | 4 | FastAPI → Supabase Realtime (publish) | Supabase Python SDK |
 | 5 | Supabase Realtime → Frontend (subscribe) | Supabase JS SDK WebSocket |
 | 6 | FastAPI → LLM Provider | HTTPS |
@@ -204,7 +204,7 @@ Frontend subscribes:
 | Type | Required for |
 |------|-------------|
 | Unit | Circuit validation logic, BKT calculations, schema transforms |
-| Integration | API routes + DB, RAG retrieval, `QiskitAerAdapter` (mock `AsyncSandbox.fork()`) |
+| Integration | API routes + DB, RAG retrieval, `QiskitAerAdapter` (mock `SandboxRunner.run_python()`) |
 | E2E | Full student journey: login → lesson → circuit → execute → quiz → progress |
 
-Mock `AsyncSandbox.fork()` in all integration tests — never fork real microVMs in CI.
+Mock `SandboxRunner.run_python()` in all integration tests — never fork real microVMs in CI.

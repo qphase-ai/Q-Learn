@@ -64,7 +64,7 @@ sequenceDiagram
     UI->>API: POST /simulations/execute (circuit JSON)
     API->>QS: execute(CircuitSpec)
     QS->>SA: compile(CircuitSpec) → CompiledCircuit
-    SA->>VM: AsyncSandbox.fork() + run Qiskit script
+    SA->>VM: SandboxRunner.run_python() + run Qiskit script
     VM-->>SA: JSON stdout (statevector · probabilities · measurements)
     SA-->>QS: ExecutionResult
     QS->>DB: INSERT circuit_executions
