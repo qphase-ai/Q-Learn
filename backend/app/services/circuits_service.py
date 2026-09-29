@@ -164,20 +164,18 @@ async def run_and_publish(
             }
 
         except Exception as exc:  # noqa: BLE001 — background task, never re-raise
+            # Sandbox diagnostics (stderr/stdout/parse errors) can contain internal
+            # paths and runtime detail, so they go to the SERVER LOG only (bounded).
+            # The persisted + realtime-published `error_message` stays the generic
+            # exception message so it is never leaked to the client (CWE-209).
             logger.exception(
                 "circuit_execution_failed",
                 circuit_id=str(circuit_id),
                 execution_id=str(execution_id),
                 error=str(exc),
+                details=str(getattr(exc, "details", None) or "")[:2000],
             )
             error_msg = str(exc)
-            # SandboxExecutionError (and other QlearnError) carry a diagnostic in
-            # `details`; the global exception handler surfaces it on the API path,
-            # but this background task bypasses that handler, so fold it in here
-            # (bounded) or the stderr/stdout from the sandbox would be lost.
-            details = getattr(exc, "details", None)
-            if details:
-                error_msg = f"{error_msg}: {str(details)[:2000]}"
 
             if execution is not None:
                 execution.status = "failed"
