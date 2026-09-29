@@ -8,10 +8,16 @@ import uuid
 
 import structlog
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ConflictError, NotFoundError, ValidationError
-from app.models.content_ref import LEGACY_PAYLOAD_PREFIX, ContentKind, ContentRef
+from app.models.content_ref import (
+    LEGACY_PAYLOAD_PREFIX,
+    UQ_CONTENT_REFS_KIND_PAYLOAD_ID,
+    ContentKind,
+    ContentRef,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -59,7 +65,17 @@ class ContentRefService:
             raise ConflictError(f"Payload {kind.value} {payload_id} is already bound to another ref")
 
         ref.payload_id = payload_id
-        await self.db.commit()
+        try:
+            await self.db.commit()
+        except IntegrityError as exc:
+            # A concurrent bind of the same payload_id passed the check above
+            # and committed first; the unique constraint is the real guard.
+            await self.db.rollback()
+            if UQ_CONTENT_REFS_KIND_PAYLOAD_ID in str(exc.orig):
+                raise ConflictError(
+                    f"Payload {kind.value} {payload_id} is already bound to another ref"
+                ) from exc
+            raise
         await self.db.refresh(ref)
         logger.info("content_ref_bound", ref_id=str(ref_id), kind=kind.value, payload_id=payload_id)
         return ref

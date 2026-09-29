@@ -6,7 +6,8 @@ move into Payload's `payload` schema without cross-schema FKs.
 
 Backfill reuses each lesson's UUID as its content_refs.id, so no learner-state
 row changes and API lesson ids stay valid. payload_id holds a 'legacy:<uuid>'
-sentinel until the Payload import binds the real document id.
+sentinel until the Payload import binds the real document id. An AFTER INSERT
+trigger on `lessons` gives lessons added later the same ref.
 
 Downgrade restores the FKs to `lessons`; it fails (safely, inside the
 transaction) if content_refs by then holds ids with no matching lesson.
@@ -29,6 +30,9 @@ depends_on: Union[str, Sequence[str], None] = None
 # Postgres default names — the initial schema created these FKs unnamed.
 PROGRESS_FK = "student_progress_lesson_id_fkey"
 QUIZ_FK = "quiz_questions_lesson_id_fkey"
+
+SYNC_FUNCTION = "content_refs_sync_legacy_lesson"
+SYNC_TRIGGER = "trg_lessons_content_ref"
 
 
 def upgrade() -> None:
@@ -55,6 +59,27 @@ def upgrade() -> None:
         "INSERT INTO content_refs (id, payload_id, kind) "
         "SELECT id, 'legacy:' || id::text, 'lesson' FROM lessons"
     )
+    # Lessons inserted after this migration get their ref the same way, so
+    # every legacy lesson id stays valid for learner-state writes.
+    op.execute(
+        f"""
+        CREATE FUNCTION {SYNC_FUNCTION}() RETURNS trigger
+        LANGUAGE plpgsql
+        SET search_path = public
+        AS $$
+        BEGIN
+            INSERT INTO content_refs (id, payload_id, kind)
+            VALUES (NEW.id, 'legacy:' || NEW.id::text, 'lesson')
+            ON CONFLICT DO NOTHING;
+            RETURN NEW;
+        END
+        $$
+        """
+    )
+    op.execute(
+        f"CREATE TRIGGER {SYNC_TRIGGER} AFTER INSERT ON lessons "
+        f"FOR EACH ROW EXECUTE FUNCTION {SYNC_FUNCTION}()"
+    )
 
     op.drop_constraint(PROGRESS_FK, "student_progress", type_="foreignkey")
     op.create_foreign_key(
@@ -69,6 +94,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute(f"DROP TRIGGER {SYNC_TRIGGER} ON lessons")
+    op.execute(f"DROP FUNCTION {SYNC_FUNCTION}()")
     op.drop_constraint(QUIZ_FK, "quiz_questions", type_="foreignkey")
     op.create_foreign_key(
         QUIZ_FK, "quiz_questions", "lessons",

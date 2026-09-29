@@ -290,6 +290,8 @@ class TestUpsertProgress:
         svc = LearningService(db=db)
         result = await svc.upsert_progress(user_id, lesson_id, body)
 
+        from app.models.content_ref import ContentRef
+        db.get.assert_awaited_once_with(ContentRef, lesson_id)
         db.add.assert_called_once()
         added = db.add.call_args.args[0]
         assert isinstance(added, LearningProgress)

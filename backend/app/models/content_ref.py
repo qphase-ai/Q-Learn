@@ -3,10 +3,11 @@
 Payload owns what a lesson *is*; this table only gives learner-state rows
 (student_progress, quiz_questions) something to foreign-key against.
 Identity only — never titles, bodies, or ordering.
-Invariant: any lesson added to the legacy `lessons` table after migration
-d4e5f6a7b8c9 must also get a matching `content_refs` row (`kind='lesson'`,
-same UUID, `payload_id='legacy:<uuid>'`), otherwise `PUT /lessons/{id}/progress`
-404s for it.
+Invariant: every row in the legacy `lessons` table has a matching
+`content_refs` row (`kind='lesson'`, same UUID, `payload_id='legacy:<uuid>'`).
+Migration d4e5f6a7b8c9 backfills existing lessons and installs an AFTER INSERT
+trigger on `lessons` for later ones; without it `PUT /lessons/{id}/progress`
+would 404 for a lesson that `GET /lessons/{id}` still serves.
 See docs/Curriculum/cirrculum-store-architecture.md § content_refs.
 """
 import uuid
@@ -31,11 +32,13 @@ class ContentKind(StrEnum):
 # payload_id until the Payload import binds the real document id.
 LEGACY_PAYLOAD_PREFIX = "legacy:"
 
+UQ_CONTENT_REFS_KIND_PAYLOAD_ID = "uq_content_refs_kind_payload_id"
+
 
 class ContentRef(Base):
     __tablename__ = "content_refs"
     __table_args__ = (
-        UniqueConstraint("kind", "payload_id", name="uq_content_refs_kind_payload_id"),
+        UniqueConstraint("kind", "payload_id", name=UQ_CONTENT_REFS_KIND_PAYLOAD_ID),
         CheckConstraint(
             "kind IN ('curriculum', 'level', 'module', 'lesson')",
             name="ck_content_refs_kind",

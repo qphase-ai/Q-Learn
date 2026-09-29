@@ -7,9 +7,16 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from app.exceptions import ConflictError, NotFoundError, ValidationError
-from app.models.content_ref import ContentKind, ContentRef
+from app.models.content_ref import UQ_CONTENT_REFS_KIND_PAYLOAD_ID, ContentKind, ContentRef
+
+
+def _integrity_error(constraint: str) -> IntegrityError:
+    """Mimic the IntegrityError SQLAlchemy raises when Postgres rejects a commit."""
+    orig = Exception(f'duplicate key value violates unique constraint "{constraint}"')
+    return IntegrityError("UPDATE content_refs ...", {}, orig)
 
 
 def _make_ref(*, kind: str = "lesson", payload_id: str | None = None) -> ContentRef:
@@ -155,3 +162,29 @@ class TestBindPayloadId:
 
         with pytest.raises(NotFoundError):
             await ContentRefService(db).bind_payload_id(uuid.uuid4(), ContentKind.LESSON, "42")
+
+    async def test_concurrent_bind_race_raises_conflict(self):
+        """A bind that loses a race at commit is a 409, not a raw IntegrityError."""
+        from app.services.content_ref_service import ContentRefService
+
+        ref = _make_ref()
+        db = _make_mock_db(get_returns=ref)
+        db.execute = AsyncMock(return_value=_scalar_one_or_none_result(None))
+        db.commit = AsyncMock(side_effect=_integrity_error(UQ_CONTENT_REFS_KIND_PAYLOAD_ID))
+
+        with pytest.raises(ConflictError):
+            await ContentRefService(db).bind_payload_id(ref.id, ContentKind.LESSON, "42")
+        db.rollback.assert_awaited_once()
+        db.refresh.assert_not_awaited()
+
+    async def test_other_integrity_errors_are_reraised(self):
+        from app.services.content_ref_service import ContentRefService
+
+        ref = _make_ref()
+        db = _make_mock_db(get_returns=ref)
+        db.execute = AsyncMock(return_value=_scalar_one_or_none_result(None))
+        db.commit = AsyncMock(side_effect=_integrity_error("ck_content_refs_kind"))
+
+        with pytest.raises(IntegrityError):
+            await ContentRefService(db).bind_payload_id(ref.id, ContentKind.LESSON, "42")
+        db.rollback.assert_awaited_once()
