@@ -116,7 +116,7 @@ Six layers — each has its own module doc:
 | **1. Frontend** | **Public surface:** marketing landing page at `/` (auth-gated, `components/home/`). **App surface:** VS Code-style IDE shell — 6 zones, 6 modes, 7 Zustand stores, Supabase Realtime for events | [`docs/frontend-layer.md`](docs/frontend-layer.md) |
 | **2. Backend Services** | FastAPI microservices — API Gateway + 11 domain services; `API Router → Service → Repository → PostgreSQL` | [`backend/design.md`](backend/design.md) |
 | **3. Quantum Backend** | Adapter pattern — `QiskitAerAdapter` forks Vercel Sandbox microVM; FastAPI stays I/O-bound | [`docs/quantum-execution.md`](docs/quantum-execution.md) |
-| **4. Code Execution Sandbox** | Vercel Sandbox managed microVM (via `SandboxRunner`) — both student code and quantum circuits; isolated runtime, 512 MB, 30s | [`docs/sandbox.md`](docs/sandbox.md) |
+| **4. Code Execution Sandbox** | Vercel Sandbox managed microVM (via `SandboxRunner`) — both student code and quantum circuits; deny-all network, 512 MB, 30s | [`docs/sandbox.md`](docs/sandbox.md) |
 | **5. AI & Knowledge** | `get_llm()` backed by **ModelRouter** — proactive sliding-window RPM routing across 10 free-tier models (225 RPM reliable capacity) + reactive LangChain fallback chain + RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) | [`docs/llm-model-router.md`](docs/llm-model-router.md) · [`docs/rag-pipeline.md`](docs/rag-pipeline.md) · [`docs/agents.md`](docs/agents.md) |
 | **6. Data Storage** | Supabase (Auth + PostgreSQL + pgvector + Realtime) · Docker Compose for local dev | [`docs/database.md`](docs/database.md) · [`docs/infrastructure.md`](docs/infrastructure.md) |
 

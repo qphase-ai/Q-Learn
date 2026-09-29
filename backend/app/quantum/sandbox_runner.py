@@ -16,7 +16,7 @@ Vercel Sandbox Python SDK (beta, package ``vercel-sandbox``):
         async with sandbox.create_sandbox(...) as instance:
             proc = await instance.run_process("python", ["-c", code],
                                               capture_output=True)
-            proc.stdout / proc.stderr / proc.exit_code
+            proc.stdout / proc.stderr / proc.returncode
 
 The SDK is imported lazily inside ``run_python`` so that importing this module
 (and unit-testing callers by patching ``SandboxRunner.run_python``) never
@@ -63,9 +63,14 @@ class SandboxRunner:
         non-zero exit code from the script is a normal SandboxResult, left for
         the caller to interpret.
         """
+        from datetime import timedelta
+
         from vercel.api import session  # type: ignore[import-not-found]
         from vercel import sandbox  # type: ignore[import-not-found]
-        from vercel.sandbox import SandboxResources  # type: ignore[import-not-found]
+        from vercel.sandbox import (  # type: ignore[import-not-found]
+            NetworkPolicy,
+            SandboxResources,
+        )
 
         timeout = timeout_ms if timeout_ms is not None else self.settings.sandbox_timeout
 
@@ -74,7 +79,13 @@ class SandboxRunner:
                 vcpus=self.settings.sandbox_vcpus,
                 memory=self.settings.sandbox_memory,
             ),
-            "timeout": timeout,
+            # SDK 0.7.0: the cap is `execution_time_limit` (seconds or timedelta);
+            # our setting is milliseconds, so convert explicitly. There is no
+            # `timeout` kwarg.
+            "execution_time_limit": timedelta(milliseconds=timeout),
+            # Deny all outbound network from the microVM — student/Qiskit code
+            # never needs egress. (SDK 0.7.0 exposes NetworkPolicy.deny_all().)
+            "network_policy": NetworkPolicy.deny_all(),
         }
 
         # Prefer a snapshot (warm, qiskit preinstalled); else a custom image.
@@ -94,8 +105,9 @@ class SandboxRunner:
                     "python", ["-c", code], capture_output=True
                 )
 
+        # CompletedProcess exposes `returncode` (not `exit_code`).
         return SandboxResult(
             stdout=_as_text(getattr(proc, "stdout", "")),
             stderr=_as_text(getattr(proc, "stderr", "")),
-            exit_code=int(getattr(proc, "exit_code", 0) or 0),
+            exit_code=int(getattr(proc, "returncode", 0) or 0),
         )

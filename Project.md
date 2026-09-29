@@ -228,7 +228,7 @@ Six primary layers:
    - `PennyLaneAdapter` (Phase 2)
    - `CirqAdapter` (Phase 2)
 
-4. **Code Execution Sandbox** — Vercel Sandbox (managed microVM) for **all compute-heavy execution** — both student code and quantum circuit simulation, through the single `SandboxRunner` seam. Isolation via microVM + locked-down runtime image (the Python SDK has no `deny-all` flag; attach a Secure Compute `network_id` if strict egress control is required). Resource limits: 512 MB RAM, 1 vCPU, 30s timeout. Qiskit Aer pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`) so each `create_sandbox()` avoids cold-start. FastAPI remains I/O-bound throughout — no CPU work in-process.
+4. **Code Execution Sandbox** — Vercel Sandbox (managed microVM) for **all compute-heavy execution** — both student code and quantum circuit simulation, through the single `SandboxRunner` seam. Isolation via microVM + deny-all outbound network (`network_policy=NetworkPolicy.deny_all()`, SDK 0.7.0; a Secure Compute `network_id` can be attached for selective egress). Resource limits: 512 MB RAM, 1 vCPU, 30s timeout. Qiskit Aer pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`) so each `create_sandbox()` avoids cold-start. FastAPI remains I/O-bound throughout — no CPU work in-process.
 
 5. **External AI & Knowledge Sources** — LLM via ChatLiteLLM with smart routing and fallback (primary + ordered fallbacks via `get_llm()`; any LiteLLM-supported provider), official SDK documentation, academic papers, trusted educational resources.
 
@@ -675,7 +675,7 @@ flowchart TD
 
 **Code Execution Sandbox** (for student-submitted Python):
 - Vercel Sandbox managed microVM — same `SandboxRunner` seam as quantum execution
-- Isolation via microVM + locked-down image (Secure Compute `network_id` for strict egress control; no `deny-all` kwarg exists)
+- Isolation via microVM + deny-all outbound network (`network_policy=NetworkPolicy.deny_all()`; Secure Compute `network_id` for selective egress)
 - Resource limits: 512 MB RAM, 1 vCPU, 30s timeout
 - Qiskit Aer pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`)
 - Never executes inside the main API process
@@ -740,7 +740,7 @@ flowchart LR
 | Rate limiting | slowapi (100 req/min default; Redis backend deferred to Phase 2) |
 | Secrets management | Environment variables only, never in code |
 | No API keys in frontend | All LLM/API calls proxied through backend |
-| Sandboxed code execution | Vercel Sandbox microVM — isolated runtime, 512 MB RAM, 30s timeout |
+| Sandboxed code execution | Vercel Sandbox microVM — deny-all network, 512 MB RAM, 30s timeout |
 | Resource limits | CPU, Memory, Time limits for simulations |
 | Timeouts | All operations have configurable timeouts |
 | Prompt injection protection | Input sanitization, system prompt boundaries |

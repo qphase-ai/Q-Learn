@@ -1057,7 +1057,7 @@ class SandboxService:
 
 ### Security Rules
 
-- **Isolation** — isolated microVM, fully managed by Vercel, no shared process space. The Python SDK has no `deny-all` flag; use a locked-down image and, if strict egress control is needed, a Secure Compute `network_id`.
+- **Isolation** — isolated microVM, fully managed by Vercel, no shared process space, plus **deny-all outbound network** via `network_policy=NetworkPolicy.deny_all()` (SDK 0.7.0). Use a Secure Compute `network_id` if selective egress is ever needed.
 - **Memory limit**: 512MB (`SANDBOX_MEMORY`, configurable)
 - **Timeout**: 30 seconds (`SANDBOX_TIMEOUT`)
 - **Qiskit pre-installed** via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`)

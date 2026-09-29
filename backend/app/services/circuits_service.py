@@ -171,6 +171,13 @@ async def run_and_publish(
                 error=str(exc),
             )
             error_msg = str(exc)
+            # SandboxExecutionError (and other QlearnError) carry a diagnostic in
+            # `details`; the global exception handler surfaces it on the API path,
+            # but this background task bypasses that handler, so fold it in here
+            # (bounded) or the stderr/stdout from the sandbox would be lost.
+            details = getattr(exc, "details", None)
+            if details:
+                error_msg = f"{error_msg}: {str(details)[:2000]}"
 
             if execution is not None:
                 execution.status = "failed"

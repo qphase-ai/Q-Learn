@@ -31,7 +31,7 @@ flowchart TD
 - **Never execute student code or Qiskit inside the main API process**
 - **Vercel Sandbox microVM** — fully managed, no self-hosted Docker needed
 - **Single SDK seam** — all Vercel SDK contact lives in `app/quantum/sandbox_runner.py` (`SandboxRunner`); adapters/services never import the SDK directly
-- **Isolation** — microVM boundary + a locked-down runtime image. The Python SDK has no `deny-all` flag; if strict network egress control is required, attach a Secure Compute network via `network_id`. Do **not** rely on a `network_policy` kwarg — it does not exist.
+- **Isolation** — microVM boundary + **deny-all outbound network**: `SandboxRunner` passes `network_policy=NetworkPolicy.deny_all()` to `create_sandbox()` (SDK 0.7.0), so student/Qiskit code has no egress. A Secure Compute `network_id` can be attached instead if selective egress is ever needed.
 - **Warm runtime** — a Qiskit-ready **snapshot** (`SANDBOX_SNAPSHOT_ID`) or custom **image** (`SANDBOX_IMAGE`) so each `create_sandbox()` avoids per-run `pip install`
 - **JSON over stdout** — results serialised to stdout; FastAPI parses them, and a non-zero exit code / empty / unparseable output raises `SandboxExecutionError`
 - **Hobby plan quota** — hard cap, no billing risk
