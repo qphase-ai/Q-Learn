@@ -112,17 +112,15 @@ export default function DashboardHeader() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            {/* Wrapper keeps the tooltip reachable: disabled buttons don't fire pointer events. */}
-            <span tabIndex={0} className="rounded-lg">
-              <button
-                type="button"
-                disabled
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed"
-                aria-label="Theme switching (coming soon)"
-              >
-                <Sun size={16} aria-hidden />
-              </button>
-            </span>
+            {/* aria-disabled (not `disabled`) keeps the button focusable so the tooltip still shows. */}
+            <button
+              type="button"
+              aria-disabled="true"
+              className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-lg text-muted-foreground opacity-50"
+              aria-label="Theme switching (coming soon)"
+            >
+              <Sun size={16} aria-hidden />
+            </button>
           </TooltipTrigger>
           <TooltipContent>Light mode coming soon</TooltipContent>
         </Tooltip>
