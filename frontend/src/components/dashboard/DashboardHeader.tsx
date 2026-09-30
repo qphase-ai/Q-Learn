@@ -110,14 +110,22 @@ export default function DashboardHeader() {
           </div>
         )}
 
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground"
-          aria-label="Toggle theme"
-          title="Theme switching coming soon"
-        >
-          <Sun size={16} aria-hidden />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* Wrapper keeps the tooltip reachable: disabled buttons don't fire pointer events. */}
+            <span tabIndex={0} className="rounded-lg">
+              <button
+                type="button"
+                disabled
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed"
+                aria-label="Theme switching (coming soon)"
+              >
+                <Sun size={16} aria-hidden />
+              </button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>Light mode coming soon</TooltipContent>
+        </Tooltip>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 outline-none hover:bg-white/5">
