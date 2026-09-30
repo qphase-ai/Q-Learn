@@ -91,7 +91,7 @@ function PlanCard({
       className={`flex flex-col rounded-2xl border p-6 ${
         highlighted
           ? "border-electric-purple/50 bg-gradient-to-b from-electric-purple/10 to-transparent shadow-glow-purple"
-          : "border-white/10 bg-surface"
+          : "border-overlay/10 bg-surface"
       }`}
     >
       <div className="flex items-center justify-between">
@@ -113,7 +113,7 @@ function PlanCard({
         className={`mt-6 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
           highlighted
             ? "bg-electric-purple text-background hover:brightness-110"
-            : "border border-white/10 text-foreground"
+            : "border border-overlay/10 text-foreground"
         } disabled:cursor-not-allowed disabled:opacity-60`}
       >
         {cta}

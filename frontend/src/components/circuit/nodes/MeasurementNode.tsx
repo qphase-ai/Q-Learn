@@ -20,7 +20,7 @@ function MeasurementNode({ selected }: NodeProps) {
         justifyContent: "center",
         fontSize: 12,
         fontWeight: 700,
-        color: "var(--bg-base)",
+        color: "var(--gate-label-on-light)",
         cursor: "pointer",
       }}
     >

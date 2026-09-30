@@ -16,7 +16,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/8 bg-background/60 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-overlay/[0.08] bg-background/60 backdrop-blur-md">
       <nav
         className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
         aria-label="Main navigation"

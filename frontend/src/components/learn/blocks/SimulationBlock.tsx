@@ -52,7 +52,7 @@ export default function SimulationBlock({ circuit, shots, view, title, descripti
   }
 
   return (
-    <section aria-label={title || "Simulation"} className="my-6 rounded-md border border-white/10 bg-surface p-4">
+    <section aria-label={title || "Simulation"} className="my-6 rounded-md border border-overlay/10 bg-surface p-4">
       {title && <p className="mb-1 font-semibold">{title}</p>}
       {description && <p className="mb-3 text-sm text-muted-foreground">{description}</p>}
       <CircuitPreview spec={circuit} />

@@ -41,7 +41,7 @@ export default function TrackCard({
       <Link
         href={href}
         aria-label={`Launch ${title}`}
-        className={`block rounded-lg border px-4 py-2 text-center text-sm font-medium transition-colors hover:bg-white/[0.04] ${accentClass} ${borderClass}`}
+        className={`block rounded-lg border px-4 py-2 text-center text-sm font-medium transition-colors hover:bg-overlay/[0.04] ${accentClass} ${borderClass}`}
       >
         Launch
       </Link>

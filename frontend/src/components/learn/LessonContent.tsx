@@ -31,7 +31,7 @@ export default function LessonContent() {
         <Markdown>{activeLesson.content ?? ""}</Markdown>
       )}
 
-      <footer className="mt-8 flex justify-end border-t border-border pt-4">
+      <footer className="mt-8 flex justify-end border-t border-overlay/10 pt-4">
         {!isTrackableLessonId(activeLesson.id) ? (
           <span className="text-xs text-muted-foreground">Progress tracking unavailable for this lesson</span>
         ) : isCompleted ? (

@@ -26,7 +26,7 @@ export default function ChatMessage({ message }: { message: TutorMessage }) {
             ? "bg-cyber-cyan/15 text-foreground"
             : message.error
               ? "border border-error/40 bg-error/10 text-error"
-              : "bg-white/[0.03] text-foreground"
+              : "bg-overlay/[0.03] text-foreground"
         )}
       >
         {isUser || message.error ? (

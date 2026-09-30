@@ -58,7 +58,7 @@ export default function DashboardActivityBar({
   return (
     <nav
       aria-label="Dashboard navigation"
-      className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-surface py-3 transition-opacity ${
+      className={`flex w-[68px] flex-shrink-0 flex-col items-center gap-1 border-r border-overlay/10 bg-surface py-3 transition-opacity ${
         dim ? "opacity-30" : ""
       }`}
     >
@@ -95,7 +95,7 @@ function NavButton({ item, isActive }: { item: NavItem; isActive: boolean }) {
       className={`flex h-11 w-14 flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-medium transition-colors ${
         isActive
           ? "bg-electric-purple/15 text-electric-purple"
-          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+          : "text-muted-foreground hover:bg-overlay/5 hover:text-foreground"
       }`}
     >
       <Icon size={17} aria-hidden />

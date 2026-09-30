@@ -112,7 +112,7 @@ export default function StateSphereVisualization() {
           {probabilities.map(([key, prob], i) => (
             <span
               key={key}
-              className="flex items-center gap-1.5 rounded-full bg-white/[0.03] px-2 py-0.5 text-xs text-foreground"
+              className="flex items-center gap-1.5 rounded-full bg-overlay/[0.03] px-2 py-0.5 text-xs text-foreground"
             >
               <span
                 className={`h-2 w-2 rounded-full ${PALETTE_BG_CLASSES[i % PALETTE_BG_CLASSES.length]}`}

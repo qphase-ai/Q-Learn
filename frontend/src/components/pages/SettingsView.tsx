@@ -1,8 +1,11 @@
 "use client";
 
-import { Settings, LogOut, User, Palette, Info } from "lucide-react";
+import { Settings, LogOut, User, Palette, Info, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
+import { useMounted } from "@/hooks/useMounted";
+import { cn } from "@/lib/utils";
 
 export default function SettingsView() {
   const user = useAuthStore((s) => s.user);
@@ -21,7 +24,7 @@ export default function SettingsView() {
       </header>
 
       {/* Account */}
-      <section className="rounded-xl border border-white/10 bg-surface p-5">
+      <section className="rounded-xl border border-overlay/10 bg-surface p-5">
         <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <User size={15} className="text-cyber-cyan" aria-hidden />
           Account
@@ -42,26 +45,26 @@ export default function SettingsView() {
       </section>
 
       {/* Appearance */}
-      <section className="rounded-xl border border-white/10 bg-surface p-5">
+      <section className="rounded-xl border border-overlay/10 bg-surface p-5">
         <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Palette size={15} className="text-cyber-cyan" aria-hidden />
           Appearance
         </h2>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm text-foreground">Theme</div>
+            <div id="theme-label" className="text-sm text-foreground">
+              Theme
+            </div>
             <div className="text-xs text-muted-foreground">
-              Q-Learn uses a dark quantum-lab theme. Light mode is coming soon.
+              Choose light, dark, or match your system setting.
             </div>
           </div>
-          <span className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-muted-foreground">
-            Dark
-          </span>
+          <ThemePicker />
         </div>
       </section>
 
       {/* About */}
-      <section className="rounded-xl border border-white/10 bg-surface p-5">
+      <section className="rounded-xl border border-overlay/10 bg-surface p-5">
         <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Info size={15} className="text-cyber-cyan" aria-hidden />
           About
@@ -80,6 +83,47 @@ function Row({ label, value, capitalize }: { label: string; value: string; capit
     <div className="flex items-center justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={`truncate text-foreground ${capitalize ? "capitalize" : ""}`}>{value}</dd>
+    </div>
+  );
+}
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", Icon: Sun },
+  { value: "dark", label: "Dark", Icon: Moon },
+  { value: "system", label: "System", Icon: Monitor },
+] as const;
+
+function ThemePicker() {
+  const { theme, setTheme } = useTheme();
+  const mounted = useMounted();
+
+  return (
+    <div
+      role="group"
+      aria-labelledby="theme-label"
+      className="inline-flex rounded-lg border border-overlay/10 bg-overlay/[0.03] p-0.5"
+    >
+      {THEME_OPTIONS.map(({ value, label, Icon }) => {
+        // Until mounted the stored theme is unknown, so no option shows as selected.
+        const selected = mounted && theme === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => setTheme(value)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1 text-xs transition-colors",
+              selected
+                ? "bg-cyber-cyan/15 text-cyber-cyan"
+                : "text-muted-foreground hover:bg-overlay/5 hover:text-foreground",
+            )}
+          >
+            <Icon size={13} aria-hidden />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

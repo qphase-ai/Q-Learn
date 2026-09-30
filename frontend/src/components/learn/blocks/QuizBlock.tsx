@@ -13,7 +13,7 @@ export default function QuizBlock({ question, options, correctAnswer, hint, expl
   const correct = submitted && selected === correctAnswer;
 
   return (
-    <section aria-label="Quiz question" className="my-6 rounded-md border border-white/10 bg-surface p-4">
+    <section aria-label="Quiz question" className="my-6 rounded-md border border-overlay/10 bg-surface p-4">
       <p className="mb-3 font-medium">{question}</p>
       <div role="radiogroup" className="flex flex-col gap-2">
         {options.map((option, i) => {
@@ -28,7 +28,7 @@ export default function QuizBlock({ question, options, correctAnswer, hint, expl
               onClick={() => setSelected(option.text)}
               className={cn(
                 "rounded-md border px-3 py-2 text-left text-sm transition-colors",
-                isSelected ? "border-cyber-cyan bg-cyber-cyan/10" : "border-white/10 hover:bg-white/5",
+                isSelected ? "border-cyber-cyan bg-cyber-cyan/10" : "border-overlay/10 hover:bg-overlay/5",
                 submitted && option.text === correctAnswer && "border-success bg-success/10"
               )}
             >

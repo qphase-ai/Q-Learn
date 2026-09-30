@@ -91,7 +91,7 @@ export function AnimatedBeam({
           <stop offset="100%" stopColor="#B026FF" />
         </linearGradient>
       </defs>
-      <path d={path} stroke="rgba(255,255,255,0.08)" strokeWidth={1.5} />
+      <path d={path} className="stroke-overlay/[0.08]" strokeWidth={1.5} />
       <motion.path
         d={path}
         stroke={`url(#${gradientId})`}

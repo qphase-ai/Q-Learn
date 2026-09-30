@@ -45,7 +45,7 @@ function MasteryMockup() {
             <span className="text-muted-foreground">{topic}</span>
             <span className="text-foreground font-medium">{pct}%</span>
           </div>
-          <div className="h-2 w-full rounded-full bg-white/10">
+          <div className="h-2 w-full rounded-full bg-overlay/10">
             <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct}%` }} />
           </div>
         </div>

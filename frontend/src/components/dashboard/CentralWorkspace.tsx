@@ -153,7 +153,7 @@ export default function CentralWorkspace({
       {tab === "circuit" && (
         <div className={`flex flex-col gap-4 ${lockedTab ? "flex-1 overflow-y-auto" : ""}`}>
           <div
-            className={`flex overflow-hidden rounded-xl border border-white/10 ${
+            className={`flex overflow-hidden rounded-xl border border-overlay/10 ${
               lockedTab ? "h-[420px] flex-shrink-0" : "h-[420px]"
             }`}
           >
@@ -173,7 +173,7 @@ export default function CentralWorkspace({
         <div className={`flex flex-col gap-4 ${lockedTab ? "flex-1 overflow-y-auto" : ""}`}>
           <div
             className={`flex overflow-hidden rounded-xl ${
-              lockedTab ? "h-[420px] flex-shrink-0" : "h-[420px] border border-white/10"
+              lockedTab ? "h-[420px] flex-shrink-0" : "h-[420px] border border-overlay/10"
             }`}
           >
             {lockedTab && <FileTreePanel activeFile="circuit.py" />}
@@ -188,7 +188,7 @@ export default function CentralWorkspace({
       {tab === "simulation" && <CircuitResultsPanel />}
 
       {tab === "practice" && (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-surface p-8 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-overlay/10 bg-surface p-8 text-center">
           <p className="text-sm font-medium text-foreground">Practice problems for this lesson</p>
           <p className="max-w-sm text-xs text-muted-foreground">
             Head to the Quiz workspace to test what you&apos;ve learned in this level.

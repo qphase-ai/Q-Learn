@@ -85,9 +85,9 @@ export default function RegisterPage() {
       </form>
 
       <div className="my-5 flex items-center gap-3 text-[0.8125rem] text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
+        <span className="h-px flex-1 bg-overlay/10" />
         or
-        <span className="h-px flex-1 bg-border" />
+        <span className="h-px flex-1 bg-overlay/10" />
       </div>
 
       <Button

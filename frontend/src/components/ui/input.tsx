@@ -48,11 +48,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               onChange?.(e);
             }}
             className={cn(
-              "block h-12 w-full rounded-lg border bg-white/[0.02] px-3 text-sm text-foreground outline-none backdrop-blur-md transition-colors",
+              "block h-12 w-full rounded-lg border bg-overlay/[0.02] px-3 text-sm text-foreground outline-none backdrop-blur-md transition-colors",
               label ? "pb-1.5 pt-4" : "py-3",
               error
                 ? "border-error"
-                : "border-white/10 focus:border-cyber-cyan focus:shadow-glow-cyan",
+                : "border-overlay/10 focus:border-cyber-cyan focus:shadow-glow-cyan",
               className
             )}
             {...props}

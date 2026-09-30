@@ -76,7 +76,7 @@ export default function QuizWorkspace({
       <main className="flex flex-1 flex-col items-center gap-3 p-6">
         <p className="text-lg font-semibold text-foreground">Quiz complete!</p>
         <p className="text-sm text-muted-foreground">You scored {score}%.</p>
-        <div className="mt-4 w-full max-w-2xl overflow-hidden rounded-xl border border-white/10">
+        <div className="mt-4 w-full max-w-2xl overflow-hidden rounded-xl border border-overlay/10">
           <AITutorPanel />
         </div>
       </main>

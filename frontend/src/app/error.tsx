@@ -15,7 +15,7 @@ export default function Error({
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl shadow-glow-cyan animate-fade-in">
+      <div className="w-full max-w-md rounded-2xl border border-overlay/10 bg-overlay/5 p-8 text-center backdrop-blur-xl shadow-glow-cyan animate-fade-in">
         <h1 className="mb-2 text-lg font-semibold text-foreground">
           Something went wrong
         </h1>

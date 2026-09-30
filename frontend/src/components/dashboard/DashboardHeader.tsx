@@ -1,6 +1,6 @@
 "use client";
 
-import { Atom, Search, Sun, ChevronDown, LogOut } from "lucide-react";
+import { Atom, Search, ChevronDown, LogOut } from "lucide-react";
 import { useLearningStore } from "@/stores/learningStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function DashboardHeader() {
   const activeCourse = useLearningStore((s) => s.activeCourse);
@@ -46,7 +47,7 @@ export default function DashboardHeader() {
   const initial = (user?.email ?? "S").charAt(0).toUpperCase();
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center gap-4 border-b border-white/10 bg-surface px-4">
+    <header className="flex h-14 flex-shrink-0 items-center gap-4 border-b border-overlay/10 bg-surface px-4">
       <div className="flex items-center gap-2.5">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyber-cyan/20 to-electric-purple/20">
           <Atom size={18} className="text-cyber-cyan" aria-hidden />
@@ -60,7 +61,7 @@ export default function DashboardHeader() {
       <div className="mx-auto flex w-full max-w-md items-center">
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex h-9 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-sm text-muted-foreground">
+            <div className="flex h-9 w-full items-center gap-2 rounded-lg border border-overlay/10 bg-overlay/[0.02] px-3 text-sm text-muted-foreground">
               <Search size={15} aria-hidden />
               <input
                 type="text"
@@ -69,7 +70,7 @@ export default function DashboardHeader() {
                 aria-label="Search (coming soon)"
                 className="w-full flex-1 bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed"
               />
-              <kbd className="rounded border border-white/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+              <kbd className="rounded border border-overlay/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                 ⌘K
               </kbd>
             </div>
@@ -110,17 +111,10 @@ export default function DashboardHeader() {
           </div>
         )}
 
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground"
-          aria-label="Toggle theme"
-          title="Theme switching coming soon"
-        >
-          <Sun size={16} aria-hidden />
-        </button>
+        <ThemeToggle />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 outline-none hover:bg-white/5">
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 outline-none hover:bg-overlay/5">
             <Avatar className="h-7 w-7">
               <AvatarFallback className="text-xs">{initial}</AvatarFallback>
             </Avatar>

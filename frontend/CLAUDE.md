@@ -157,26 +157,33 @@ Unsubscribe on component unmount to avoid leaking channels.
 
 ## Design System Constraints
 
-Dark cyberpunk / glassmorphism aesthetic. Core tokens are HSL triplets defined in `src/app/globals.css` (`:root`), consumed via Tailwind's `hsl(var(--x) / <alpha-value>)` pattern in `tailwind.config.ts` and exposed as semantic Tailwind classes. **Do not hardcode colors or read the CSS vars directly — use the Tailwind semantic classes.**
+Cyberpunk / glassmorphism aesthetic with **light and dark themes** (dark is the default). Core tokens are HSL triplets defined in `src/app/globals.css` — light values on `:root`, dark values on `.dark` — consumed via Tailwind's `hsl(var(--x) / <alpha-value>)` pattern in `tailwind.config.ts` and exposed as semantic Tailwind classes. **Do not hardcode colors or read the CSS vars directly — use the Tailwind semantic classes**, or the UI will break in one of the two themes. In particular, never use `white/…`/`black/…` for translucent fills or borders; use `overlay/…` (white in dark, black in light).
+
+**Theming:** `next-themes` (`ThemeProvider` in `app/providers.tsx`, `attribute="class"`, `defaultTheme="dark"`, `enableSystem`) sets `light`/`dark` on `<html>` before paint and persists the choice in `localStorage` (`theme`). Users switch via `ThemeToggle` (`components/ui/theme-toggle.tsx`, in `DashboardHeader`) or the Light/Dark/System picker in Settings. Read the theme with `useTheme()`; anything rendering theme-specific markup must wait for `useMounted()` (`hooks/useMounted.ts`) to avoid hydration mismatches. Third-party widgets follow `resolvedTheme` (Sonner toasts in `components/ui/sonner.tsx`, Monaco `light`/`vs-dark` in `MonacoCodePanel`).
+
+Values below are dark / light.
 
 | Token (CSS var) | Approx. value | Tailwind class | When to use |
 |------|------|-----------------|-------------|
-| `--background` | `#050505` (0 0% 2%) | `bg-background` | Root background |
-| `--surface` | 0 0% 4% | `bg-surface` | Panels, cards |
-| `--elevated` | 0 0% 7% | `bg-elevated` | Dropdowns, tooltips, popovers |
-| `--border-ds` | 0 0% 100% (low-alpha) | `border-border` | All borders (use with opacity, e.g. `border-white/10`) |
-| `--foreground` | 0 0% 96% | `text-foreground` | Primary text |
-| `--muted-foreground` | 0 0% 60% | `text-muted-foreground` | Secondary text |
-| `--cyber-cyan` | `#00F0FF` | `text-cyber-cyan` / `bg-cyber-cyan` (+ 50–950 shade ramp) | Primary accent — CTAs, active states, links |
-| `--electric-purple` | `#B026FF` | `text-electric-purple` / `bg-electric-purple` (+ 50–950 shade ramp) | Secondary accent |
-| `--neon-green` | `#39FF14` | `text-neon-green` / `bg-neon-green` (+ 50–950 shade ramp) | Tertiary accent, success highlight |
-| `--success-ds` | 142 71% 45% | `text-success` / `bg-success` | Correct, passed |
-| `--warning-ds` | 38 92% 50% | `text-warning` / `bg-warning` | Partial mastery, hints |
-| `--error-ds` | 0 91% 65% | `text-error` / `bg-error` | Wrong answers, errors |
+| `--background` | `#050505` / `#f7f7f7` | `bg-background` | Root background |
+| `--surface` | 0 0% 4% / white | `bg-surface` | Panels, cards |
+| `--elevated` | 0 0% 7% / white | `bg-elevated` | Dropdowns, tooltips, popovers |
+| `--overlay` | white / black (always with opacity) | `bg-overlay/5`, `border-overlay/10`, `hover:bg-overlay/5` | Glass fills, hover states, hairline borders and dividers |
+| `--border-ds` | white / black | `border-border` | Full-strength only — for dividers use `border-overlay/10` |
+| `--foreground` | 0 0% 96% / 0 0% 9% | `text-foreground` | Primary text |
+| `--muted-foreground` | 0 0% 60% / 0 0% 38% | `text-muted-foreground` | Secondary text |
+| `--cyber-cyan` | `#00F0FF` / `#0b7490`-ish | `text-cyber-cyan` / `bg-cyber-cyan` | Primary accent — CTAs, active states, links |
+| `--electric-purple` | `#B026FF` / `#7e22ce`-ish | `text-electric-purple` / `bg-electric-purple` | Secondary accent |
+| `--neon-green` | `#39FF14` / `#15803d`-ish | `text-neon-green` / `bg-neon-green` | Tertiary accent, success highlight |
+| `--success-ds` | 142 71% 45% / 142 72% 29% | `text-success` / `bg-success` | Correct, passed |
+| `--warning-ds` | 38 92% 50% / 32 95% 36% | `text-warning` / `bg-warning` | Partial mastery, hints |
+| `--error-ds` | 0 91% 65% / 0 72% 45% | `text-error` / `bg-error` | Wrong answers, errors |
 
-`globals.css` also keeps a **LEGACY DESIGN TOKENS** block (`--bg-base`, `--quantum`, etc.) alive for old components not yet migrated — don't build new UI against it; it is slated for removal once all consumers move to the tokens above.
+The accent `DEFAULT`s are theme-aware (darkened in light mode for ≥4.5:1 contrast); their numbered 50–950 ramps are fixed hex and do **not** change with the theme.
 
-Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — unchanged, still consumed directly by circuit builder node components:
+`globals.css` also keeps a **LEGACY DESIGN TOKENS** block (`--bg-base`, `--quantum`, etc., with light and dark values) alive for old components not yet migrated — don't build new UI against it; it is slated for removal once all consumers move to the tokens above.
+
+Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — identical in both themes, consumed directly by circuit builder node components. Because the fills don't change, their labels use the fixed `--gate-label` (light) / `--gate-label-on-light` (dark, for the cyan measurement gate) from the "CIRCUIT LABELS" block, not theme tokens:
 
 | Token | Value | When to use |
 |-------|-------|-------------|
@@ -185,7 +192,7 @@ Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — un
 | `--gate-CX` | `#3b82f6` | CNOT gate |
 | `--gate-M` | `#00d4ff` | Measurement gate |
 
-**Depth & glow:** `backdrop-blur-md`/`backdrop-blur-xl` + translucent `border-white/10` and `bg-white/[x]` fills for glassmorphic panels; `shadow-glow-{cyan,purple,green}` (and `shadow-glow-cyan-lg`, `shadow-glow-inner`) utilities for accent glows — `box-shadow` is a core technique here, not banned.  
+**Depth & glow:** `backdrop-blur-md`/`backdrop-blur-xl` + translucent `border-overlay/10` and `bg-overlay/[x]` fills for glassmorphic panels; `shadow-glow-{cyan,purple,green}` (and `shadow-glow-cyan-lg`, `shadow-glow-inner`) utilities for accent glows — `box-shadow` is a core technique here, not banned.  
 **Motion:** Framer Motion micro-interactions (`whileHover`/`whileTap`) expected on interactive elements; anything animated must respect `prefers-reduced-motion` (see `useReducedMotion()` usage in `components/ui/button.tsx` and `components/motion/`).
 
 **Component directories:**

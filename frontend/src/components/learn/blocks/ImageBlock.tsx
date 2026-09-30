@@ -15,7 +15,7 @@ export default function ImageBlock({ image, caption }: BlockProps<"image">) {
         width={image.width ?? undefined}
         height={image.height ?? undefined}
         loading="lazy"
-        className="mx-auto h-auto max-w-full rounded-md border border-white/10"
+        className="mx-auto h-auto max-w-full rounded-md border border-overlay/10"
       />
       {caption && <figcaption className="mt-2 text-center text-xs text-muted-foreground">{caption}</figcaption>}
     </figure>

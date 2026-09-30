@@ -57,7 +57,7 @@ export default function FeedbackView() {
         </div>
       </header>
 
-      <form onSubmit={openIssue} className="space-y-5 rounded-xl border border-white/10 bg-surface p-5">
+      <form onSubmit={openIssue} className="space-y-5 rounded-xl border border-overlay/10 bg-surface p-5">
         <div>
           <label className="mb-2 block text-xs font-medium text-muted-foreground">Category</label>
           <div className="flex flex-wrap gap-2">
@@ -69,7 +69,7 @@ export default function FeedbackView() {
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   category === c.id
                     ? "bg-cyber-cyan/15 text-cyber-cyan"
-                    : "border border-white/10 text-muted-foreground hover:text-foreground"
+                    : "border border-overlay/10 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {c.label}
@@ -87,7 +87,7 @@ export default function FeedbackView() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Short summary…"
-            className="h-10 w-full rounded-lg border border-white/10 bg-white/[0.02] px-3 text-sm text-foreground outline-none focus:border-cyber-cyan"
+            className="h-10 w-full rounded-lg border border-overlay/10 bg-overlay/[0.02] px-3 text-sm text-foreground outline-none focus:border-cyber-cyan"
           />
         </div>
 
@@ -101,7 +101,7 @@ export default function FeedbackView() {
             onChange={(e) => setDetails(e.target.value)}
             rows={5}
             placeholder="What happened, or what would you like to see?"
-            className="w-full resize-y rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-foreground outline-none focus:border-cyber-cyan"
+            className="w-full resize-y rounded-lg border border-overlay/10 bg-overlay/[0.02] px-3 py-2 text-sm text-foreground outline-none focus:border-cyber-cyan"
           />
         </div>
 

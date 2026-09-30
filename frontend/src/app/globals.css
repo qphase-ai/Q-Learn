@@ -3,27 +3,59 @@
 @tailwind utilities;
 
 @layer base {
+  /* New design system tokens (HSL triplets, no hsl() wrapper — consumed via
+     hsl(var(--x) / <alpha-value>) in tailwind.config.ts).
+     Light values live on :root, dark values on .dark (class set on <html> by
+     next-themes, see app/providers.tsx). */
   :root {
-    /* New design system tokens (HSL triplets, no hsl() wrapper — consumed via
-       hsl(var(--x) / <alpha-value>) in tailwind.config.ts) */
+    --background: 0 0% 97%;
+    --surface: 0 0% 100%;
+    --elevated: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --muted-foreground: 0 0% 38%;
+
+    /* Accents are darkened in light mode so text/fills keep >= 4.5:1 contrast
+       against the light surfaces (and against white text on solid fills). */
+    --cyber-cyan: 192 85% 31%;
+    --electric-purple: 272 72% 47%;
+    --neon-green: 142 72% 29%;
+
+    /* Translucent overlay base for glass fills, hover states and hairline
+       borders (`bg-overlay/5`, `border-overlay/10`): white on dark, black on
+       light. */
+    --overlay: 0 0% 0%;
+
+    /* Suffixed with -ds to avoid colliding with the legacy hex vars of the
+       same conceptual name (--border, --success, --warning, --error) that
+       are still consumed directly (as hex, not HSL) by legacy components
+       below — see the "LEGACY DESIGN TOKENS" block. */
+    --border-ds: 0 0% 0%;
+    --success-ds: 142 72% 29%;
+    --warning-ds: 32 95% 36%;
+    --error-ds: 0 72% 45%;
+
+    color-scheme: light;
+  }
+
+  .dark {
     --background: 0 0% 2%;
     --surface: 0 0% 4%;
     --elevated: 0 0% 7%;
     --foreground: 0 0% 96%;
     --muted-foreground: 0 0% 60%;
 
-    --cyber-cyan: 187 100% 50%;
-    --electric-purple: 279 100% 58%;
+    --cyber-cyan: 184 100% 50%;
+    --electric-purple: 278 100% 57%;
     --neon-green: 111 100% 54%;
 
-    /* Suffixed with -ds to avoid colliding with the legacy hex vars of the
-       same conceptual name (--border, --success, --warning, --error) that
-       are still consumed directly (as hex, not HSL) by legacy components
-       below — see the "LEGACY DESIGN TOKENS" block. */
+    --overlay: 0 0% 100%;
+
     --border-ds: 0 0% 100%;
     --success-ds: 142 71% 45%;
     --warning-ds: 38 92% 50%;
     --error-ds: 0 91% 65%;
+
+    color-scheme: dark;
   }
 }
 
@@ -41,11 +73,38 @@
   --wire: #8b8b8b;
 }
 
+/* CIRCUIT LABELS — text on the gate fills above. The fills are the same in
+   both themes, so their labels are fixed too (not theme tokens). */
+:root {
+  --gate-label: #f5f5f5;
+  --gate-label-on-light: #0d0d0d; /* for the bright cyan measurement gate */
+}
+
 /* LEGACY DESIGN TOKENS — kept alive for this wave; consumed directly (as hex)
    by frontend/src/components/ui/Button.tsx, Input.tsx, and other existing
    components. A later wave migrates these consumers to the new tokens above
-   and removes this block. Do not repurpose these names for new meanings. */
+   and removes this block. Do not repurpose these names for new meanings.
+   Light values on :root, dark values on .dark (mirrors the block above). */
 :root {
+  --bg-base: #f7f7f7;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f2f2f2;
+  --bg-hover: #e8e8e8;
+  --border: #d9d9d9;
+
+  --quantum: #0e7490;
+  --quantum-dim: #0e749026;
+
+  --text-primary: #1f2328;
+  --text-secondary: #57606a;
+  --text-muted: #8c959f;
+
+  --success: #1a7f37;
+  --warning: #9a6700;
+  --error: #cf222e;
+}
+
+.dark {
   --bg-base: #0d0d0d;
   --bg-surface: #141414;
   --bg-elevated: #1a1a1a;
@@ -84,26 +143,26 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 240, 255, 0.25);
+  background-color: hsl(var(--cyber-cyan) / 0.25);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 240, 255, 0.45);
+  background-color: hsl(var(--cyber-cyan) / 0.45);
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 240, 255, 0.25) transparent;
+  scrollbar-color: hsl(var(--cyber-cyan) / 0.25) transparent;
 }
 
 ::selection {
-  background-color: rgba(0, 240, 255, 0.3);
-  color: #ffffff;
+  background-color: hsl(var(--cyber-cyan) / 0.3);
+  color: hsl(var(--foreground));
 }
 
 :focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px #050505,
-    0 0 0 4px rgba(0, 240, 255, 0.6);
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--cyber-cyan) / 0.6);
   border-radius: 4px;
 }

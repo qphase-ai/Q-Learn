@@ -14,7 +14,7 @@ const STARTER_FILES = ["starter_bell_state.py", "starter_ghz_state.py"];
 export default function FileTreePanel({ activeFile }: { activeFile: string }) {
   return (
     <aside
-      className="flex w-[200px] flex-shrink-0 flex-col gap-1 overflow-y-auto border-r border-white/10 bg-surface p-2"
+      className="flex w-[200px] flex-shrink-0 flex-col gap-1 overflow-y-auto border-r border-overlay/10 bg-surface p-2"
       aria-label="Code files"
     >
       <p className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -26,7 +26,7 @@ export default function FileTreePanel({ activeFile }: { activeFile: string }) {
         className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] ${
           activeFile === "circuit.py"
             ? "bg-cyber-cyan/10 text-cyber-cyan"
-            : "text-foreground hover:bg-white/5"
+            : "text-foreground hover:bg-overlay/5"
         }`}
       >
         <FileCode2 size={14} aria-hidden />

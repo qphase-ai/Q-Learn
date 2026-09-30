@@ -57,10 +57,10 @@ export default function CurriculumSidebar({
 
   return (
     <aside
-      className="flex w-[250px] flex-shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-surface"
+      className="flex w-[250px] flex-shrink-0 flex-col overflow-y-auto border-r border-overlay/10 bg-surface"
       aria-label="Quantum curriculum"
     >
-      <div className="border-b border-white/10 p-4">
+      <div className="border-b border-overlay/10 p-4">
         <h2 className="text-sm font-semibold text-foreground">Quantum Curriculum</h2>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
           {modules.length > 0
@@ -107,7 +107,7 @@ export default function CurriculumSidebar({
                       ? "border-l-2 border-electric-purple bg-electric-purple/10 pl-[6px] text-foreground"
                       : locked
                         ? "text-muted-foreground opacity-60"
-                        : "text-foreground hover:bg-white/5"
+                        : "text-foreground hover:bg-overlay/5"
                   }`}
                 >
                   {locked ? (
@@ -115,7 +115,7 @@ export default function CurriculumSidebar({
                   ) : completed ? (
                     <CheckCircle2 size={15} className="shrink-0 text-success" aria-hidden />
                   ) : (
-                    <span className="h-[15px] w-[15px] shrink-0 rounded-full border border-white/20" />
+                    <span className="h-[15px] w-[15px] shrink-0 rounded-full border border-overlay/20" />
                   )}
                   <span className="flex-1 truncate">
                     <span className="block truncate font-medium">{levelLabel(index)}</span>
@@ -157,7 +157,7 @@ export default function CurriculumSidebar({
                             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors ${
                               isSelected
                                 ? "bg-cyber-cyan/10 text-cyber-cyan"
-                                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                : "text-muted-foreground hover:bg-overlay/5 hover:text-foreground"
                             }`}
                           >
                             {lessonDone ? (
