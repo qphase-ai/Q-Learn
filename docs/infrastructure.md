@@ -87,7 +87,7 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `SECRET_KEY` | App secret (misc. signing) |
 | `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) — see the two-URL model below |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
-| `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-1.5-flash"]` |
+| `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-3.8-flash"]` |
 | `LLM_TEMPERATURE` | Default `0.7` |
 | `LLM_MAX_TOKENS` | Default `2048` |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` | Set only for providers you use |

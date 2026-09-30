@@ -53,7 +53,7 @@ Each Groq model has **its own independent** 30 RPM quota — adding a model adds
 | `groq/mixtral-8x7b-32768` | Groq | 30 | Largest context (32 k) |
 | `groq/llama3-70b-8192` | Groq | 30 | |
 | `groq/llama3-8b-8192` | Groq | 30 | |
-| `gemini/gemini-2.0-flash` | Google | 15 | Conservative; 1,500 req/day free |
+| `gemini/gemini-3.8-flash` | Google | 15 | Conservative; 1,500 req/day free |
 | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | OpenRouter | 20 | 50 req/day without credits |
 | `openrouter/poolside/laguna-s-2.1:free` | OpenRouter | 20 | 50 req/day without credits |
 | **Total reliable capacity** | | **225 RPM** | Groq + Gemini only |
