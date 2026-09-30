@@ -21,6 +21,9 @@ _DAY_SECONDS = 86_400.0
 _DAILY_RESERVE = 0.10
 
 _DEFAULT_COOLDOWN_SECONDS = 10.0
+# Non-429 failures (bad key, unreachable provider, retired model) rarely clear within
+# seconds; without a cooldown every request would pay a doomed round-trip first.
+ERROR_COOLDOWN_SECONDS = 60.0
 
 
 @dataclass(frozen=True)
@@ -160,11 +163,20 @@ class ModelRouter:
     def get_ordered_models(self, models: list[str], est_tokens: int = 0) -> list[str]:
         """Order models for a request expected to use `est_tokens` tokens.
 
-        1. Ready now, daily budget above the reserve — most headroom first.
-        2. Ready now, but daily budget inside the reserve — most headroom first.
-        3. Not ready (a bucket is short, or cooling down after a 429) — soonest ready first.
+        1. Ready now, daily budget above the reserve.
+        2. Ready now, but daily budget inside the reserve.
+        3. Not ready (a bucket is short, or cooling down) — soonest ready first.
+
+        Within tiers 1 and 2, providers keep the order they first appear in `models`
+        and models of the same provider are balanced by headroom. Headroom is not
+        compared across providers: they track different dimensions, so a provider
+        with no known TPM limit would otherwise always look emptier than Groq.
         """
         now = time.monotonic()
+        provider_rank: dict[str, int] = {}
+        for model in models:
+            provider_rank.setdefault(_provider(model), len(provider_rank))
+
         ready, reserve, waiting = [], [], []
         with self._lock:
             for model in models:
@@ -172,11 +184,13 @@ class ModelRouter:
                 wait = self._wait_seconds(state, est_tokens, now)
                 if wait > 0:
                     waiting.append((wait, model))
-                elif self._daily_fraction(state, now) > _DAILY_RESERVE:
-                    ready.append((-self._headroom(state, est_tokens, now), model))
+                    continue
+                key = (provider_rank[_provider(model)], -self._headroom(state, est_tokens, now), model)
+                if self._daily_fraction(state, now) > _DAILY_RESERVE:
+                    ready.append(key)
                 else:
-                    reserve.append((-self._headroom(state, est_tokens, now), model))
-        return [m for _, m in sorted(ready) + sorted(reserve) + sorted(waiting)]
+                    reserve.append(key)
+        return [k[-1] for k in sorted(ready) + sorted(reserve) + sorted(waiting)]
 
     def record(self, model: str, tokens: int = 0) -> None:
         """Count one request (and `tokens` tokens) against `model`."""
@@ -215,17 +229,21 @@ class ModelRouter:
                     except ValueError:
                         pass
 
+    def mark_unavailable(self, model: str, seconds: float) -> None:
+        """Take `model` out of rotation for `seconds`."""
+        now = time.monotonic()
+        with self._lock:
+            state = self._state(model, now)
+            state.cooldown_until = max(state.cooldown_until, now + seconds)
+
     def mark_rate_limited(self, model: str, headers: dict[str, str] | None = None) -> None:
         """Take `model` out of rotation until the provider's retry-after elapses."""
-        now = time.monotonic()
         retry_after = _header(headers or {}, "retry-after")
         try:
             seconds = float(retry_after) if retry_after is not None else _DEFAULT_COOLDOWN_SECONDS
         except ValueError:
             seconds = _DEFAULT_COOLDOWN_SECONDS
-        with self._lock:
-            state = self._state(model, now)
-            state.cooldown_until = max(state.cooldown_until, now + seconds)
+        self.mark_unavailable(model, seconds)
         if headers:
             self.sync_from_headers(model, headers)
 
@@ -238,6 +256,10 @@ class ModelRouter:
                 name: (b.available(now) if b else None)
                 for name, b in (("rpm", state.rpm), ("rpd", state.rpd), ("tpm", state.tpm), ("tpd", state.tpd))
             } | {"cooldown": max(0.0, state.cooldown_until - now)}
+
+
+def _provider(model: str) -> str:
+    return model.split("/", 1)[0] if "/" in model else "openai"
 
 
 def _header(headers: dict[str, str], name: str) -> str | None:

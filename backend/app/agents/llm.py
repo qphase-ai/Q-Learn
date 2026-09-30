@@ -5,7 +5,7 @@ from langchain_core.runnables import Runnable
 from langchain_litellm import ChatLiteLLM
 from litellm.integrations.custom_logger import CustomLogger
 
-from app.agents.router import _router
+from app.agents.router import ERROR_COOLDOWN_SECONDS, _router
 from app.config import get_settings, Settings
 
 logger = structlog.get_logger(__name__)
@@ -80,8 +80,14 @@ def _response_headers(response_obj) -> dict:
 
 
 def _total_tokens(response_obj) -> int | None:
+    """Tokens that count toward rate limits: total minus cached prompt tokens,
+    which Groq doesn't charge."""
     usage = getattr(response_obj, "usage", None)
-    return getattr(usage, "total_tokens", None) if usage is not None else None
+    total = getattr(usage, "total_tokens", None) if usage is not None else None
+    if total is None:
+        return None
+    cached = getattr(getattr(usage, "prompt_tokens_details", None), "cached_tokens", None) or 0
+    return total - cached
 
 
 class RouterUsageLogger(CustomLogger):
@@ -119,6 +125,8 @@ class RouterUsageLogger(CustomLogger):
         if isinstance(exc, litellm.RateLimitError):
             headers = dict(getattr(getattr(exc, "response", None), "headers", None) or {})
             _router.mark_rate_limited(model, headers)
+        else:
+            _router.mark_unavailable(model, ERROR_COOLDOWN_SECONDS)
         logger.warning("llm_attempt_failed", model=model, error=type(exc).__name__ if exc else None)
 
     async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
