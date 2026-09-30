@@ -22,7 +22,8 @@ erDiagram
     LESSON }o--o{ CONCEPT : teaches
 
     CONCEPT ||--o{ SKILL_MASTERY : measured_by
-    LESSON ||--o{ LEARNING_PROGRESS : tracked_by
+    CONTENT_REF ||--o{ LEARNING_PROGRESS : tracked_by
+    CONTENT_REF ||--o{ QUIZ_QUESTION : scopes
 
     QUIZ ||--o{ QUIZ_QUESTION : contains
     QUIZ_QUESTION ||--o{ QUIZ_ATTEMPT : receives
@@ -46,13 +47,14 @@ erDiagram
 | `user_profiles` | Extended user info | display_name, skill_level, preferences |
 | `courses` | Course container | title, description, status |
 | `modules` | Course modules | course_id FK, title, position |
-| `lessons` | Individual lessons | module_id FK, title, content, position |
+| `lessons` | Individual lessons (legacy; learner state references content_refs, not lessons) | module_id FK, title, content, position |
+| `content_refs` | Stable identity for CMS-authored content (integration boundary with Payload) | id (UUID, backend-owned), payload_id TEXT, kind ∈ curriculum/level/module/lesson, UNIQUE(kind, payload_id) |
 | `concepts` | Quantum concepts | name, description, difficulty |
-| `student_progress` | Lesson completion | user_id FK, lesson_id FK, status, completion |
+| `student_progress` | Lesson completion | user_id FK, lesson_id FK → content_refs, status, completion |
 | `skill_mastery` | BKT student model | user_id FK, concept_id FK, mastery_score, confidence |
 | `circuits` | Saved circuits | user_id FK, name, circuit_definition JSON, backend |
 | `circuit_executions` | Execution results | circuit_id FK, status, probabilities, measurements, statevector, time |
-| `quiz_questions` | Quiz questions | quiz_id FK, question_text, type, answer_data |
+| `quiz_questions` | Quiz questions | lesson_id FK → content_refs, concept_id FK, question_text, question_type, options, correct_answer |
 | `quiz_attempts` | Quiz attempts | user_id FK, question_id FK, answer, is_correct, score |
 | `coding_challenges` | Code challenges | title, description, difficulty, expected_result |
 | `challenge_attempts` | Challenge attempts | user_id FK, code, result, score |

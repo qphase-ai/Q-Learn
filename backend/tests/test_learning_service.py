@@ -76,6 +76,13 @@ def _make_progress(user_id: uuid.UUID | None = None, lesson_id: uuid.UUID | None
     return p
 
 
+def _make_lesson_ref(lesson_id: uuid.UUID | None = None):
+    from app.models.content_ref import ContentRef
+
+    ref_id = lesson_id or uuid.uuid4()
+    return ContentRef(id=ref_id, kind="lesson", payload_id=f"legacy:{ref_id}")
+
+
 def _make_mock_db() -> AsyncMock:
     db = AsyncMock()
     db.add = MagicMock()
@@ -276,12 +283,15 @@ class TestUpsertProgress:
         body = UpdateProgressRequest(status="in_progress", completion_pct=50.0)
 
         db = _make_mock_db()
+        db.get = AsyncMock(return_value=_make_lesson_ref(lesson_id))
         # No existing row
         db.execute = AsyncMock(return_value=_scalar_one_or_none_result(None))
 
         svc = LearningService(db=db)
         result = await svc.upsert_progress(user_id, lesson_id, body)
 
+        from app.models.content_ref import ContentRef
+        db.get.assert_awaited_once_with(ContentRef, lesson_id)
         db.add.assert_called_once()
         added = db.add.call_args.args[0]
         assert isinstance(added, LearningProgress)
@@ -305,6 +315,7 @@ class TestUpsertProgress:
         body = UpdateProgressRequest(status="completed", completion_pct=100.0)
 
         db = _make_mock_db()
+        db.get = AsyncMock(return_value=_make_lesson_ref(lesson_id))
         db.execute = AsyncMock(return_value=_scalar_one_or_none_result(existing))
 
         svc = LearningService(db=db)
@@ -328,6 +339,7 @@ class TestUpsertProgress:
         body = UpdateProgressRequest(status="in_progress", completion_pct=30.0)
 
         db = _make_mock_db()
+        db.get = AsyncMock(return_value=_make_lesson_ref(lesson_id))
         db.execute = AsyncMock(return_value=_scalar_one_or_none_result(existing))
 
         svc = LearningService(db=db)
@@ -342,6 +354,7 @@ class TestUpsertProgress:
         from app.services.learning_service import LearningService
 
         db = _make_mock_db()
+        db.get = AsyncMock(return_value=_make_lesson_ref())
         db.execute = AsyncMock(return_value=_scalar_one_or_none_result(None))
         body = UpdateProgressRequest(status="in_progress", completion_pct=0.0)
 
@@ -350,3 +363,18 @@ class TestUpsertProgress:
 
         db.commit.assert_awaited_once()
         db.refresh.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_raises_not_found_for_unknown_lesson_ref(self):
+        """An id with no content_refs row is a 404, not an FK-violation 500."""
+        from app.services.learning_service import LearningService
+
+        db = _make_mock_db()  # db.get returns None → no content ref
+        db.execute = AsyncMock(return_value=_scalar_one_or_none_result(None))
+        body = UpdateProgressRequest(status="in_progress", completion_pct=10.0)
+
+        with pytest.raises(NotFoundError):
+            await LearningService(db=db).upsert_progress(uuid.uuid4(), uuid.uuid4(), body)
+
+        db.add.assert_not_called()
+        db.commit.assert_not_awaited()

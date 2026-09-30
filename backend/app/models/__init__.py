@@ -1,6 +1,7 @@
 from app.models.base import Base
 from app.models.user import User, UserProfile
 from app.models.learning import Course, Module, Lesson, Concept
+from app.models.content_ref import ContentRef
 from app.models.progress import LearningProgress, SkillMastery
 from app.models.circuit import Circuit, CircuitExecution
 from app.models.assessment import QuizQuestion, QuizAttempt, CodingChallenge, ChallengeAttempt
@@ -10,7 +11,7 @@ from app.models.agent import AgentSession, AgentMessage
 __all__ = [
     "Base",
     "User", "UserProfile",
-    "Course", "Module", "Lesson", "Concept",
+    "Course", "Module", "Lesson", "Concept", "ContentRef",
     "LearningProgress", "SkillMastery",
     "Circuit", "CircuitExecution",
     "QuizQuestion", "QuizAttempt", "CodingChallenge", "ChallengeAttempt",
