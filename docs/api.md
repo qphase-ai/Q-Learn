@@ -23,6 +23,7 @@
 | `/api/v1/analytics/*` | Learning analytics, progress data |
 | `/api/v1/instructors/*` | Class management, student monitoring |
 | `/api/v1/admin/*` | User management, course management, system health |
+| `/api/v1/internal/*` | Server-to-server calls from the Payload CMS, authenticated with `X-CMS-Secret` (not a user JWT). `POST /internal/content-refs` `{kind, payload_id, ref_id?}` returns the lesson's `content_refs` row, minting it on first publish or binding a `legacy:<uuid>` ref when `ref_id` is given. Returns 403 when `CMS_WEBHOOK_SECRET` is unset |
 
 ---
 

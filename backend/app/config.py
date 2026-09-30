@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     # Rate limiting
     rate_limit_per_minute: int = 100
 
+    # Payload CMS (cms/) — shared secret the CMS sends as X-CMS-Secret when it
+    # registers published content in content_refs. Empty disables the endpoint.
+    cms_webhook_secret: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

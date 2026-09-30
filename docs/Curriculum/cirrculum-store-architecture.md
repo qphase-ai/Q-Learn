@@ -1,6 +1,6 @@
 # Curriculum Store Architecture — Payload CMS
 
-**Status:** Accepted · supersedes the hand-rolled FastAPI block-CMS design previously in this file
+**Status:** Accepted · **Implemented** (`cms/`, see [Implementation](#implementation)) · supersedes the hand-rolled FastAPI block-CMS design previously in this file
 **Decision:** Payload CMS in a dedicated Next.js 16 application, backed by the existing Supabase PostgreSQL in an isolated `payload` schema
 **Related:** `Q-Learn-quantum-curriculum.md` (curriculum content) · `q-learn-scaling-architecture.md` (scaling) · `../database.md` · `../../Architecture.md`
 
@@ -437,9 +437,32 @@ legacy tables → export JSON → import to Payload → validate → frontend re
 
 ---
 
+## Implementation
+
+| Piece | Where |
+|---|---|
+| Payload app, collections, block registry | `cms/src/payload.config.ts`, `cms/src/collections/`, `cms/src/blocks/lessonBlocks.ts` |
+| `payload` schema migration | `cms/src/migrations/` (creates the schema; `push: false` so changes always go through migrations) |
+| Roles | `cmsUsers.role ∈ author \| publisher`. Authors save drafts; publishers publish, delete content, and manage users. The first admin account becomes a publisher |
+| CircuitSpec validation (authoring UX) | `cms/src/lib/circuitSpec.ts` — gate set mirrors the backend QASM compiler; FastAPI still validates before execution |
+| `content_refs` registration | `cms/src/hooks/registerContentRef.ts` → `POST /api/v1/internal/content-refs` (`X-CMS-Secret`, `ContentRefService.register`). The ref id is stored on the lesson as `contentRefId` |
+| Cache invalidation | `cms/src/hooks/revalidate.ts` → `frontend/src/app/api/revalidate/route.ts` (tags `cms:curriculum`, `cms:lesson:<id>`) |
+| Student reads | `frontend/src/lib/cms.ts` through `/api/cms/*` route handlers. Requests are anonymous, so Payload returns published documents only, and responses are cached until revalidated |
+| Frontend flag | `NEXT_PUBLIC_CONTENT_SOURCE=cms` (default `legacy`) — migration step 5 |
+| Block renderers | `frontend/src/components/learn/blocks/`. No block uses `dangerouslySetInnerHTML`, and Markdown goes through react-markdown without raw HTML |
+| Legacy migration (steps 3–4) | `backend/scripts/export_legacy_curriculum.py` → `cms/scripts/import-legacy.ts` (idempotent; validates each lesson; binds the `legacy:<uuid>` refs) |
+
+**Mapping onto the student UI.** The sidebar already groups lessons as "Level N". Each Payload Level becomes one sidebar group, and its lessons are listed in module order and then lesson order. Lesson ids in the student app are `content_refs` ids, so progress recorded before the switch is kept. A lesson published without a ref (because the backend was unreachable) is keyed `payload:<id>`. It renders but can't record progress until it's published again.
+
+**Quiz blocks** feed the `/quiz` workspace directly (`frontend/src/lib/quiz-generator.ts`). The `quiz_questions` projection sync is not built yet, because nothing in FastAPI serves quizzes today.
+
+---
+
 ## Open items
 
-1. **Infrastructure validation (Phase 0).** Four assumptions remain unverified against live infrastructure: `schemaName` isolation on Supabase, the S3 endpoint's `forcePathStyle` behaviour, `blocksAsJSON` round-tripping of nested `CircuitSpec`, and Payload/Drizzle against the PgBouncer transaction pooler. These gate implementation.
-2. **Payload `idType`** — confirm `serial` vs `uuid` before fixing the `content_refs.payload_id` column type.
+1. **Infrastructure validation (Phase 0).** `schemaName` isolation and `blocksAsJSON` round-tripping of nested `CircuitSpec` have been verified against local Postgres 16: the migration creates only `payload.*`, and imported circuit specs read back byte-identical. Two assumptions are still unverified against live Supabase: the S3 endpoint's `forcePathStyle` behaviour, and Payload/Drizzle against the PgBouncer transaction pooler. Both must pass before production cut-over (step 6).
+2. **Payload `idType`** — the implementation uses the adapter default (`serial`). `content_refs.payload_id` stays `TEXT`, which fits either choice.
 3. **RAG ingestion** — decide whether the tutor pipeline ingests curriculum content from Payload and by what path. `knowledge_embeddings`' ivfflat `lists=100` needs re-tuning as the corpus grows, and publishing from Payload is what will grow it.
-4. **`GateSpec.params` drift** between frontend and backend.
+4. ~~**`GateSpec.params` drift** between frontend and backend.~~ Resolved: the frontend `GateSpec` now carries `params`.
+5. **`quiz_questions` projection** — syncing quiz blocks into `public.quiz_questions` waits on a FastAPI quiz endpoint.
+6. **Payload DB role** — create a Postgres role for `PAYLOAD_DATABASE_URL` that can write only the `payload` schema before production.

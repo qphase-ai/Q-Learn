@@ -8,7 +8,7 @@ This document evaluates the block-based CMS (`cirrculum-store-architecture.md`) 
 
 ## Current State (verified in codebase)
 
-- **CMS**: decided but not yet implemented. `cirrculum-store-architecture.md` specifies Payload CMS at `cms/`; no `cms/` directory, Payload dependency, or block renderer exists yet in the repo. Live schema remains `backend/alembic/versions/80be607aeeb4_seed_curriculum.py` (flat `courses/modules/lessons`), and the live content volume is tiny — 1 course, 2 modules, 4 lessons, all `lesson_type: "text"`. Four infrastructure assumptions behind the Payload decision (`schemaName` isolation, Supabase S3 storage, `blocksAsJSON` round-tripping, Drizzle against the PgBouncer pooler) are **unvalidated** pending a Phase 0 spike.
+- **CMS**: implemented. Payload lives at `cms/` (collections, the 10-block registry, `content_refs` registration, and on-publish revalidation), and the student app renders blocks through `frontend/src/components/learn/blocks/`. Reads from the CMS sit behind `NEXT_PUBLIC_CONTENT_SOURCE=cms`. The default is still `legacy`, which serves the flat `courses/modules/lessons` from `backend/alembic/versions/80be607aeeb4_seed_curriculum.py` (1 course, 2 modules, 4 lessons). `schemaName` isolation and `blocksAsJSON` round-tripping of `CircuitSpec` have been verified against local Postgres 16. Supabase S3 storage and Drizzle against the PgBouncer pooler are still **unvalidated** against live Supabase.
 - **Workspace**: not a monorepo. `frontend/pnpm-workspace.yaml` carries only `allowBuilds` settings and has no `packages:` key; there is no root `package.json`, `turbo.json`, or root lockfile. `cms/` is therefore added as a second standalone pnpm project, which keeps Next 14 (frontend) and Next 16 (cms) dependency trees fully independent.
 - **Database**: Supabase Postgres via PgBouncer transaction pooler in prod (`backend/app/database.py`), correctly configured (NullPool + disabled prepared statements). No read replica. RLS enabled with no policies — backend bypasses via `service_role` key, so all authorization correctness lives in the FastAPI service layer.
 - **Caching**: none. No Redis anywhere; explicitly deferred by project docs ("added when profiling shows a bottleneck").
@@ -107,10 +107,10 @@ flowchart TD
 | Subsystem | Role | Status |
 |---|---|---|
 | CDN / Edge | Caches static assets and routes traffic to Next.js | Existing (Vercel) |
-| Payload REST / GraphQL | Serves curriculum/lesson/block content; also the authoring admin | Decided (`cms/`), not yet implemented |
+| Payload REST / GraphQL | Serves curriculum/lesson/block content; also the authoring admin | Implemented (`cms/`); student reads behind `NEXT_PUBLIC_CONTENT_SOURCE=cms` |
 | Redis Content Cache | Absorbs read traffic before it reaches Postgres | Not implemented — **reassess**: Payload + CDN/ISR may absorb this, see Phase 2 |
-| Content DB | Payload-generated tables in the `payload` schema; lesson blocks as a JSONB column | Not yet created; legacy flat schema still live |
-| Supabase Storage | Media assets (images/video/diagrams) via Payload's S3 adapter | Design proposed, not implemented; no bucket exists yet |
+| Content DB | Payload-generated tables in the `payload` schema; lesson blocks as a JSONB column | Created by `cms/src/migrations`; legacy flat schema still serves `legacy` reads |
+| Supabase Storage | Media assets (images/video/diagrams) via Payload's S3 adapter | Adapter wired (enabled when `S3_BUCKET` is set); no bucket provisioned yet |
 | Exec API / Concurrency Semaphore | Accepts circuit/code submissions, bounds in-flight forks | Semaphore not implemented (Phase 0 item) |
 | Job Queue | Decouples submission from execution | Not implemented — recommended proactively |
 | Sandbox Workers | Runs student code in isolated Firecracker microVMs | Implemented (`AsyncSandbox.fork()`), lacks queue in front |

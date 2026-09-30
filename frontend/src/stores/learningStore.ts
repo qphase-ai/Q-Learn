@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CourseSummary, CourseDetail, LessonDetail } from "@/types";
 import { apiFetch } from "@/lib/api";
+import { cmsContent, contentSource, isTrackableLessonId } from "@/lib/content-source";
 import { getAccessToken } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -54,24 +55,40 @@ export const useLearningStore = create<LearningStore>()(
 
       // ── New async actions ────────────────────────────────────────────────
       loadCourses: async () => {
+        if (contentSource() === "cms") {
+          set({ courses: await cmsContent.listCourses() });
+          return;
+        }
         const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         const courses = await apiFetch<CourseSummary[]>("/api/v1/courses", { token });
         set({ courses });
       },
 
       loadCourse: async (id) => {
+        if (contentSource() === "cms") {
+          set({ activeCourse: await cmsContent.getCourse(id) });
+          return;
+        }
         const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
         const activeCourse = await apiFetch<CourseDetail>(`/api/v1/courses/${id}`, { token });
         set({ activeCourse });
       },
 
       loadLesson: async (id) => {
-        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
-        const activeLesson = await apiFetch<LessonDetail>(`/api/v1/lessons/${id}`, { token });
+        let activeLesson: LessonDetail;
+        if (contentSource() === "cms") {
+          activeLesson = await cmsContent.getLesson(id);
+        } else {
+          const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
+          activeLesson = await apiFetch<LessonDetail>(`/api/v1/lessons/${id}`, { token });
+        }
         set({ activeLesson, currentLessonId: id });
       },
 
       markProgress: async (lessonId, pct) => {
+        // Progress is keyed by content_refs id; a CMS lesson without one
+        // has nowhere to record it on the backend.
+        if (!isTrackableLessonId(lessonId)) return;
         // Optimistic update
         set((s) => ({ lessonProgress: { ...s.lessonProgress, [lessonId]: pct } }));
         const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;

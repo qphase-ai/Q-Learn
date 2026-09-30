@@ -79,3 +79,45 @@ class ContentRefService:
         await self.db.refresh(ref)
         logger.info("content_ref_bound", ref_id=str(ref_id), kind=kind.value, payload_id=payload_id)
         return ref
+
+    async def register(
+        self, kind: ContentKind, payload_id: str, ref_id: uuid.UUID | None = None
+    ) -> ContentRef:
+        """Resolve the ref for a published Payload document, creating it if new.
+
+        Called by the CMS on publish. Idempotent: re-publishing returns the
+        same ref. When the CMS already carries a ref id (the legacy import
+        sets it to the legacy lesson UUID) the sentinel is bound instead of a
+        new ref being minted, so learner state recorded before the switch is
+        kept. Ref ids are only ever minted here, never accepted from the CMS.
+        """
+        if not payload_id or payload_id.startswith(LEGACY_PAYLOAD_PREFIX):
+            raise ValidationError(f"Invalid Payload id {payload_id!r}")
+
+        existing = await self.find_by_payload_id(kind, payload_id)
+        if existing is not None:
+            if ref_id is not None and existing.id != ref_id:
+                raise ConflictError(
+                    f"Payload {kind.value} {payload_id} is already bound to ref {existing.id}"
+                )
+            return existing
+
+        if ref_id is not None:
+            return await self.bind_payload_id(ref_id, kind, payload_id)
+
+        ref = ContentRef(kind=kind.value, payload_id=payload_id)
+        self.db.add(ref)
+        try:
+            await self.db.commit()
+        except IntegrityError as exc:
+            # A concurrent register of the same document committed first.
+            await self.db.rollback()
+            if UQ_CONTENT_REFS_KIND_PAYLOAD_ID not in str(exc.orig):
+                raise
+            winner = await self.find_by_payload_id(kind, payload_id)
+            if winner is None:
+                raise
+            return winner
+        await self.db.refresh(ref)
+        logger.info("content_ref_registered", ref_id=str(ref.id), kind=kind.value, payload_id=payload_id)
+        return ref

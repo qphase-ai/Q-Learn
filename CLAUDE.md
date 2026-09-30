@@ -58,6 +58,17 @@ pnpm lint
 pnpm build
 ```
 
+### CMS (Payload — curriculum authoring)
+```bash
+cd cms
+
+pnpm install
+pnpm migrate                      # Payload migrations (schema `payload` only)
+pnpm dev                          # http://localhost:3001/admin
+pnpm type-check && pnpm lint && pnpm test
+pnpm migrate:create <name>        # after changing collections/blocks
+```
+
 ---
 
 ## Architecture
@@ -116,6 +127,7 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 | Supabase Realtime | FastAPI publishes events; frontend subscribes via `@supabase/supabase-js` |
 | LLM provider | ChatLiteLLM (`app/agents/llm.py`) — `get_llm()` returns primary + `.with_fallbacks()`; model strings via LiteLLM format |
 | pgvector | dim=384 embeddings in `knowledge_embeddings` table |
+| Payload CMS (`cms/`) | Owns curriculum content (schema `payload`, Payload-migrated). Frontend reads published content via `/api/cms/*` when `NEXT_PUBLIC_CONTENT_SOURCE=cms`; CMS registers lessons in `content_refs` via `POST /api/v1/internal/content-refs` (`X-CMS-Secret`) and revalidates the frontend on publish. See `cms/README.md` |
 
 ---
 

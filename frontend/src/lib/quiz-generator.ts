@@ -11,6 +11,10 @@ import type { QuizQuestion } from "@/types/quiz";
  * whichever component calls this.
  */
 export function generateQuizFromLesson(lesson: LessonDetail): QuizQuestion[] {
+  // Questions authored in the CMS take precedence over generated ones.
+  const authored = quizFromBlocks(lesson);
+  if (authored.length > 0) return authored;
+
   const concepts = lesson.concepts;
 
   if (concepts.length === 0) return [];
@@ -26,6 +30,24 @@ export function generateQuizFromLesson(lesson: LessonDetail): QuizQuestion[] {
     concept.description
       ? multipleChoiceQuestion(concept, concepts)
       : trueFalseQuestion(concept, concepts)
+  );
+}
+
+function quizFromBlocks(lesson: LessonDetail): QuizQuestion[] {
+  return (lesson.blocks ?? []).flatMap((block, i) =>
+    block.blockType === "quiz"
+      ? [
+          {
+            id: `q-${lesson.id}-${block.id ?? i}`,
+            concept_id: block.concept ?? lesson.id,
+            question_text: block.question,
+            question_type: block.questionType,
+            options: block.options.map((o) => o.text),
+            correct_answer: block.correctAnswer,
+            hint: block.hint ?? "",
+          },
+        ]
+      : []
   );
 }
 

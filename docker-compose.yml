@@ -32,6 +32,22 @@ services:
       - ./backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
+  cms:
+    build:
+      context: ./cms
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./cms/.env
+    environment:
+      - PAYLOAD_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/qlearn
+      - BACKEND_API_URL=http://api:8000
+      - STUDENT_APP_URL=http://web:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   web:
     build:
       context: ./frontend
@@ -40,6 +56,8 @@ services:
       - "3000:3000"
     env_file:
       - ./frontend/.env.local
+    environment:
+      - CMS_URL=http://cms:3001
     depends_on:
       - api
     volumes:
