@@ -9,7 +9,8 @@ from typing import AsyncIterator
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-from app.agents.llm import get_llm
+from app.agents.llm import get_llm, estimate_tokens
+from app.config import get_settings
 from app.agents.prompts import (
     TUTOR_SYSTEM_PROMPT,
     TUTOR_CIRCUIT_BLOCK,
@@ -62,7 +63,8 @@ async def stream_tutor_answer(
 
     messages = [SystemMessage(content=system)] + history + [HumanMessage(content=question)]
 
-    async for chunk in get_llm().astream(messages):
+    llm = get_llm(est_tokens=estimate_tokens(messages, get_settings().llm_max_tokens))
+    async for chunk in llm.astream(messages):
         token = getattr(chunk, "content", "")
         if token:
             yield token

@@ -1,5 +1,8 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+_LLM_LIMIT_KEYS = {"rpm", "rpd", "tpm", "tpd"}
 
 
 class Settings(BaseSettings):
@@ -26,14 +29,28 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
 
-    # LLM — ChatLiteLLM model routing
-    # Use LiteLLM model strings: "gpt-4o-mini", "anthropic/claude-haiku-4-5-20251001",
-    # "gemini/gemini-3.8-flash", "ollama/llama3.2", etc.
-    llm_primary_model: str = "gpt-4o-mini"
-    llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-3.8-flash"]
+    # LLM — ChatLiteLLM model routing (see docs/llm-model-router.md)
+    # Use LiteLLM model strings: "groq/openai/gpt-oss-120b", "anthropic/claude-haiku-4-5-20251001",
+    # "ollama/llama3.2", etc.
+    llm_primary_model: str = "groq/openai/gpt-oss-120b"
+    llm_fallback_models: list[str] = ["groq/openai/gpt-oss-20b", "groq/qwen/qwen3.8-27b"]
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
-    llm_model_rpm_limits: dict[str, int] = {}  # LLM_MODEL_RPM_LIMITS — override per-model RPM cap
+    # LLM_MODEL_LIMITS — per-model overrides of any of rpm/rpd/tpm/tpd, e.g. after a
+    # paid-tier upgrade: {"groq/openai/gpt-oss-120b": {"rpm": 1000, "tpm": 250000}}
+    llm_model_limits: dict[str, dict[str, int]] = {}
+
+    @field_validator("llm_model_limits")
+    @classmethod
+    def _check_llm_limit_keys(cls, value: dict[str, dict[str, int]]) -> dict[str, dict[str, int]]:
+        for model, limits in value.items():
+            unknown = set(limits) - _LLM_LIMIT_KEYS
+            if unknown:
+                raise ValueError(
+                    f"LLM_MODEL_LIMITS[{model!r}] has unknown keys {sorted(unknown)}; "
+                    f"allowed: {sorted(_LLM_LIMIT_KEYS)}"
+                )
+        return value
 
     # Provider API keys — only set the keys for providers you use
     openai_api_key: str = ""

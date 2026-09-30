@@ -142,8 +142,9 @@ Copy `.env.example` → `.env` in `backend/`. Required keys:
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_ANON_KEY` | Supabase project |
 | `SUPABASE_JWT_SECRET` | Verifies Supabase Auth access tokens (HS256) — required for `/me` and all authed routes |
 | `VERCEL_TOKEN` | Sandbox SDK auth |
-| `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
-| `LLM_FALLBACK_MODELS` | JSON list of fallback model strings |
+| `LLM_PRIMARY_MODEL` | LiteLLM model string — default `groq/openai/gpt-oss-120b` (Groq is the primary provider) |
+| `LLM_FALLBACK_MODELS` | JSON list of the rest of the model pool |
+| `LLM_MODEL_LIMITS` | JSON dict of per-model `rpm`/`rpd`/`tpm`/`tpd` overrides — see `../docs/llm-model-router.md` |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `GROQ_API_KEY` / `OPENROUTER_API_KEY` | Set only for providers you use |
 
 Production env var reference: `../docs/infrastructure.md`
