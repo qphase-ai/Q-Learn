@@ -24,6 +24,17 @@ function gateBackground(type: GateType): string {
   }
 }
 
+/** Label colour for a gate body: fixed on the palette fills, themed on the fallback. */
+function gateLabelColor(type: GateType): string {
+  switch (type) {
+    case "M":   return "var(--gate-label-on-light)";
+    case "H": case "X": case "Y": case "Z": case "CX": case "CZ": case "SWAP":
+    case "S": case "T": case "I":
+      return "var(--gate-label)";
+    default:    return "var(--text-primary)";
+  }
+}
+
 export default function DraggableGate({ type }: DraggableGateProps) {
   const selectedGateType = useCircuitStore((s) => s.selectedGateType);
   const setSelectedGateType = useCircuitStore((s) => s.setSelectedGateType);
@@ -49,7 +60,7 @@ export default function DraggableGate({ type }: DraggableGateProps) {
         border: isSelected
           ? "2px solid var(--quantum)"
           : "2px solid var(--border)",
-        color: "var(--text-primary)",
+        color: gateLabelColor(type),
         borderRadius: 6,
         width: 44,
         height: 44,

@@ -17,7 +17,7 @@ export default function ProgressHero({
   currentProgress,
 }: ProgressHeroProps) {
   return (
-    <div className="rounded-xl border border-white/10 bg-surface p-5">
+    <div className="rounded-xl border border-overlay/10 bg-surface p-5">
       <div className="flex flex-wrap items-center gap-6">
         <div className="flex items-center gap-2">
           <Zap size={16} className="text-cyber-cyan" aria-hidden />
@@ -59,7 +59,7 @@ export default function ProgressHero({
             <span>Current lesson progress</span>
             <span>{currentProgress}%</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-overlay/[0.06]">
             <div
               role="progressbar"
               aria-label="Current lesson progress"

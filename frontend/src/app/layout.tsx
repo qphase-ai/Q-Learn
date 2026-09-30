@@ -19,9 +19,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // suppressHydrationWarning: next-themes sets the theme class on <html>
+    // before hydration, so the server markup intentionally differs.
     <html
       lang="en"
-      className={`dark bg-[#050505] ${GeistSans.variable} ${GeistMono.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+      className={`bg-background ${GeistSans.variable} ${GeistMono.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans">
         <Providers>{children}</Providers>

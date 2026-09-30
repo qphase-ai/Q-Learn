@@ -11,7 +11,7 @@ export default function GridBackground({ className }: { className?: string }) {
       aria-hidden="true"
       className={cn(
         "pointer-events-none fixed inset-0 -z-10",
-        "bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]",
+        "bg-[linear-gradient(hsl(var(--overlay)/0.05)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--overlay)/0.05)_1px,transparent_1px)] bg-[size:40px_40px]",
         className,
       )}
       style={{

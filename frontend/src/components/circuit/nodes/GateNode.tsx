@@ -22,6 +22,17 @@ function gateColor(type: GateType): string {
   }
 }
 
+/** Label colour for a gate body: fixed on the palette fills, themed on the fallback. */
+function gateLabelColor(type: GateType): string {
+  switch (type) {
+    case "M":   return "var(--gate-label-on-light)";
+    case "H": case "X": case "Y": case "Z": case "CX": case "CZ": case "SWAP":
+    case "S": case "T": case "I":
+      return "var(--gate-label)";
+    default:    return "var(--text-primary)";
+  }
+}
+
 function GateNode({ data, selected }: NodeProps) {
   const runState = useCircuitStore((s) => s.runState);
   const gateData = data as GateNodeData;
@@ -77,7 +88,7 @@ function GateNode({ data, selected }: NodeProps) {
           justifyContent: "center",
           fontSize: 12,
           fontWeight: 700,
-          color: "var(--text-primary)",
+          color: gateLabelColor(type),
           cursor: "pointer",
           opacity: isRunning ? 0.7 : 1,
           animation: isRunning ? "pulse 1s ease-in-out infinite" : undefined,

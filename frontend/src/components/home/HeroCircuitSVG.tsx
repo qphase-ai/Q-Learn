@@ -11,16 +11,16 @@ export function HeroCircuitSVG() {
       className="w-full max-w-md"
     >
       {/* Qubit labels */}
-      <text x="8" y="65" fill="rgba(255,255,255,0.5)" fontSize="13" fontFamily="monospace">
+      <text x="8" y="65" className="fill-overlay/50" fontSize="13" fontFamily="monospace">
         q₀
       </text>
-      <text x="8" y="125" fill="rgba(255,255,255,0.5)" fontSize="13" fontFamily="monospace">
+      <text x="8" y="125" className="fill-overlay/50" fontSize="13" fontFamily="monospace">
         q₁
       </text>
 
       {/* Qubit wires */}
-      <line x1="36" y1="60" x2="400" y2="60" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-      <line x1="36" y1="120" x2="400" y2="120" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      <line x1="36" y1="60" x2="400" y2="60" className="stroke-overlay/15" strokeWidth="1.5" />
+      <line x1="36" y1="120" x2="400" y2="120" className="stroke-overlay/15" strokeWidth="1.5" />
 
       {/* H gate — q0 at x=70 */}
       <rect x="60" y="40" width="40" height="40" rx="6" fill="#8b5cf6" />

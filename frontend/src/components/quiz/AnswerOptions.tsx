@@ -17,7 +17,7 @@ export default function AnswerOptions({
           className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors ${
             selected === option
               ? "border-cyber-cyan bg-cyber-cyan/10 text-cyber-cyan"
-              : "border-white/10 text-foreground hover:bg-white/5"
+              : "border-overlay/10 text-foreground hover:bg-overlay/5"
           }`}
         >
           <input

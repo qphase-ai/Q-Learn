@@ -57,7 +57,7 @@ export default function AITutorPanel() {
 
       <form
         onSubmit={handleSubmit}
-        className="flex items-center gap-2 border-t border-border p-3"
+        className="flex items-center gap-2 border-t border-overlay/10 p-3"
       >
         <input
           type="text"
@@ -66,7 +66,7 @@ export default function AITutorPanel() {
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Ask the AI Tutor…"
           aria-label="Ask the AI Tutor"
-          className="h-9 flex-1 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-sm text-foreground outline-none transition-colors focus:border-cyber-cyan focus:shadow-glow-cyan disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-9 flex-1 rounded-lg border border-overlay/10 bg-overlay/[0.02] px-3 text-sm text-foreground outline-none transition-colors focus:border-cyber-cyan focus:shadow-glow-cyan disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
           type="submit"

@@ -17,8 +17,8 @@ export const buttonVariants = cva(
         primary: "bg-cyber-cyan text-background shadow-glow-cyan hover:brightness-110",
         secondary: "bg-electric-purple text-white shadow-glow-purple hover:brightness-110",
         outline:
-          "border border-white/10 bg-white/[0.02] text-foreground backdrop-blur-md hover:bg-white/[0.06]",
-        ghost: "bg-transparent text-muted-foreground hover:bg-white/5 hover:text-foreground",
+          "border border-overlay/10 bg-overlay/[0.02] text-foreground backdrop-blur-md hover:bg-overlay/[0.06]",
+        ghost: "bg-transparent text-muted-foreground hover:bg-overlay/5 hover:text-foreground",
         destructive: "bg-error text-white hover:brightness-110",
         link: "h-auto bg-transparent p-0 text-cyber-cyan underline-offset-4 hover:underline",
       },

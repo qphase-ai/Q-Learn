@@ -31,11 +31,11 @@ export default function CircuitToolbar() {
   }
 
   const btnBase =
-    "h-8 rounded-md border border-border bg-elevated px-2.5 text-[13px] text-foreground outline-none cursor-pointer";
+    "h-8 rounded-md border border-overlay/10 bg-elevated px-2.5 text-[13px] text-foreground outline-none cursor-pointer";
 
   return (
     <div
-      className="flex flex-shrink-0 items-center gap-2 border-b border-border bg-surface px-3"
+      className="flex flex-shrink-0 items-center gap-2 border-b border-overlay/10 bg-surface px-3"
       style={{ height: 44 }}
       role="toolbar"
       aria-label="Circuit toolbar"
@@ -45,11 +45,11 @@ export default function CircuitToolbar() {
         type="text"
         value={circuitName}
         onChange={(e) => renameCircuit(e.target.value)}
-        className="h-8 min-w-[120px] rounded-md border border-border bg-elevated px-2 text-[13px] text-foreground outline-none"
+        className="h-8 min-w-[120px] rounded-md border border-overlay/10 bg-elevated px-2 text-[13px] text-foreground outline-none"
         aria-label="Circuit name"
       />
 
-      <div className="h-6 w-px flex-shrink-0 bg-border" />
+      <div className="h-6 w-px flex-shrink-0 bg-overlay/10" />
 
       {/* Qubit controls */}
       <div className="flex items-center gap-1">
@@ -74,7 +74,7 @@ export default function CircuitToolbar() {
         </button>
       </div>
 
-      <div className="h-6 w-px flex-shrink-0 bg-border" />
+      <div className="h-6 w-px flex-shrink-0 bg-overlay/10" />
 
       {/* Run button */}
       <button

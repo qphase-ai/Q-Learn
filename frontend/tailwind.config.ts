@@ -7,7 +7,8 @@ const config: Config = {
     extend: {
       colors: {
         "cyber-cyan": {
-          DEFAULT: "#00F0FF",
+          // Theme-aware (darker in light mode); the numbered ramp stays fixed.
+          DEFAULT: "hsl(var(--cyber-cyan) / <alpha-value>)",
           50: "#E5FDFF",
           100: "#CCFBFF",
           200: "#99F7FF",
@@ -21,7 +22,8 @@ const config: Config = {
           950: "#001A1C",
         },
         "electric-purple": {
-          DEFAULT: "#B026FF",
+          // Theme-aware (darker in light mode); the numbered ramp stays fixed.
+          DEFAULT: "hsl(var(--electric-purple) / <alpha-value>)",
           50: "#F5E9FF",
           100: "#EBD3FF",
           200: "#D7A8FF",
@@ -35,7 +37,8 @@ const config: Config = {
           950: "#14041D",
         },
         "neon-green": {
-          DEFAULT: "#39FF14",
+          // Theme-aware (darker in light mode); the numbered ramp stays fixed.
+          DEFAULT: "hsl(var(--neon-green) / <alpha-value>)",
           50: "#EFFFEB",
           100: "#DFFFD6",
           200: "#BFFFAD",
@@ -53,6 +56,7 @@ const config: Config = {
         elevated: "hsl(var(--elevated) / <alpha-value>)",
         border: "hsl(var(--border-ds) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
+        overlay: "hsl(var(--overlay) / <alpha-value>)",
         "muted-foreground": "hsl(var(--muted-foreground) / <alpha-value>)",
         success: "hsl(var(--success-ds) / <alpha-value>)",
         warning: "hsl(var(--warning-ds) / <alpha-value>)",

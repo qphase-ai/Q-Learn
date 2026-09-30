@@ -20,7 +20,7 @@ export function StatsSection() {
                 key={stat.label}
                 className={`flex flex-col items-center text-center ${
                   i < STATS.length - 1
-                    ? "md:border-r md:border-white/10"
+                    ? "md:border-r md:border-overlay/10"
                     : ""
                 }`}
               >

@@ -47,10 +47,10 @@ export default function DashboardTutorPanel({
 
   return (
     <aside
-      className="flex w-[340px] flex-shrink-0 flex-col border-l border-white/10 bg-surface"
+      className="flex w-[340px] flex-shrink-0 flex-col border-l border-overlay/10 bg-surface"
       aria-label="AI Tutor"
     >
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-overlay/10 px-4 py-3">
         <span className="text-sm font-semibold text-foreground">AI Tutor</span>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-success" aria-hidden />
@@ -58,7 +58,7 @@ export default function DashboardTutorPanel({
         </span>
       </div>
 
-      <div className="border-b border-white/10 p-2">
+      <div className="border-b border-overlay/10 p-2">
         <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as TutorTab)}>
           <TabsList className="w-full justify-between">
             <TabsTrigger value="chat" className="flex-1">Chat</TabsTrigger>
@@ -86,7 +86,7 @@ export default function DashboardTutorPanel({
               )}
             </div>
             {askedTabs.has(activeTab) && (
-              <div className="flex-1 overflow-hidden border-t border-white/10">
+              <div className="flex-1 overflow-hidden border-t border-overlay/10">
                 <AITutorPanel />
               </div>
             )}
@@ -112,7 +112,7 @@ function AskableHeroCard({
   const Icon = meta.icon;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div className="rounded-xl border border-overlay/10 bg-overlay/[0.03] p-4">
       <div className="flex items-start gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-electric-purple/15 text-electric-purple">
           <Icon size={16} aria-hidden />

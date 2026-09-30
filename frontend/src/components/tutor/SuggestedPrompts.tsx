@@ -25,7 +25,7 @@ export default function SuggestedPrompts({
             type="button"
             disabled={disabled}
             onClick={() => onSelect(prompt)}
-            className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-cyber-cyan hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-overlay/10 bg-overlay/[0.02] px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-cyber-cyan hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             {prompt}
           </button>

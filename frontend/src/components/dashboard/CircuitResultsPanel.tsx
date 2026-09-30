@@ -24,7 +24,7 @@ export default function CircuitResultsPanel() {
   const results = useCircuitStore((s) => s.results);
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-surface p-4">
+    <div className="flex flex-col gap-4 rounded-xl border border-overlay/10 bg-surface p-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Simulation Results</span>
         {results && (

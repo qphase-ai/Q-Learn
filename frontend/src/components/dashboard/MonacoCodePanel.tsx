@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { useCircuitStore } from "@/stores/circuitStore";
 import { nodesToCircuitSpec, circuitSpecToQiskitSource } from "@/lib/circuit-spec";
 import {
@@ -16,6 +17,7 @@ import {
 const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
 export default function MonacoCodePanel() {
+  const { resolvedTheme } = useTheme();
   const nodes = useCircuitStore((s) => s.nodes);
   const qubitCount = useCircuitStore((s) => s.qubitCount);
   const runSimulation = useCircuitStore((s) => s.runSimulation);
@@ -50,8 +52,8 @@ export default function MonacoCodePanel() {
   );
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-surface">
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-overlay/10 bg-surface">
+      <div className="flex items-center justify-between border-b border-overlay/10 px-3 py-2">
         <span className="text-sm font-medium text-foreground">circuit.py</span>
         {isEdited ? (
           // A local TooltipProvider is required here: this file is rendered in
@@ -80,7 +82,7 @@ export default function MonacoCodePanel() {
         <Editor
           height="100%"
           language="python"
-          theme="vs-dark"
+          theme={resolvedTheme === "light" ? "light" : "vs-dark"}
           value={buffer}
           onChange={(v) => setBuffer(v ?? "")}
           options={{ fontSize: 13, minimap: { enabled: false }, fontFamily: "var(--font-mono)" }}

@@ -51,7 +51,7 @@ export default function ProgressView() {
       </div>
 
       {/* Level progress */}
-      <section className="rounded-xl border border-white/10 bg-surface p-5">
+      <section className="rounded-xl border border-overlay/10 bg-surface p-5">
         <h2 className="mb-4 text-sm font-semibold text-foreground">Level progress</h2>
 
         {coursesError ? (
@@ -60,7 +60,7 @@ export default function ProgressView() {
             <button
               type="button"
               onClick={onRetry}
-              className="rounded-md border border-white/10 px-3 py-1 text-xs text-foreground hover:bg-white/5"
+              className="rounded-md border border-overlay/10 px-3 py-1 text-xs text-foreground hover:bg-overlay/5"
             >
               Retry
             </button>
@@ -108,7 +108,7 @@ export default function ProgressView() {
       </section>
 
       {/* Concept mastery */}
-      <section className="rounded-xl border border-white/10 bg-surface p-5">
+      <section className="rounded-xl border border-overlay/10 bg-surface p-5">
         <h2 className="mb-1 text-sm font-semibold text-foreground">Concept mastery</h2>
         <p className="mb-4 text-xs text-muted-foreground">
           Bayesian knowledge-tracing estimates updated as you learn.
@@ -158,7 +158,7 @@ function StatTile({
     warning: "text-warning",
   }[accent];
   return (
-    <div className="rounded-xl border border-white/10 bg-surface p-4">
+    <div className="rounded-xl border border-overlay/10 bg-surface p-4">
       <div className={`mb-2 flex items-center gap-2 ${accentClass}`}>
         {icon}
         <span className="text-xs font-medium text-muted-foreground">{label}</span>

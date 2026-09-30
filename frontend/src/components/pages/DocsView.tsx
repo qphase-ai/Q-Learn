@@ -78,7 +78,7 @@ function Section({ title, items }: { title: string; items: DocLink[] }) {
         {items.map((item) => {
           const Icon = item.icon;
           const inner = (
-            <div className="group h-full rounded-xl border border-white/10 bg-surface p-4 transition-colors hover:border-cyber-cyan/40 hover:bg-white/[0.02]">
+            <div className="group h-full rounded-xl border border-overlay/10 bg-surface p-4 transition-colors hover:border-cyber-cyan/40 hover:bg-overlay/[0.02]">
               <Icon size={18} className="text-cyber-cyan" aria-hidden />
               <div className="mt-2 flex items-center gap-1 text-sm font-medium text-foreground">
                 {item.title}

@@ -11,7 +11,7 @@ const MEASURE: GateType[] = ["M"];
 export default function GatePalette() {
   return (
     <aside
-      className="flex w-[180px] min-w-[180px] flex-col gap-1 overflow-y-auto border-r border-border bg-surface px-2.5 py-3"
+      className="flex w-[180px] min-w-[180px] flex-col gap-1 overflow-y-auto border-r border-overlay/10 bg-surface px-2.5 py-3"
       aria-label="Gate palette"
     >
       <GatePaletteGroup title="Single">

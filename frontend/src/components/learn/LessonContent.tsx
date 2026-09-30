@@ -63,7 +63,7 @@ export default function LessonContent() {
         {activeLesson.content}
       </ReactMarkdown>
 
-      <footer className="mt-8 flex justify-end border-t border-border pt-4">
+      <footer className="mt-8 flex justify-end border-t border-overlay/10 pt-4">
         {isCompleted ? (
           <span className="text-sm font-semibold text-success">✓ Completed</span>
         ) : (
