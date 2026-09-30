@@ -216,7 +216,7 @@ Context travels in the **payload**, not in the model's memory — any model in t
 
 ### Upgrade path to multi-replica
 
-The current counter is in-process (`threading.Lock` + `deque`). When multiple API replicas are deployed, swap the deque for a Redis sorted-set backend in two internal methods (`record` / `_count_last_minute`). All callers and `get_ordered_models()` are unchanged.
+Bucket state is in-process (`threading.Lock` + refilling buckets). When multiple API replicas are deployed, back `record`, `adjust_tokens`, `sync_from_headers` and `mark_rate_limited` with Redis (see [`docs/llm-model-router.md`](docs/llm-model-router.md)). All callers and `get_ordered_models()` are unchanged.
 
 ---
 

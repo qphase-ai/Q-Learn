@@ -1,5 +1,8 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+_LLM_LIMIT_KEYS = {"rpm", "rpd", "tpm", "tpd"}
 
 
 class Settings(BaseSettings):
@@ -36,6 +39,18 @@ class Settings(BaseSettings):
     # LLM_MODEL_LIMITS — per-model overrides of any of rpm/rpd/tpm/tpd, e.g. after a
     # paid-tier upgrade: {"groq/openai/gpt-oss-120b": {"rpm": 1000, "tpm": 250000}}
     llm_model_limits: dict[str, dict[str, int]] = {}
+
+    @field_validator("llm_model_limits")
+    @classmethod
+    def _check_llm_limit_keys(cls, value: dict[str, dict[str, int]]) -> dict[str, dict[str, int]]:
+        for model, limits in value.items():
+            unknown = set(limits) - _LLM_LIMIT_KEYS
+            if unknown:
+                raise ValueError(
+                    f"LLM_MODEL_LIMITS[{model!r}] has unknown keys {sorted(unknown)}; "
+                    f"allowed: {sorted(_LLM_LIMIT_KEYS)}"
+                )
+        return value
 
     # Provider API keys — only set the keys for providers you use
     openai_api_key: str = ""

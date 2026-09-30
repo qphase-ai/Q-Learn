@@ -33,6 +33,19 @@ def test_resolve_limits_exact_prefix_and_fallback():
     assert resolve_limits("gpt-4o-mini") == ModelLimits(rpm=30)
 
 
+def test_llm_model_limits_rejects_unknown_keys_at_settings_load():
+    """A typo like "RPM" must fail at startup, not inside every get_llm() call."""
+    from pydantic import ValidationError
+
+    from app.config import Settings, get_settings
+
+    base = get_settings().model_dump()
+    with pytest.raises(ValidationError, match="unknown keys"):
+        Settings(**{**base, "llm_model_limits": {GPT120: {"RPM": 1_000}}})
+    ok = Settings(**{**base, "llm_model_limits": {GPT120: {"rpm": 1_000, "tpm": 250_000}}})
+    assert ok.llm_model_limits[GPT120]["rpm"] == 1_000
+
+
 def test_resolve_limits_partial_override_keeps_other_fields():
     limits = resolve_limits(GPT120, {GPT120: {"rpm": 1_000, "tpm": 250_000}})
     assert limits == ModelLimits(rpm=1_000, rpd=1_000, tpm=250_000, tpd=200_000)
