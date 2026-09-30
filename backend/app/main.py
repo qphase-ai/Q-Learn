@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
+from app.core.logging import configure_logging
 from app.exceptions import QlearnError, qlearn_exception_handler
 from app.routers import auth, circuits, content_refs, learning, tutor
 
+configure_logging()
 settings = get_settings()
 
 
