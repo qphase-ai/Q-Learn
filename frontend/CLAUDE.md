@@ -61,6 +61,10 @@ Inside `LabShell`'s children, `/dashboard` renders the full `CentralWorkspace` w
 | `stores/` | Zustand stores — one per domain |
 | `hooks/` | Custom React hooks wrapping store + API logic |
 | `lib/api.ts` | `apiFetch<T>` — all FastAPI calls go through here |
+| `lib/content-source.ts` | `NEXT_PUBLIC_CONTENT_SOURCE` flag + client reads of `/api/cms/*` |
+| `lib/cms.ts` | Server-only Payload reads (cached, tag-revalidated) and Payload → `CourseDetail`/`LessonDetail` mapping |
+| `app/api/cms/*`, `app/api/revalidate` | Route handlers: published curriculum from Payload; on-publish cache invalidation |
+| `components/learn/blocks/` | Lesson block registry — one renderer per CMS block type (mirrors `cms/src/blocks/lessonBlocks.ts`) |
 | `lib/supabase.ts` | Supabase client + Realtime channel subscriptions |
 | `types/index.ts` | Shared TypeScript types (`User`, `Course`, `GateSpec`, `SimulationResult`, `Plan`, …) |
 
@@ -221,6 +225,9 @@ Gate palette (`src/app/globals.css`, "CIRCUIT PALETTE — DO NOT MODIFY") — id
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_DEV_NO_AUTH` | Dev-only: `1` opens every page without login (ignored in production; double-gated on `NODE_ENV`) |
+| `NEXT_PUBLIC_CONTENT_SOURCE` | `legacy` (default, FastAPI `/api/v1/courses`) or `cms` (Payload via `/api/cms/*`) |
+| `CMS_URL` | Server-only — Payload CMS origin read by `lib/cms.ts` |
+| `REVALIDATE_SECRET` | Server-only — shared secret the CMS sends to `POST /api/revalidate` |
 
 Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `../docs/infrastructure.md`.
 

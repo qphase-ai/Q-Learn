@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Payload CMS curriculum store
+
+- **`cms/`**: a standalone Payload 3.90.2 / Next.js 16 app. It has the Curriculums → Levels → Modules → Lessons collections with drafts and versions, the closed 10-block lesson registry stored as JSONB (`blocksAsJSON`), Media with the Supabase Storage (S3) adapter, and isolated `cmsUsers` with `author`/`publisher` roles. It lives in its own `payload` Postgres schema, managed by migrations only.
+- **Backend**: `POST /api/v1/internal/content-refs` (`X-CMS-Secret`) and `ContentRefService.register`. Publishing a lesson mints its `content_refs` id, or binds a legacy `legacy:<uuid>` ref. New `CMS_WEBHOOK_SECRET` setting.
+- **Legacy migration**: `backend/scripts/export_legacy_curriculum.py` and `cms/scripts/import-legacy.ts`. The import is idempotent, validates every converted lesson, and keeps legacy lesson ids so existing progress carries over.
+- **Frontend**: `NEXT_PUBLIC_CONTENT_SOURCE=cms` reads published curriculum from Payload through cached `/api/cms/*` route handlers. `POST /api/revalidate` refreshes that cache on publish. A lesson block renderer registry (`components/learn/blocks/`) covers all 10 block types, including interactive quiz and simulation blocks. Authored quiz blocks feed `/quiz`.
+
+### Changed
+
+- Frontend `GateSpec` now includes `params`, matching the backend.
+
 ### Added — Marketing Home Page (PR #21, 2026-09-21)
 
 - **Marketing landing page** at `/` — replaces the redirect-only `app/page.tsx` with a fully assembled public surface. Unauthenticated visitors see the landing page; authenticated users are redirected to `/dashboard` via a `qlearn-auth` cookie check on mount.

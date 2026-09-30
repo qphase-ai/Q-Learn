@@ -1,6 +1,7 @@
 "use client";
 
 import { useCircuitStore } from "@/stores/circuitStore";
+import type { SimulationResult } from "@/types";
 
 interface Row {
   label: string;
@@ -9,8 +10,10 @@ interface Row {
   phase: string;
 }
 
-export default function StateVectorTable() {
-  const results = useCircuitStore((s) => s.results);
+/** Shows the circuit store's latest run unless `results` is passed explicitly. */
+export default function StateVectorTable({ results: override }: { results?: SimulationResult | null } = {}) {
+  const storeResults = useCircuitStore((s) => s.results);
+  const results = override !== undefined ? override : storeResults;
 
   if (!results || (!results.statevector && !results.probabilities)) {
     return (

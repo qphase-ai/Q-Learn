@@ -92,3 +92,33 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
         run: pnpm build
+
+  cms:
+    name: CMS
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install deps
+        working-directory: cms
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: cms
+        run: pnpm type-check
+
+      - name: Lint
+        working-directory: cms
+        run: pnpm lint
+
+      - name: Test
+        working-directory: cms
+        run: pnpm test
