@@ -204,7 +204,7 @@ block-beta
     end
 
     block:other["Other providers"]:4
-        H["gemini-2.0-flash\n15 RPM"]
+        H["gemini-3.8-flash\n15 RPM"]
         I["openrouter ×2\n20 RPM each\n⚠ 50 req/day free"]
         space:2
     end

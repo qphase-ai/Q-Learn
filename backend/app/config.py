@@ -28,9 +28,9 @@ class Settings(BaseSettings):
 
     # LLM — ChatLiteLLM model routing
     # Use LiteLLM model strings: "gpt-4o-mini", "anthropic/claude-haiku-4-5-20251001",
-    # "gemini/gemini-1.5-flash", "ollama/llama3.2", etc.
+    # "gemini/gemini-3.8-flash", "ollama/llama3.2", etc.
     llm_primary_model: str = "gpt-4o-mini"
-    llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-1.5-flash"]
+    llm_fallback_models: list[str] = ["anthropic/claude-haiku-4-5-20251001", "gemini/gemini-3.8-flash"]
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
     llm_model_rpm_limits: dict[str, int] = {}  # LLM_MODEL_RPM_LIMITS — override per-model RPM cap

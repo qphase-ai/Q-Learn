@@ -27,7 +27,7 @@ def get_llm(temperature: float | None = None) -> Runnable:
     Model strings follow LiteLLM format:
       - "gpt-4o-mini"                          → OpenAI
       - "anthropic/claude-haiku-4-5-20251001"  → Anthropic
-      - "gemini/gemini-2.0-flash"              → Google
+      - "gemini/gemini-3.8-flash"              → Google
       - "groq/llama-3.3-70b-versatile"         → Groq
       - "openrouter/openai/gpt-4o"             → OpenRouter
       - "ollama/llama3.2"                      → local Ollama
