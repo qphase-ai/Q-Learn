@@ -27,16 +27,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
 
     # LLM — ChatLiteLLM model routing (see docs/llm-model-router.md)
-    # Use LiteLLM model strings: "groq/openai/gpt-oss-120b", "gemini/gemini-3.8-flash",
-    # "anthropic/claude-haiku-4-5-20251001", "ollama/llama3.2", etc.
+    # Use LiteLLM model strings: "groq/openai/gpt-oss-120b", "anthropic/claude-haiku-4-5-20251001",
+    # "ollama/llama3.2", etc.
     llm_primary_model: str = "groq/openai/gpt-oss-120b"
-    llm_fallback_models: list[str] = [
-        "groq/openai/gpt-oss-20b",
-        "groq/qwen/qwen3.8-27b",
-        "gemini/gemini-3.8-flash",
-        "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
-        "openrouter/poolside/laguna-s-2.1:free",
-    ]
+    llm_fallback_models: list[str] = ["groq/openai/gpt-oss-20b", "groq/qwen/qwen3.8-27b"]
     llm_temperature: float = 0.7
     llm_max_tokens: int = 2048
     # LLM_MODEL_LIMITS — per-model overrides of any of rpm/rpd/tpm/tpd, e.g. after a
