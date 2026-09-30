@@ -6,9 +6,10 @@ import { revalidateStudentApp } from '../src/hooks/revalidate'
 
 const fetchMock = vi.fn()
 
-function fakeReq(user?: { role: string }) {
+function fakeReq(user?: { role: string }, query: Record<string, unknown> = {}) {
   return {
     user: user ? { collection: 'cmsUsers', ...user } : null,
+    query,
     t: (k: string) => k,
     payload: {
       update: vi.fn().mockResolvedValue({}),
@@ -87,14 +88,20 @@ describe('registerContentRef', () => {
 })
 
 describe('enforcePublishRole', () => {
+  const draft = { draft: 'true' }
   it.each([
-    ['publisher publishing', { role: 'publisher' }, { _status: 'published' }, undefined, true],
-    ['author saving a draft', { role: 'author' }, { _status: 'draft' }, { _status: 'published' }, true],
-    ['local API without a user', undefined, { _status: 'published' }, undefined, true],
-    ['author publishing', { role: 'author' }, { _status: 'published' }, undefined, false],
-    ['author editing a published doc without drafting', { role: 'author' }, { title: 'x' }, { _status: 'published' }, false],
-  ])('%s', (_label, user, data, originalDoc, allowed) => {
-    const run = () => call(enforcePublishRole, { data, originalDoc, req: fakeReq(user) })
+    ['publisher publishing', { role: 'publisher' }, {}, { _status: 'published' }, undefined, true],
+    ['publisher unpublishing', { role: 'publisher' }, {}, { _status: 'draft' }, { _status: 'published' }, true],
+    ['author saving a draft of a published doc', { role: 'author' }, draft, { _status: 'draft' }, { _status: 'published' }, true],
+    ['author saving a draft (boolean query flag)', { role: 'author' }, { draft: true }, { _status: 'draft' }, { _status: 'published' }, true],
+    ['author editing a never-published doc', { role: 'author' }, {}, { title: 'x' }, { _status: 'draft' }, true],
+    ['local API without a user', undefined, {}, { _status: 'published' }, undefined, true],
+    ['author publishing', { role: 'author' }, {}, { _status: 'published' }, undefined, false],
+    ['author publishing via a draft request', { role: 'author' }, draft, { _status: 'published' }, { _status: 'draft' }, false],
+    ['author editing a published doc without drafting', { role: 'author' }, {}, { title: 'x' }, { _status: 'published' }, false],
+    ['author unpublishing', { role: 'author' }, {}, { _status: 'draft' }, { _status: 'published' }, false],
+  ])('%s', (_label, user, query, data, originalDoc, allowed) => {
+    const run = () => call(enforcePublishRole, { data, originalDoc, req: fakeReq(user, query) })
     if (allowed) expect(run()).toBe(data)
     else expect(run).toThrow()
   })

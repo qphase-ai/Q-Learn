@@ -255,6 +255,8 @@ export async function fetchCourseDetail(curriculumId: string): Promise<CourseDet
           "select[module]": "true",
           "select[order]": "true",
           "select[contentRefId]": "true",
+          // Block types only (for lesson_type), not block content.
+          "select[blocks][blockType]": "true",
         },
         tags
       )

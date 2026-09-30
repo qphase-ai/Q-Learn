@@ -50,8 +50,22 @@ async function main() {
   let created = 0
   let lessonsSeen = 0
 
+  // Documents are matched by slug, so two legacy sources whose titles slugify
+  // identically would silently merge. Refuse the second one instead.
+  const claimedSlugs = new Map<string, string>()
+  const claim = (key: string, legacyId: string, label: string): boolean => {
+    const owner = claimedSlugs.get(key)
+    if (owner && owner !== legacyId) {
+      problems.push(`${label} (${legacyId}): slug collides with ${owner}; skipped — rename one of them`)
+      return false
+    }
+    claimedSlugs.set(key, legacyId)
+    return true
+  }
+
   for (const course of data.courses) {
     const curriculumSlug = slugify(course.title)
+    if (!claim(`curriculum:${curriculumSlug}`, course.id, `course "${course.title}"`)) continue
     let curriculum = await findOne(payload, 'curriculums', { slug: { equals: curriculumSlug } })
     if (!curriculum) {
       curriculum = await payload.create({
@@ -65,6 +79,7 @@ async function main() {
     const modules = [...course.modules].sort(byOrder)
     for (const [index, legacyModule] of modules.entries()) {
       const slug = slugify(legacyModule.title)
+      if (!claim(`level:${curriculumSlug}:${slug}`, legacyModule.id, `module "${legacyModule.title}"`)) continue
       let level = await findOne(payload, 'levels', {
         and: [{ curriculum: { equals: curriculum.id } }, { slug: { equals: slug } }],
       })

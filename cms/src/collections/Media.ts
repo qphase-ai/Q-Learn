@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { authenticated } from '../access'
+import { authenticated, publishers } from '../access'
 
 /**
  * Lesson media. Stored in Supabase Storage via the S3 adapter when S3_* is
@@ -15,7 +15,8 @@ export const Media: CollectionConfig = {
     read: () => true,
     create: authenticated,
     update: authenticated,
-    delete: authenticated,
+    // Published lessons reference media; removing it changes live content.
+    delete: publishers,
   },
   fields: [{ name: 'alt', type: 'text', required: true }],
   upload: {
