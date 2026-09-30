@@ -82,16 +82,36 @@ class TestStartMessage:
         from app.services.tutor_service import start_message
         from app.models.agent import AgentSession, AgentMessage
 
+        user_id = uuid.uuid4()
         existing = MagicMock(spec=AgentSession)
+        existing.user_id = user_id
         db = _make_mock_db()
         db.get = AsyncMock(return_value=existing)
         body = TutorChatRequest(message="hi", session_id=uuid.uuid4())
 
-        await start_message(db, uuid.uuid4(), body)
+        await start_message(db, user_id, body)
 
         added = [call.args[0] for call in db.add.call_args_list]
         assert not any(isinstance(a, AgentSession) for a in added)
         assert any(isinstance(a, AgentMessage) for a in added)
+
+    @pytest.mark.asyncio
+    async def test_rejects_other_users_session(self):
+        from app.services.tutor_service import start_message
+        from app.models.agent import AgentSession
+        from app.exceptions import NotFoundError
+
+        existing = MagicMock(spec=AgentSession)
+        existing.user_id = uuid.uuid4()
+        db = _make_mock_db()
+        db.get = AsyncMock(return_value=existing)
+        body = TutorChatRequest(message="hi", session_id=uuid.uuid4())
+
+        with pytest.raises(NotFoundError):
+            await start_message(db, uuid.uuid4(), body)
+
+        db.add.assert_not_called()
+        db.commit.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------

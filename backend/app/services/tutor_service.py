@@ -38,8 +38,14 @@ async def start_message(
     user_id: uuid.UUID,
     body: TutorChatRequest,
 ) -> uuid.UUID:
-    """Upsert the session, persist the user's message, commit, return session_id."""
+    """Upsert the session, persist the user's message, commit, return session_id.
+
+    404 if the session exists but belongs to another user — same as get_session,
+    so a known session UUID can't be used to write into someone else's history.
+    """
     session = await db.get(AgentSession, body.session_id)
+    if session is not None and session.user_id != user_id:
+        raise NotFoundError("Session not found")
     if session is None:
         session = AgentSession(
             id=body.session_id,
