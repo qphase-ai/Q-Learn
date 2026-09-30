@@ -38,6 +38,7 @@ export interface GateSpec {
   type: string;
   targets: number[];
   control?: number;
+  params?: Record<string, unknown>;
   classical?: number[];
 }
 
@@ -110,7 +111,67 @@ export interface LessonDetail {
   lesson_type: "text" | "circuit" | "code" | "quiz";
   is_pro: boolean;
   concepts: ConceptOut[];
+  /** Present when the lesson comes from the Payload CMS (see lib/cms.ts). */
+  blocks?: LessonBlock[];
 }
+
+// ---------------------------------------------------------------------------
+// Lesson blocks — the closed registry authored in Payload (cms/src/blocks).
+// `blockType` is the discriminant; unknown types are skipped by the renderer.
+// ---------------------------------------------------------------------------
+
+interface BlockBase {
+  id?: string | null;
+}
+
+export interface CmsMedia {
+  url?: string | null;
+  alt?: string | null;
+  width?: number | null;
+  height?: number | null;
+}
+
+export type LessonBlock =
+  | (BlockBase & { blockType: "heading"; text: string; level: "2" | "3" | "4" })
+  | (BlockBase & { blockType: "text"; body: string })
+  | (BlockBase & { blockType: "markdown"; body: string })
+  | (BlockBase & { blockType: "math"; latex: string; displayMode?: boolean | null; caption?: string | null })
+  | (BlockBase & { blockType: "image"; image: CmsMedia | number | null; caption?: string | null })
+  | (BlockBase & {
+      blockType: "code";
+      language: "python" | "qasm" | "text";
+      code: string;
+      filename?: string | null;
+      caption?: string | null;
+    })
+  | (BlockBase & {
+      blockType: "callout";
+      variant: "info" | "tip" | "warning" | "important";
+      title?: string | null;
+      body: string;
+    })
+  | (BlockBase & { blockType: "circuit"; spec: CircuitSpec; title?: string | null; description?: string | null })
+  | (BlockBase & {
+      blockType: "quiz";
+      question: string;
+      questionType: "multiple_choice" | "true_false";
+      options: { id?: string | null; text: string }[];
+      correctAnswer: string;
+      hint?: string | null;
+      explanation?: string | null;
+      difficulty?: string | null;
+      concept?: string | null;
+    })
+  | (BlockBase & {
+      blockType: "simulation";
+      view: "probabilities" | "statevector";
+      circuit: CircuitSpec;
+      shots: number;
+      title?: string | null;
+      description?: string | null;
+    });
+
+export type LessonBlockType = LessonBlock["blockType"];
 
 export interface ProgressItem {
   lesson_id: string;

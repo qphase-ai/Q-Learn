@@ -59,3 +59,41 @@ describe("generateQuizFromLesson", () => {
     expect(generateQuizFromLesson(lesson)).toEqual([]);
   });
 });
+
+describe("generateQuizFromLesson — CMS quiz blocks", () => {
+  it("prefers questions authored as quiz blocks", () => {
+    const quiz = generateQuizFromLesson({
+      id: "ref-1",
+      module_id: "m",
+      title: "Superposition",
+      content: null,
+      lesson_type: "quiz",
+      is_pro: false,
+      concepts: [{ id: "c1", name: "Superposition", description: "d" }],
+      blocks: [
+        { blockType: "markdown", body: "intro" },
+        {
+          id: "b1",
+          blockType: "quiz",
+          question: "P(0) for |+>?",
+          questionType: "multiple_choice",
+          options: [{ text: "0.5" }, { text: "1" }],
+          correctAnswer: "0.5",
+          hint: "Equal amplitudes",
+          concept: "superposition",
+        },
+      ],
+    });
+    expect(quiz).toEqual([
+      {
+        id: "q-ref-1-b1",
+        concept_id: "superposition",
+        question_text: "P(0) for |+>?",
+        question_type: "multiple_choice",
+        options: ["0.5", "1"],
+        correct_answer: "0.5",
+        hint: "Equal amplitudes",
+      },
+    ]);
+  });
+});

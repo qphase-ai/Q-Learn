@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { CourseSummary, CourseDetail, LessonDetail, ProgressItem } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -154,5 +154,63 @@ describe("markProgress", () => {
     const body = JSON.parse(opts?.body as string);
     expect(body.status).toBe("in_progress");
     expect(body.completion_pct).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CMS content source (NEXT_PUBLIC_CONTENT_SOURCE=cms)
+// ---------------------------------------------------------------------------
+describe("with NEXT_PUBLIC_CONTENT_SOURCE=cms", () => {
+  const fetchMock = vi.fn();
+
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_CONTENT_SOURCE", "cms");
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockReset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  const ok = (data: unknown) => ({ ok: true, json: async () => ({ success: true, data }) });
+
+  it("reads courses and lessons from the app's /api/cms routes, not FastAPI", async () => {
+    fetchMock.mockResolvedValueOnce(ok([COURSE_SUMMARY]));
+    fetchMock.mockResolvedValueOnce(ok(COURSE_DETAIL));
+    fetchMock.mockResolvedValueOnce(ok(LESSON_DETAIL));
+
+    await useLearningStore.getState().loadCourses();
+    await useLearningStore.getState().loadCourse("course-1");
+    await useLearningStore.getState().loadLesson("lesson-1");
+
+    expect(fetchMock.mock.calls.map((c) => c[0])).toEqual([
+      "/api/cms/courses",
+      "/api/cms/courses/course-1",
+      "/api/cms/lessons/lesson-1",
+    ]);
+    expect(useLearningStore.getState().activeLesson).toEqual(LESSON_DETAIL);
+    expect(useLearningStore.getState().currentLessonId).toBe("lesson-1");
+    expect(apiFetch).not.toHaveBeenCalled();
+  });
+
+  it("surfaces the route's error message", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ success: false, error: { message: "Curriculum content is temporarily unavailable" } }),
+    });
+    await expect(useLearningStore.getState().loadCourses()).rejects.toThrow(/temporarily unavailable/);
+  });
+
+  it("still records progress on FastAPI, keyed by content ref id", async () => {
+    vi.mocked(apiFetch).mockResolvedValueOnce(PROGRESS_ITEM);
+    await useLearningStore.getState().markProgress("lesson-1", 100);
+    expect(vi.mocked(apiFetch).mock.calls[0][0]).toBe("/api/v1/lessons/lesson-1/progress");
+  });
+
+  it("does not record progress for lessons without a content ref", async () => {
+    await useLearningStore.getState().markProgress("payload:7", 100);
+    expect(apiFetch).not.toHaveBeenCalled();
+    expect(useLearningStore.getState().lessonProgress).toEqual({});
   });
 });

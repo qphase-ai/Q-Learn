@@ -48,7 +48,7 @@ erDiagram
 | `courses` | Course container | title, description, status |
 | `modules` | Course modules | course_id FK, title, position |
 | `lessons` | Individual lessons (legacy; learner state references content_refs, not lessons) | module_id FK, title, content, position |
-| `content_refs` | Stable identity for CMS-authored content (integration boundary with Payload) | id (UUID, backend-owned), payload_id TEXT, kind ∈ curriculum/level/module/lesson, UNIQUE(kind, payload_id) |
+| `content_refs` | Stable identity for CMS-authored content (integration boundary with Payload). Lesson rows are created or bound on publish via `POST /api/v1/internal/content-refs` | id (UUID, backend-owned), payload_id TEXT, kind ∈ curriculum/level/module/lesson, UNIQUE(kind, payload_id) |
 | `concepts` | Quantum concepts | name, description, difficulty |
 | `student_progress` | Lesson completion | user_id FK, lesson_id FK → content_refs, status, completion |
 | `skill_mastery` | BKT student model | user_id FK, concept_id FK, mastery_score, confidence |
