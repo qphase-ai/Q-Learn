@@ -27,7 +27,7 @@ vi.mock("@/lib/api", () => ({
 import { useCircuitStore } from "@/stores/circuitStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useShellStore } from "@/stores/shellStore";
-import { nodesToCircuitSpec } from "@/lib/circuit-spec";
+import { nodesToCircuitSpec, xyFromCell } from "@/lib/circuit-spec";
 import { apiFetch } from "@/lib/api";
 import { subscribeToCircuitResult } from "@/lib/supabase";
 
@@ -229,5 +229,151 @@ describe("runSimulation", () => {
 
     expect(useCircuitStore.getState().runState).toBe("error");
     expect(useCircuitStore.getState().error).toBe("Network error");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Editor actions added for the circuit lab
+// ---------------------------------------------------------------------------
+const cells = () =>
+  useCircuitStore
+    .getState()
+    .nodes.map((n) => {
+      const d = n.data as { type: string; qubit: number; column: number; control?: number };
+      return `${d.type}@${d.qubit}${d.control !== undefined ? `/${d.control}` : ""}:${d.column}`;
+    })
+    .sort();
+
+describe("placement", () => {
+  it("shifts to the next free column when the cell is occupied", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().placeGate("X", 0, 0);
+    expect(cells()).toEqual(["H@0:0", "X@0:1"]);
+  });
+
+  it("two-qubit gates block every row they span", () => {
+    useCircuitStore.setState({ qubitCount: 3 });
+    useCircuitStore.getState().placeTwoQubitGate("CX", 0, 2, 0);
+    useCircuitStore.getState().placeGate("H", 1, 0);
+    expect(cells()).toEqual(["CX@2/0:0", "H@1:1"]);
+  });
+
+  it("parametric gates get default params", () => {
+    useCircuitStore.getState().placeGate("RX", 0, 0);
+    const d = useCircuitStore.getState().nodes[0].data as { params?: { theta?: number } };
+    expect(d.params?.theta).toBeCloseTo(Math.PI / 2);
+  });
+
+  it("placeAtNextFreeColumn appends after existing gates", () => {
+    useCircuitStore.getState().placeGate("H", 1, 0);
+    useCircuitStore.getState().placeAtNextFreeColumn("CX", 1);
+    expect(cells()).toEqual(["CX@1/0:1", "H@1:0"]);
+  });
+});
+
+describe("history", () => {
+  it("undo/redo restore nodes and qubit count", () => {
+    const s = useCircuitStore.getState();
+    s.placeGate("H", 0, 0);
+    s.addQubit();
+    expect(useCircuitStore.getState().qubitCount).toBe(3);
+    useCircuitStore.getState().undo();
+    expect(useCircuitStore.getState().qubitCount).toBe(2);
+    useCircuitStore.getState().undo();
+    expect(useCircuitStore.getState().nodes).toHaveLength(0);
+    useCircuitStore.getState().redo();
+    expect(cells()).toEqual(["H@0:0"]);
+    expect(useCircuitStore.getState().future).toHaveLength(1);
+  });
+
+  it("a new edit clears the redo stack", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().undo();
+    useCircuitStore.getState().placeGate("X", 0, 0);
+    expect(useCircuitStore.getState().future).toHaveLength(0);
+  });
+
+  it("clearCircuit is undoable", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().clearCircuit();
+    useCircuitStore.getState().undo();
+    expect(cells()).toEqual(["H@0:0"]);
+  });
+
+  it("selection changes are not recorded", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    const id = useCircuitStore.getState().nodes[0].id;
+    useCircuitStore.getState().selectGate(id);
+    expect(useCircuitStore.getState().past).toHaveLength(1);
+  });
+});
+
+describe("moveGate", () => {
+  it("moves a gate and syncs its pixel position", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    const id = useCircuitStore.getState().nodes[0].id;
+    expect(useCircuitStore.getState().moveGate(id, 1, 3)).toBe(true);
+    const n = useCircuitStore.getState().nodes[0];
+    expect(cells()).toEqual(["H@1:3"]);
+    expect(n.position).toEqual(xyFromCell(1, 3));
+  });
+
+  it("snaps back when the target cell is occupied or out of range", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().placeGate("X", 1, 0);
+    const id = useCircuitStore.getState().nodes[0].id;
+    expect(useCircuitStore.getState().moveGate(id, 1, 0)).toBe(false);
+    expect(useCircuitStore.getState().moveGate(id, 5, 0)).toBe(false);
+    expect(cells()).toEqual(["H@0:0", "X@1:0"]);
+  });
+
+  it("moves the control of a two-qubit gate with it", () => {
+    useCircuitStore.setState({ qubitCount: 3 });
+    useCircuitStore.getState().placeTwoQubitGate("CX", 0, 1, 0);
+    const id = useCircuitStore.getState().nodes[0].id;
+    useCircuitStore.getState().moveGate(id, 2, 2);
+    expect(cells()).toEqual(["CX@2/1:2"]);
+  });
+});
+
+describe("updateGate / duplicate / qubit count", () => {
+  it("updates params and rejects control === target", () => {
+    useCircuitStore.getState().placeTwoQubitGate("RZZ", 0, 1, 0);
+    const id = useCircuitStore.getState().nodes[0].id;
+    expect(useCircuitStore.getState().updateGate(id, { params: { theta: 1 } })).toBe(true);
+    expect((useCircuitStore.getState().nodes[0].data as { params: { theta: number } }).params.theta).toBe(1);
+    expect(useCircuitStore.getState().updateGate(id, { control: 1 })).toBe(false);
+  });
+
+  it("duplicates the selection into the next free column and selects the copy", () => {
+    useCircuitStore.getState().placeGate("H", 0, 0);
+    useCircuitStore.getState().selectGate(useCircuitStore.getState().nodes[0].id);
+    useCircuitStore.getState().duplicateSelected();
+    expect(cells()).toEqual(["H@0:0", "H@0:1"]);
+    expect(useCircuitStore.getState().nodes.filter((n) => n.selected)).toHaveLength(1);
+  });
+
+  it("removeQubit drops gates controlled by the removed qubit and shifts controls", () => {
+    useCircuitStore.setState({ qubitCount: 4 });
+    useCircuitStore.getState().placeTwoQubitGate("CX", 1, 2, 0);
+    useCircuitStore.getState().placeTwoQubitGate("CZ", 2, 3, 1);
+    useCircuitStore.getState().removeQubit(1);
+    expect(cells()).toEqual(["CZ@2/1:1"]);
+  });
+
+  it("setQubitCount clamps to 1..8 and drops gates beyond the new range", () => {
+    useCircuitStore.getState().placeGate("H", 1, 0);
+    useCircuitStore.getState().setQubitCount(1);
+    expect(useCircuitStore.getState().nodes).toHaveLength(0);
+    useCircuitStore.getState().setQubitCount(99);
+    expect(useCircuitStore.getState().qubitCount).toBe(8);
+  });
+
+  it("runSimulation sends the selected shot count", async () => {
+    useCircuitStore.getState().setShots(2048);
+    await useCircuitStore.getState().runSimulation();
+    const body = JSON.parse(vi.mocked(apiFetch).mock.calls[0][1]!.body as string);
+    expect(body.shots).toBe(2048);
+    useCircuitStore.getState().setShots(1024);
   });
 });

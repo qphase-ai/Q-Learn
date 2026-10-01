@@ -7,6 +7,11 @@ import {
   xyFromCell,
   circuitSpecToQiskitSource,
   GRID,
+  circuitSpecToQasm,
+  gateRows,
+  nextFreeColumn,
+  occupiedCells,
+  usedColumns,
 } from "@/lib/circuit-spec";
 
 // Helper to build a minimal React Flow Node carrying GateNodeData
@@ -139,5 +144,80 @@ describe("circuitSpecToQiskitSource", () => {
     const lines = source.split("\n");
     expect(lines.indexOf("qc.h(0)")).toBeLessThan(lines.indexOf("qc.cx(0, 1)"));
     expect(lines[lines.length - 1]).toBe("qc.measure([0,1], [0,1])");
+  });
+});
+
+describe("parametric gates and exports", () => {
+  const node = (data: Record<string, unknown>, id = String(Math.random())) =>
+    ({ id, type: "gate", position: { x: 0, y: 0 }, data }) as never;
+
+  it("nodesToCircuitSpec carries params for parametric gates only", () => {
+    const spec = nodesToCircuitSpec(
+      [
+        node({ type: "RZ", qubit: 0, column: 0, params: { theta: 0.5 } }),
+        node({ type: "H", qubit: 1, column: 0, params: { theta: 9 } }),
+        node({ type: "RXX", qubit: 1, column: 1, control: 0, params: { theta: 0.25 } }),
+      ],
+      2
+    );
+    expect(spec.gates).toEqual([
+      { type: "RZ", targets: [0], params: { theta: 0.5 } },
+      { type: "H", targets: [1] },
+      { type: "RXX", control: 0, targets: [1], params: { theta: 0.25 } },
+    ]);
+  });
+
+  it("circuitSpecToQasm mirrors the backend mapping", () => {
+    const qasm = circuitSpecToQasm({
+      qubits: 2,
+      classical_bits: 2,
+      gates: [
+        { type: "H", targets: [0] },
+        { type: "RZ", targets: [0], params: { theta: 0.5 } },
+        { type: "U", targets: [1], params: { theta: 1, phi: 2, lambda: 3 } },
+        { type: "P", targets: [1], params: { theta: 0.25 } },
+        { type: "CX", control: 0, targets: [1] },
+        { type: "RYY", control: 0, targets: [1], params: { theta: 0.5 } },
+        { type: "M", targets: [0], classical: [0] },
+      ],
+    });
+    expect(qasm.split("\n")).toEqual([
+      "OPENQASM 2.0;",
+      'include "qelib1.inc";',
+      "qreg q[2];",
+      "creg c[2];",
+      "h q[0];",
+      "rz(0.5) q[0];",
+      "u3(1.0,2.0,3.0) q[1];",
+      "u1(0.25) q[1];",
+      "cx q[0],q[1];",
+      "rx(pi/2) q[0];", "rx(pi/2) q[1];", "cx q[0],q[1];", "rz(0.5) q[1];",
+      "cx q[0],q[1];", "rx(-pi/2) q[0];", "rx(-pi/2) q[1];",
+      "measure q[0] -> c[0];",
+    ]);
+  });
+
+  it("circuitSpecToQiskitSource renders parametric and two-qubit gates", () => {
+    const src = circuitSpecToQiskitSource({
+      qubits: 2,
+      classical_bits: 2,
+      gates: [
+        { type: "RX", targets: [1], params: { theta: 0.5 } },
+        { type: "RZZ", control: 0, targets: [1], params: { theta: 1 } },
+        { type: "SX", targets: [0] },
+      ],
+    });
+    expect(src).toContain("qc.rx(0.5, 1)");
+    expect(src).toContain("qc.rzz(1.0, 0, 1)");
+    expect(src).toContain("qc.sx(0)");
+  });
+
+  it("occupancy helpers find the next free column across a gate's span", () => {
+    const nodes = [node({ type: "CX", qubit: 2, column: 0, control: 0 }, "a")];
+    const occ = occupiedCells(nodes);
+    expect(gateRows({ qubit: 2, control: 0 })).toEqual([0, 1, 2]);
+    expect(nextFreeColumn(occ, [1])).toBe(1);
+    expect(nextFreeColumn(occupiedCells(nodes, new Set(["a"])), [1])).toBe(0);
+    expect(usedColumns(nodes)).toBe(1);
   });
 });

@@ -1,14 +1,16 @@
 import type { Node } from "@xyflow/react";
 import type { GateNodeData, GateSpec, GateType, CircuitSpec } from "@/types";
+import { GATES, isGateType, isTwoQubitGate } from "@/lib/gates";
 
 // ---------------------------------------------------------------------------
 // Grid constants — pixel geometry for the snapped-grid circuit canvas
 // ---------------------------------------------------------------------------
 export const GRID = {
-  ROW_H: 64,    // vertical spacing between qubit rows (px)
-  COL_W: 72,    // horizontal spacing between gate columns (px)
-  ORIGIN_X: 24, // x offset of column 0
-  ORIGIN_Y: 24, // y offset of qubit row 0
+  ROW_H: 64,     // vertical spacing between qubit rows (px)
+  COL_W: 64,     // horizontal spacing between gate columns (px)
+  ORIGIN_X: 104, // x offset of column 0 (leaves a gutter for "q₀ |0⟩" labels)
+  ORIGIN_Y: 44,  // y offset of qubit row 0 (leaves room for column indices)
+  GATE: 44,      // gate body size (px); wires run through its vertical centre
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -35,16 +37,44 @@ export function cellFromXY(x: number, y: number): { qubit: number; column: numbe
 }
 
 // ---------------------------------------------------------------------------
-// Known gate types set — used to filter out non-gate nodes
+// Occupancy — which (qubit, column) cells a gate covers
 // ---------------------------------------------------------------------------
-const GATE_TYPES = new Set<GateType>([
-  "H", "X", "Y", "Z", "S", "T", "I", "CX", "CZ", "SWAP", "M",
-]);
 
-const TWO_QUBIT_GATES = new Set<GateType>(["CX", "CZ", "SWAP"]);
+/** Every qubit row a gate spans (two-qubit gates also block the rows between). */
+export function gateRows(d: Pick<GateNodeData, "qubit" | "control">): number[] {
+  if (d.control === undefined) return [d.qubit];
+  const lo = Math.min(d.qubit, d.control);
+  const hi = Math.max(d.qubit, d.control);
+  return Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+}
 
-function isGateType(value: unknown): value is GateType {
-  return typeof value === "string" && GATE_TYPES.has(value as GateType);
+/** Set of "qubit:column" keys covered by gates, optionally ignoring some node ids. */
+export function occupiedCells(nodes: Node[], ignore: ReadonlySet<string> = new Set()): Set<string> {
+  const cells = new Set<string>();
+  for (const n of nodes) {
+    if (ignore.has(n.id)) continue;
+    const d = n.data as GateNodeData;
+    if (!isGateType(d?.type)) continue;
+    for (const q of gateRows(d)) cells.add(`${q}:${d.column}`);
+  }
+  return cells;
+}
+
+/** First column ≥ `from` where every row in `rows` is free. */
+export function nextFreeColumn(occupied: Set<string>, rows: number[], from = 0): number {
+  let col = Math.max(0, from);
+  while (rows.some((q) => occupied.has(`${q}:${col}`))) col++;
+  return col;
+}
+
+/** Number of columns in use (highest occupied column + 1). */
+export function usedColumns(nodes: Node[]): number {
+  let max = -1;
+  for (const n of nodes) {
+    const d = n.data as GateNodeData;
+    if (isGateType(d?.type)) max = Math.max(max, d.column);
+  }
+  return max + 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,8 +89,9 @@ function isGateType(value: unknown): value is GateType {
  * - Gates are sorted by (column, qubit) ascending before mapping.
  * - Mapping rules:
  *   - "M"  → { type:"M", targets:[qubit], classical:[qubit] }
- *   - Two-qubit ("CX"|"CZ"|"SWAP") → { type, control:data.control, targets:[qubit] }
+ *   - Two-qubit (CX, CZ, SWAP, RXX, RYY, RZZ) → { type, control:data.control, targets:[qubit] }
  *   - Single-qubit (all others) → { type, targets:[qubit] }
+ *   - Parametric gates additionally carry `params` ({ theta, phi?, lambda? } in radians)
  */
 export function nodesToCircuitSpec(
   nodes: Node[],
@@ -85,10 +116,11 @@ export function nodesToCircuitSpec(
     if (d.type === "M") {
       return { type: "M", targets: [d.qubit], classical: [d.qubit] };
     }
-    if (TWO_QUBIT_GATES.has(d.type)) {
-      return { type: d.type, control: d.control, targets: [d.qubit] };
+    const params = d.params && GATES[d.type].params.length > 0 ? { params: { ...d.params } } : {};
+    if (isTwoQubitGate(d.type)) {
+      return { type: d.type, control: d.control, targets: [d.qubit], ...params };
     }
-    return { type: d.type, targets: [d.qubit] };
+    return { type: d.type, targets: [d.qubit], ...params };
   });
 
   return {
@@ -103,21 +135,26 @@ export function nodesToCircuitSpec(
 // "Circuit Code" panel — the backend only returns QASM, not Python source).
 // ---------------------------------------------------------------------------
 
-const SINGLE_QUBIT_METHOD: Partial<Record<GateType, string>> = {
-  H: "h",
-  X: "x",
-  Y: "y",
-  Z: "z",
-  S: "s",
-  T: "t",
-  I: "id",
+const QISKIT_METHOD: Record<Exclude<GateType, "M">, string> = {
+  H: "h", X: "x", Y: "y", Z: "z", S: "s", T: "t", I: "id",
+  RX: "rx", RY: "ry", RZ: "rz", U: "u", U3: "u", P: "p", SX: "sx",
+  CX: "cx", CZ: "cz", SWAP: "swap", RXX: "rxx", RYY: "ryy", RZZ: "rzz",
 };
 
-const TWO_QUBIT_METHOD: Partial<Record<GateType, string>> = {
-  CX: "cx",
-  CZ: "cz",
-  SWAP: "swap",
-};
+/** Ordered numeric parameters for a gate spec (θ, φ, λ as the gate defines them). */
+function paramValues(gate: GateSpec): number[] {
+  const def = GATES[gate.type as GateType];
+  if (!def) return [];
+  const params = (gate.params ?? {}) as Record<string, unknown>;
+  return def.params.map((p) => {
+    const v = params[p.key];
+    return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  });
+}
+
+function fmtNum(v: number): string {
+  return Number.isInteger(v) ? v.toFixed(1) : String(Number(v.toPrecision(12)));
+}
 
 /** Render a `CircuitSpec` as illustrative Qiskit Python source. Pure/deterministic. */
 export function circuitSpecToQiskitSource(spec: CircuitSpec): string {
@@ -136,19 +173,62 @@ export function circuitSpecToQiskitSource(spec: CircuitSpec): string {
       measureTargets.push(...gate.targets);
       continue;
     }
-    if (gate.control !== undefined && TWO_QUBIT_METHOD[gate.type as GateType]) {
-      lines.push(`qc.${TWO_QUBIT_METHOD[gate.type as GateType]}(${gate.control}, ${target})`);
-      continue;
-    }
-    const method = SINGLE_QUBIT_METHOD[gate.type as GateType];
-    if (method) {
-      lines.push(`qc.${method}(${target})`);
-    }
+    const method = QISKIT_METHOD[gate.type as Exclude<GateType, "M">];
+    if (!method) continue;
+    const args = paramValues(gate).map(fmtNum);
+    const qubits = gate.control !== undefined ? [gate.control, target] : [target];
+    lines.push(`qc.${method}(${[...args, ...qubits].join(", ")})`);
   }
 
   if (measureTargets.length > 0) {
     lines.push(`qc.measure(${JSON.stringify(measureTargets)}, ${JSON.stringify(measureTargets)})`);
   }
 
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// CircuitSpec → OpenQASM 2.0 (Export menu). Mirrors the backend's
+// `QiskitAerAdapter._spec_to_qasm` so exported files run the same circuit.
+// ---------------------------------------------------------------------------
+
+const QASM_OP: Record<Exclude<GateType, "M" | "RYY">, string> = {
+  H: "h", X: "x", Y: "y", Z: "z", S: "s", T: "t", I: "id",
+  RX: "rx", RY: "ry", RZ: "rz", U: "u3", U3: "u3", P: "u1", SX: "sx",
+  CX: "cx", CZ: "cz", SWAP: "swap", RXX: "rxx", RZZ: "rzz",
+};
+
+export function circuitSpecToQasm(spec: CircuitSpec): string {
+  const lines = [
+    "OPENQASM 2.0;",
+    'include "qelib1.inc";',
+    `qreg q[${spec.qubits}];`,
+    `creg c[${spec.classical_bits}];`,
+  ];
+  for (const gate of spec.gates) {
+    const t = gate.targets[0];
+    if (gate.type === "M") {
+      gate.targets.forEach((q, i) => {
+        lines.push(`measure q[${q}] -> c[${gate.classical?.[i] ?? q}];`);
+      });
+      continue;
+    }
+    const args = paramValues(gate).map(fmtNum);
+    if (gate.type === "RYY") {
+      // ryy is not in qelib1.inc — standard decomposition.
+      const a = `q[${gate.control ?? t}]`;
+      const b = `q[${t}]`;
+      lines.push(
+        `rx(pi/2) ${a};`, `rx(pi/2) ${b};`, `cx ${a},${b};`, `rz(${args[0]}) ${b};`,
+        `cx ${a},${b};`, `rx(-pi/2) ${a};`, `rx(-pi/2) ${b};`
+      );
+      continue;
+    }
+    const base = QASM_OP[gate.type as keyof typeof QASM_OP];
+    if (!base) continue;
+    const op = args.length > 0 ? `${base}(${args.join(",")})` : base;
+    const qargs = gate.control !== undefined ? `q[${gate.control}],q[${t}]` : `q[${t}]`;
+    lines.push(`${op} ${qargs};`);
+  }
   return lines.join("\n");
 }

@@ -89,6 +89,19 @@ class QiskitAerAdapter(QuantumBackend):
             shots=shots,
         )
 
+    # Parametric gates: frontend gate type → (qelib1 op, ordered param names).
+    # U and U3 are both the generic single-qubit rotation u3(θ,φ,λ); P is u1(λ).
+    _PARAM_GATES: dict[str, tuple[str, tuple[str, ...]]] = {
+        "RX": ("rx", ("theta",)),
+        "RY": ("ry", ("theta",)),
+        "RZ": ("rz", ("theta",)),
+        "P": ("u1", ("theta",)),
+        "U": ("u3", ("theta", "phi", "lambda")),
+        "U3": ("u3", ("theta", "phi", "lambda")),
+        "RXX": ("rxx", ("theta",)),
+        "RZZ": ("rzz", ("theta",)),
+    }
+
     def _spec_to_qasm(self, circuit: CircuitSpec) -> str:
         lines = [
             f"OPENQASM 2.0;",
@@ -99,11 +112,26 @@ class QiskitAerAdapter(QuantumBackend):
         gate_map = {
             "H": "h", "X": "x", "Y": "y", "Z": "z",
             "S": "s", "T": "t", "I": "id", "CX": "cx", "CZ": "cz",
-            "SWAP": "swap", "M": "measure",
+            "SWAP": "swap", "M": "measure", "SX": "sx",
         }
         for gate in circuit.gates:
             op = gate_map.get(gate.type, gate.type.lower())
-            if gate.type == "M":
+            if gate.type in self._PARAM_GATES:
+                name, keys = self._PARAM_GATES[gate.type]
+                params = gate.params or {}
+                args = ",".join(repr(float(params.get(k, 0.0))) for k in keys)
+                op = f"{name}({args})"
+            if gate.type == "RYY":
+                # ryy is not in qelib1.inc — emit its standard decomposition.
+                theta = float((gate.params or {}).get("theta", 0.0))
+                a = f"q[{gate.control if gate.control is not None else gate.targets[0]}]"
+                b = f"q[{gate.targets[-1] if gate.control is not None else gate.targets[1]}]"
+                lines += [
+                    f"rx(pi/2) {a};", f"rx(pi/2) {b};",
+                    f"cx {a},{b};", f"rz({theta!r}) {b};", f"cx {a},{b};",
+                    f"rx(-pi/2) {a};", f"rx(-pi/2) {b};",
+                ]
+            elif gate.type == "M":
                 for i, (q, c) in enumerate(zip(gate.targets, gate.classical or gate.targets)):
                     lines.append(f"measure q[{q}] -> c[{c}];")
             elif gate.control is not None:

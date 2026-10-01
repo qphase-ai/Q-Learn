@@ -18,9 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LessonContent from "@/components/learn/LessonContent";
 import ConceptCard from "@/components/dashboard/ConceptCard";
-import GatePalette from "@/components/circuit/GatePalette";
-import CircuitCanvas from "@/components/circuit/CircuitCanvas";
-import CircuitToolbar from "@/components/circuit/CircuitToolbar";
+import CircuitWorkspace from "@/components/circuit/CircuitWorkspace";
 import FileTreePanel from "@/components/dashboard/FileTreePanel";
 import MonacoCodePanel from "@/components/dashboard/MonacoCodePanel";
 import CircuitResultsPanel from "@/components/dashboard/CircuitResultsPanel";
@@ -93,7 +91,8 @@ export default function CentralWorkspace({
           <span className="text-xs text-muted-foreground">{breadcrumb}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          {lockedTab !== "code" && (
+          {/* The circuit workspace's own toolbar owns Run on /circuit. */}
+          {lockedTab !== "code" && lockedTab !== "circuit" && (
             <Button type="button" size="sm" onClick={handleRunSimulation} disabled={runState === "running"}>
               <Play size={14} aria-hidden />
               {runState === "running" ? "Running…" : "Run Simulation"}
@@ -151,21 +150,8 @@ export default function CentralWorkspace({
           circuit here is the same circuit reachable from "Open in Circuit
           Builder" on the Learn workspace, not a separate per-lesson copy. */}
       {tab === "circuit" && (
-        <div className={`flex flex-col gap-4 ${lockedTab ? "flex-1 overflow-y-auto" : ""}`}>
-          <div
-            className={`flex overflow-hidden rounded-xl border border-overlay/10 ${
-              lockedTab ? "h-[420px] flex-shrink-0" : "h-[420px]"
-            }`}
-          >
-            <GatePalette />
-            <div className="flex flex-1 flex-col">
-              <CircuitToolbar />
-              <div className="flex-1">
-                <CircuitCanvas />
-              </div>
-            </div>
-          </div>
-          {lockedTab === "circuit" && runState !== "idle" && <CircuitResultsPanel />}
+        <div className={lockedTab ? "flex-shrink-0" : undefined}>
+          <CircuitWorkspace onExplainCircuit={onExplainCircuit} />
         </div>
       )}
 

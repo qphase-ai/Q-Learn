@@ -9,9 +9,13 @@ import type { CourseDetail, LessonDetail } from "@/types";
 vi.mock("@/components/learn/LessonContent", () => ({
   default: () => <div>LessonContentMock</div>,
 }));
-vi.mock("@/components/circuit/GatePalette", () => ({ default: () => <div>GatePaletteMock</div> }));
-vi.mock("@/components/circuit/CircuitCanvas", () => ({ default: () => <div>CircuitCanvasMock</div> }));
-vi.mock("@/components/circuit/CircuitToolbar", () => ({ default: () => <div>CircuitToolbarMock</div> }));
+vi.mock("@/components/circuit/CircuitWorkspace", () => ({
+  default: ({ onExplainCircuit }: { onExplainCircuit?: () => void }) => (
+    <button type="button" onClick={onExplainCircuit}>
+      CircuitWorkspaceMock
+    </button>
+  ),
+}));
 vi.mock("@/components/dashboard/FileTreePanel", () => ({ default: () => <div>FileTreeMock</div> }));
 vi.mock("@/components/dashboard/MonacoCodePanel", () => ({ default: () => <div>MonacoCodeMock</div> }));
 vi.mock("@/components/dashboard/CircuitResultsPanel", () => ({
@@ -90,8 +94,7 @@ describe("CentralWorkspace", () => {
     const user = userEvent.setup();
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
     await user.click(screen.getByRole("tab", { name: "Circuit" }));
-    expect(screen.getByText("GatePaletteMock")).toBeInTheDocument();
-    expect(screen.getByText("CircuitCanvasMock")).toBeInTheDocument();
+    expect(screen.getByText("CircuitWorkspaceMock")).toBeInTheDocument();
   });
 
   it("switches to the Code tab in embedded mode and renders the editor without the file tree", async () => {
@@ -137,40 +140,25 @@ describe("CentralWorkspace", () => {
       <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
     );
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
-    expect(screen.getByText("GatePaletteMock")).toBeInTheDocument();
+    expect(screen.getByText("CircuitWorkspaceMock")).toBeInTheDocument();
     expect(screen.queryByText("LessonContentMock")).not.toBeInTheDocument();
   });
 
-  it("lockedTab='circuit' keeps the canvas row at a fixed 420px height", () => {
-    render(
-      <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
-    );
-    // The canvas row is GatePaletteMock's direct parent — it stays h-[420px] in
-    // both locked and unlocked mode after Step 10's restructuring; only the
-    // outer wrapper (asserted separately below) grows to flex-1 when locked.
-    const canvasRow = screen.getByText("GatePaletteMock").parentElement;
-    expect(canvasRow?.className ?? "").toContain("h-[420px]");
-  });
-
-  it("lockedTab='circuit' wraps the canvas row and results panel in a flex-1 scrollable container", () => {
-    useCircuitStore.setState({ runState: "success" });
-    render(
-      <CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />
-    );
-    const canvasRow = screen.getByText("GatePaletteMock").parentElement;
-    const outerWrapper = canvasRow?.parentElement;
-    expect(outerWrapper?.className ?? "").toContain("flex-1");
-    expect(outerWrapper?.contains(screen.getByText("ResultsPanelMock"))).toBe(true);
-  });
-
-  it("lockedTab='circuit' shows CircuitResultsPanel below the canvas once a run has happened", () => {
-    useCircuitStore.setState({ runState: "success" });
+  it("lockedTab='circuit' passes onExplainCircuit through to the circuit workspace", async () => {
+    const user = userEvent.setup();
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
-    expect(screen.getByText("ResultsPanelMock")).toBeInTheDocument();
+    await user.click(screen.getByText("CircuitWorkspaceMock"));
+    expect(onExplainCircuit).toHaveBeenCalledOnce();
   });
 
-  it("lockedTab='circuit' hides CircuitResultsPanel before any run", () => {
-    useCircuitStore.setState({ runState: "idle" });
+  it("lockedTab='circuit' leaves Run Simulation to the workspace toolbar", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(screen.queryByRole("button", { name: /run simulation/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /explain circuit/i })).toBeInTheDocument();
+  });
+
+  it("lockedTab='circuit' renders analysis inside the workspace, not the legacy results panel", () => {
+    useCircuitStore.setState({ runState: "success" });
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
     expect(screen.queryByText("ResultsPanelMock")).not.toBeInTheDocument();
   });

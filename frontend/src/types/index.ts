@@ -25,13 +25,26 @@ export interface Lesson {
   is_pro: boolean;
 }
 
-export type GateType = "H" | "X" | "Y" | "Z" | "S" | "T" | "I" | "CX" | "CZ" | "SWAP" | "M";
+export type GateType =
+  | "H" | "X" | "Y" | "Z" | "S" | "T" | "I"
+  | "RX" | "RY" | "RZ" | "U" | "P" | "SX" | "U3"
+  | "CX" | "CZ" | "SWAP" | "RXX" | "RYY" | "RZZ"
+  | "M";
+
+/** Rotation angles (radians) for parametric gates. */
+export interface GateParams {
+  theta?: number;
+  phi?: number;
+  lambda?: number;
+}
 
 export interface GateNodeData extends Record<string, unknown> {
   type: GateType;
   qubit: number;
   column: number;
+  /** Second qubit of a two-qubit gate (the control for CX/CZ). */
   control?: number;
+  params?: GateParams;
 }
 
 export interface GateSpec {

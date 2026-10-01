@@ -73,6 +73,16 @@
   --wire: #8b8b8b;
 }
 
+/* CIRCUIT PALETTE (extended) — parametric/advanced gates and the measurement
+   accent used by the redesigned circuit lab. Same in both themes. */
+:root {
+  --gate-rot: #a855f7;
+  --gate-U: #db2777;
+  --gate-P: #0891b2;
+  --gate-SX: #64748b;
+  --gate-meas: #ec4899;
+}
+
 /* CIRCUIT LABELS — text on the gate fills above. The fills are the same in
    both themes, so their labels are fixed too (not theme tokens). */
 :root {
