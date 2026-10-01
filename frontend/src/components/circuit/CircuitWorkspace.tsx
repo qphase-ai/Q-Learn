@@ -109,7 +109,7 @@ export default function CircuitWorkspace({
           <GateLibrary
             className={cn(
               "absolute inset-0 border-r border-overlay/10",
-              drawer && "shadow-xl transition-transform duration-200 motion-reduce:transition-none",
+              drawer && "transition-transform duration-200 motion-reduce:transition-none",
               drawer && (libraryOpen ? "translate-x-0" : "invisible -translate-x-full")
             )}
           />

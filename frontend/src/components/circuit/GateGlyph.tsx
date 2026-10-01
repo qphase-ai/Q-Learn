@@ -76,9 +76,6 @@ function GateGlyph({
           ? `linear-gradient(180deg, color-mix(in srgb, ${def.color} 100%, white 8%), ${def.color})`
           : undefined,
         border: solid ? "1px solid rgb(255 255 255 / 0.12)" : `1.5px solid ${def.color}`,
-        boxShadow: solid
-          ? `0 1px 0 rgb(255 255 255 / 0.15) inset, 0 4px 12px -6px ${def.color}`
-          : `0 0 0 1px rgb(0 0 0 / 0.02), 0 4px 12px -8px ${def.color}`,
       }}
     >
       {type === "M" ? (

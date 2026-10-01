@@ -59,7 +59,8 @@ export function useCircuitShortcuts(enabled = true): void {
         // Let focused buttons/links activate normally.
         if (e.target instanceof HTMLElement && e.target.closest("button, a, [role='button']")) return;
         e.preventDefault();
-        store.runSimulation();
+        // Mirror the disabled Run button: no second run while one is active.
+        if (store.runState !== "running") store.runSimulation();
         return;
       }
 

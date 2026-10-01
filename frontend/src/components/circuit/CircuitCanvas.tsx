@@ -259,10 +259,12 @@ function CircuitCanvasInner() {
       const type = (isGateType(raw) ? raw : null) ?? armed;
       if (!type) return;
 
+      // Same raw row as the drag-over preview: a drop it showed as invalid
+      // (e.g. over the classical register) places nothing.
       const { qubit, column } = cellAt(e);
-      place(type, Math.min(Math.max(qubit, 0), qubitCount - 1), column);
+      place(type, qubit, column);
     },
-    [armed, cellAt, place, qubitCount, setDraggingGateType]
+    [armed, cellAt, place, setDraggingGateType]
   );
 
   const empty = nodes.length === 0 && !preview;

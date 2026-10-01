@@ -186,7 +186,7 @@ export default function GateInspector({ onExplain }: { onExplain?: () => void })
           animate={{ opacity: 1, x: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 12 }}
           transition={{ duration: 0.16, ease: "easeOut" }}
-          className="pointer-events-auto flex max-h-full w-[264px] flex-col overflow-hidden rounded-xl border border-overlay/10 bg-elevated shadow-xl"
+          className="pointer-events-auto flex max-h-full w-[264px] flex-col overflow-hidden rounded-xl border border-overlay/10 bg-elevated"
         >
           <header className="flex items-center gap-2.5 border-b border-overlay/10 px-3 py-2.5">
             <GateGlyph type={d.type} params={d.params} size={32} showParam={false} />

@@ -226,3 +226,38 @@ def test_qasm_parametric_gates_parse_and_match_qiskit():
     reference = qiskit.QuantumCircuit(2)
     reference.append(RYYGate(0.9), [0, 1])
     assert Operator(decomposed).equiv(Operator(reference))
+
+
+@pytest.mark.parametrize("bad", ["abc", {}, float("nan"), "inf", True])
+async def test_validate_rejects_non_numeric_or_non_finite_params(bad):
+    spec = CircuitSpec(
+        qubits=2,
+        classical_bits=2,
+        gates=[
+            GateSpec(type="RX", targets=[0], params={"theta": bad}),
+            GateSpec(type="RYY", targets=[1], control=0, params={"theta": bad}),
+        ],
+    )
+    ok, errors = await QiskitAerAdapter().validate(spec)
+    assert not ok
+    assert len(errors) == 2
+    assert all("theta" in e for e in errors)
+
+
+@pytest.mark.parametrize("gate_type", ["RX", "U3", "RYY"])
+def test_qasm_bad_param_raises_validation_error(gate_type):
+    from app.exceptions import ValidationError
+
+    gate = GateSpec(type=gate_type, targets=[1], params={"theta": "abc"})
+    if gate_type == "RYY":
+        gate.control = 0
+    with pytest.raises(ValidationError):
+        _qasm(CircuitSpec(qubits=2, classical_bits=2, gates=[gate]))
+
+
+async def test_numeric_string_params_are_accepted():
+    spec = CircuitSpec(
+        qubits=1, classical_bits=1, gates=[GateSpec(type="RZ", targets=[0], params={"theta": "0.5"})]
+    )
+    assert (await QiskitAerAdapter().validate(spec))[0]
+    assert "rz(0.5) q[0];" in _qasm(spec)

@@ -41,6 +41,22 @@ describe("CircuitAnalysis", () => {
     expect(screen.getByText("42 ms")).toBeInTheDocument();
   });
 
+  it("matches probability keys that contain register separators", () => {
+    useCircuitStore.setState({
+      results: {
+        ...BELL,
+        probabilities: { "0 1": 0.25, "1 0": 0.75 },
+        measurements: { "0 1": 256, "1 0": 768 },
+      },
+      runState: "success",
+    });
+    render(<CircuitAnalysis />);
+    const meas = screen.getByRole("region", { name: "Measurement Results" });
+    expect(within(meas).getByText("25.0%")).toBeInTheDocument();
+    expect(within(meas).getByText("75.0%")).toBeInTheDocument();
+    expect(within(meas).getByTitle(/\|10⟩: 75.0% \(768 shots\)/)).toBeInTheDocument();
+  });
+
   it("switches state-vector notation", async () => {
     const user = userEvent.setup();
     useCircuitStore.setState({ results: BELL, runState: "success" });

@@ -43,8 +43,11 @@ function download(filename: string, content: string, type: string) {
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  // Attached anchor + deferred revoke: Firefox/Safari can cancel the download otherwise.
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function slug(name: string) {

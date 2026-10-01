@@ -9,6 +9,15 @@ import AnalysisPanel, { PanelEmpty, PanelSelect } from "@/components/circuit/ana
 const SHOT_OPTIONS = [256, 512, 1024, 2048, 4096].map((v) => ({ value: v, label: v.toLocaleString() }));
 const ALL_STATES_MAX_QUBITS = 4;
 
+function normalizeKeys(values: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [key, v] of Object.entries(values)) {
+    const k = key.replace(/\s/g, "");
+    out[k] = (out[k] ?? 0) + v;
+  }
+  return out;
+}
+
 export default function MeasurementResultsPanel() {
   const results = useCircuitStore((s) => s.results);
   const runState = useCircuitStore((s) => s.runState);
@@ -18,10 +27,12 @@ export default function MeasurementResultsPanel() {
     s.nodes.some((n) => (n.data as { type?: string }).type === "M")
   );
 
-  const probabilities = results?.probabilities ?? null;
-  const counts = results?.measurements ?? {};
+  // Qiskit separates classical registers with spaces ("01 1"); key the
+  // chart by the joined bitstring so lookups match the generated labels.
+  const probabilities = results?.probabilities ? normalizeKeys(results.probabilities) : null;
+  const counts = normalizeKeys(results?.measurements ?? {});
   const keys = probabilities ? Object.keys(probabilities) : [];
-  const width = keys.reduce((m, k) => Math.max(m, k.replace(/\s/g, "").length), 0);
+  const width = keys.reduce((m, k) => Math.max(m, k.length), 0);
 
   // Show every basis state for small registers (zeros are informative); only
   // observed outcomes for larger ones.

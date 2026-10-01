@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { useCircuitShortcuts } from "@/hooks/useCircuitShortcuts";
 import { useCircuitStore } from "@/stores/circuitStore";
@@ -66,5 +66,16 @@ describe("useCircuitShortcuts — editing", () => {
     const { getByLabelText } = render(<Harness />);
     press("/");
     expect(document.activeElement).toBe(getByLabelText("search"));
+  });
+
+  it("Space does not start a second run while one is active", () => {
+    const runSimulation = vi.fn();
+    useCircuitStore.setState({ runSimulation, runState: "running" } as never);
+    render(<Harness />);
+    press(" ");
+    expect(runSimulation).not.toHaveBeenCalled();
+    useCircuitStore.setState({ runState: "idle" });
+    press(" ");
+    expect(runSimulation).toHaveBeenCalledOnce();
   });
 });
