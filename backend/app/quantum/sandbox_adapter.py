@@ -122,7 +122,7 @@ class QiskitAerAdapter(QuantumBackend):
             raise ValidationError(f"Gate parameter '{key}' must be a number")
         try:
             value = float(raw)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             raise ValidationError(f"Gate parameter '{key}' must be a number") from None
         if not math.isfinite(value):
             raise ValidationError(f"Gate parameter '{key}' must be finite")

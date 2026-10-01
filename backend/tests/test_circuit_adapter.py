@@ -228,7 +228,7 @@ def test_qasm_parametric_gates_parse_and_match_qiskit():
     assert Operator(decomposed).equiv(Operator(reference))
 
 
-@pytest.mark.parametrize("bad", ["abc", {}, float("nan"), "inf", True])
+@pytest.mark.parametrize("bad", ["abc", {}, float("nan"), "inf", True, 10**400])
 async def test_validate_rejects_non_numeric_or_non_finite_params(bad):
     spec = CircuitSpec(
         qubits=2,
