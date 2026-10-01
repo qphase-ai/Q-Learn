@@ -1,9 +1,10 @@
 import json
+import math
 import time
 from app.quantum.base import QuantumBackend, CircuitSpec, CompiledCircuit, ExecutionResult
 from app.quantum.sandbox_runner import SandboxRunner
 from app.config import get_settings
-from app.exceptions import SandboxExecutionError
+from app.exceptions import SandboxExecutionError, ValidationError
 
 QISKIT_SCRIPT_TEMPLATE = """
 import json, sys
@@ -54,6 +55,11 @@ class QiskitAerAdapter(QuantumBackend):
             for t in gate.targets:
                 if t >= circuit.qubits:
                     errors.append(f"Gate target {t} out of range for {circuit.qubits} qubits")
+            for key in self._param_keys(gate.type):
+                try:
+                    self._angle(gate.params, key)
+                except ValidationError as exc:
+                    errors.append(f"{gate.type}: {exc.message}")
         return len(errors) == 0, errors
 
     async def execute(self, circuit: CompiledCircuit, shots: int = 1024) -> ExecutionResult:
@@ -89,6 +95,39 @@ class QiskitAerAdapter(QuantumBackend):
             shots=shots,
         )
 
+    # Parametric gates: frontend gate type → (qelib1 op, ordered param names).
+    # U and U3 are both the generic single-qubit rotation u3(θ,φ,λ); P is u1(λ).
+    _PARAM_GATES: dict[str, tuple[str, tuple[str, ...]]] = {
+        "RX": ("rx", ("theta",)),
+        "RY": ("ry", ("theta",)),
+        "RZ": ("rz", ("theta",)),
+        "P": ("u1", ("theta",)),
+        "U": ("u3", ("theta", "phi", "lambda")),
+        "U3": ("u3", ("theta", "phi", "lambda")),
+        "RXX": ("rxx", ("theta",)),
+        "RZZ": ("rzz", ("theta",)),
+    }
+
+    @classmethod
+    def _param_keys(cls, gate_type: str) -> tuple[str, ...]:
+        if gate_type in cls._PARAM_GATES:
+            return cls._PARAM_GATES[gate_type][1]
+        return ("theta",) if gate_type == "RYY" else ()
+
+    @staticmethod
+    def _angle(params: dict | None, key: str) -> float:
+        """A gate angle from request-supplied params, as a finite float."""
+        raw = (params or {}).get(key, 0.0)
+        if isinstance(raw, bool):
+            raise ValidationError(f"Gate parameter '{key}' must be a number")
+        try:
+            value = float(raw)
+        except (TypeError, ValueError, OverflowError):
+            raise ValidationError(f"Gate parameter '{key}' must be a number") from None
+        if not math.isfinite(value):
+            raise ValidationError(f"Gate parameter '{key}' must be finite")
+        return value
+
     def _spec_to_qasm(self, circuit: CircuitSpec) -> str:
         lines = [
             f"OPENQASM 2.0;",
@@ -99,11 +138,25 @@ class QiskitAerAdapter(QuantumBackend):
         gate_map = {
             "H": "h", "X": "x", "Y": "y", "Z": "z",
             "S": "s", "T": "t", "I": "id", "CX": "cx", "CZ": "cz",
-            "SWAP": "swap", "M": "measure",
+            "SWAP": "swap", "M": "measure", "SX": "sx",
         }
         for gate in circuit.gates:
             op = gate_map.get(gate.type, gate.type.lower())
-            if gate.type == "M":
+            if gate.type in self._PARAM_GATES:
+                name, keys = self._PARAM_GATES[gate.type]
+                args = ",".join(repr(self._angle(gate.params, k)) for k in keys)
+                op = f"{name}({args})"
+            if gate.type == "RYY":
+                # ryy is not in qelib1.inc — emit its standard decomposition.
+                theta = self._angle(gate.params, "theta")
+                a = f"q[{gate.control if gate.control is not None else gate.targets[0]}]"
+                b = f"q[{gate.targets[-1] if gate.control is not None else gate.targets[1]}]"
+                lines += [
+                    f"rx(pi/2) {a};", f"rx(pi/2) {b};",
+                    f"cx {a},{b};", f"rz({theta!r}) {b};", f"cx {a},{b};",
+                    f"rx(-pi/2) {a};", f"rx(-pi/2) {b};",
+                ]
+            elif gate.type == "M":
                 for i, (q, c) in enumerate(zip(gate.targets, gate.classical or gate.targets)):
                     lines.append(f"measure q[{q}] -> c[{c}];")
             elif gate.control is not None:

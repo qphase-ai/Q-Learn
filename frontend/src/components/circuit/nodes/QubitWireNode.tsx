@@ -2,52 +2,72 @@
 
 import { memo } from "react";
 import type { NodeProps } from "@xyflow/react";
+import { Plus } from "lucide-react";
+import { GRID } from "@/lib/circuit-spec";
+import { getGate } from "@/lib/gates";
+import { useCircuitStore } from "@/stores/circuitStore";
+import { GATE_SEARCH_ID } from "@/components/circuit/library/GateLibrary";
 
-interface QubitWireData extends Record<string, unknown> {
+export interface QubitWireData extends Record<string, unknown> {
   index: number;
+  /** Total wire width in px (grows with the circuit). */
+  width: number;
+  /** x (node-relative) of the add-operation zone: the first column after the last gate. */
+  addX: number;
 }
 
+/** Wire start (x) relative to the node — just right of the "q₀ |0⟩" label. */
+export const WIRE_START = 76;
+
 function QubitWireNode({ data }: NodeProps) {
-  const { index } = data as unknown as QubitWireData;
+  const { index, width, addX } = data as unknown as QubitWireData;
+  const armed = useCircuitStore((s) => s.selectedGateType);
+  const placeAtNextFreeColumn = useCircuitStore((s) => s.placeAtNextFreeColumn);
+  const setSelectedGateType = useCircuitStore((s) => s.setSelectedGateType);
+
+  function handleAdd() {
+    if (armed) {
+      placeAtNextFreeColumn(armed, index);
+      setSelectedGateType(null);
+    } else {
+      document.getElementById(GATE_SEARCH_ID)?.focus();
+    }
+  }
+
+  const addLabel = armed
+    ? `Append ${getGate(armed).name} to q${index}`
+    : `Add a gate to q${index} — choose one from the library`;
+
   return (
     <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: 44,
-        display: "flex",
-        alignItems: "center",
-        pointerEvents: "none",
-        userSelect: "none",
-      }}
+      className="relative select-none"
+      style={{ width, height: GRID.GATE, pointerEvents: "none" }}
     >
-      {/* Label */}
-      <span
-        style={{
-          position: "absolute",
-          left: 0,
-          color: "var(--text-secondary)",
-          fontSize: 12,
-          fontFamily: "monospace",
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-          zIndex: 1,
-        }}
-      >
-        q{index}
-      </span>
-      {/* Wire line */}
+      {/* Label: q₀ |0⟩ */}
+      <div className="absolute left-2 top-1/2 flex -translate-y-1/2 items-baseline gap-1.5 whitespace-nowrap font-mono text-[13px]">
+        <span className="font-semibold italic text-foreground">
+          q<sub className="text-[10px] not-italic">{index}</sub>
+        </span>
+        <span className="text-muted-foreground">|0⟩</span>
+      </div>
+
+      {/* Wire */}
       <div
-        style={{
-          position: "absolute",
-          left: 24,
-          right: 0,
-          top: "50%",
-          height: 1,
-          background: "var(--wire)",
-          transform: "translateY(-50%)",
-        }}
+        className="absolute top-1/2 h-px -translate-y-1/2 bg-[color:var(--wire)] opacity-70"
+        style={{ left: WIRE_START, right: 0 }}
       />
+
+      {/* Add-operation zone */}
+      <button
+        type="button"
+        onClick={handleAdd}
+        aria-label={addLabel}
+        title={addLabel}
+        className="nodrag nopan absolute top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md border border-dashed border-overlay/15 bg-surface text-muted-foreground outline-none transition-colors hover:border-cyber-cyan/60 hover:text-cyber-cyan focus-visible:ring-2 focus-visible:ring-cyber-cyan/70"
+        style={{ left: addX, pointerEvents: "auto" }}
+      >
+        <Plus size={14} aria-hidden />
+      </button>
     </div>
   );
 }

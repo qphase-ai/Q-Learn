@@ -53,7 +53,7 @@ Inside `LabShell`'s children, `/dashboard` renders the full `CentralWorkspace` w
 | `app/auth/` | Login / Register / Forgot-password pages |
 | `app/dashboard/`, `learn/`, `circuit/`, `code/`, `quiz/`, `pricing/`, `settings/` | Route entry points |
 | `components/dashboard/` | `LabShell`, `CentralWorkspace`, `DashboardHeader`, `DashboardActivityBar`, `CurriculumSidebar`, `DashboardTutorPanel`, `FileTreePanel`, `MonacoCodePanel`, `CircuitResultsPanel`, `DashboardWorkspace`, and other dashboard-owned pieces |
-| `components/circuit/` | React Flow circuit builder — `GateNode`, `QubitWireNode`, `MeasurementNode`, `GatePalette`, `CircuitCanvas`, `CircuitToolbar` |
+| `components/circuit/` | Circuit lab — `CircuitWorkspace` (layout) composing `library/GateLibrary` + `GateCard`, `CircuitToolbar`, `CircuitCanvas` (React Flow; `nodes/` GateNode · MeasurementNode · QubitWireNode · ClassicalWireNode · CellGridNode), `GateInspector`, `analysis/` (StateVector · BlochSphere · MeasurementResults panels) |
 | `components/quiz/` | `QuizWorkspace` + its children — `QuizProgressBar`, `QuestionDisplay`, `AnswerOptions`, `HintButton`, `QuizNavigation` |
 | `components/tutor/` | `AITutorPanel` — streaming chat, citation badges, KaTeX math |
 | `components/visualization/` | `ProbabilityChart`, `StateVectorTable`, `QASMViewer`, `ConsoleOutput` — rendered inline (e.g. inside `CircuitResultsPanel`), not in a separate bottom panel |
@@ -146,12 +146,13 @@ Unsubscribe on component unmount to avoid leaking channels.
 
 ## Circuit Builder
 
-- Canvas: `@xyflow/react` (React Flow) with custom node types
-- Node types: `GateNode` · `QubitWireNode` · `MeasurementNode`
-- Gates are HTML5 drag sources from `GatePalette`; drop onto a wire creates a node
-- Circuit state (`nodes`, `edges`) lives entirely in `useCircuitStore` — React Flow's `onNodesChange` / `onEdgesChange` must call `setNodes` / `setEdges`
-- Running a circuit: POST circuit definition to `/api/v1/circuits/{id}/execute`, then await Supabase Realtime `result` event
-- Results render inline via `CircuitResultsPanel` (in `CentralWorkspace`'s lesson/circuit/code/simulation tabs) — a fixed layout, not tabs: a measurement-probability chart (`ProbabilityChart`) + state-vector table (`StateVectorTable`) side by side with a Bloch-sphere visualization (`StateSphereVisualization`) and a key-insight callout. `QASMViewer` exists under `components/visualization/` but isn't wired into `CircuitResultsPanel`.
+- `CircuitWorkspace` is the whole circuit lab (used by `CentralWorkspace`'s circuit tab): gate library | toolbar / canvas (+ floating `GateInspector`) / status bar / `CircuitAnalysis`. Layout is driven by the workspace's **own width** (`useElementWidth`), not viewport breakpoints, because LabShell's side panels decide how much room it gets
+- Gate metadata (symbol, name, description, colour, params, KaTeX matrix) lives in one catalog: `lib/gates.ts`. Add a gate there, in `GateType`, and in the backend's `QiskitAerAdapter._spec_to_qasm`
+- Canvas: `@xyflow/react` with custom node types. Wires, the classical register and the cell grid are ephemeral frame nodes derived from `qubitCount` (they carry explicit `width`/`height` because their dimension changes are not stored)
+- Gate cards are HTML5 drag sources (`application/gate-type`); the canvas previews the landing cell during drag-over. Clicking a card "arms" it (`selectedGateType`) for click / keyboard placement
+- Circuit state lives entirely in `useCircuitStore`. Editing actions (`placeGate`, `moveGate`, `updateGate`, `duplicateSelected`, `removeSelected`, `setQubitCount`, `clearCircuit`, …) push undo history; `setNodes` (selection/drag frames) does not. Occupied cells shift placements to the next free column
+- Running a circuit: POST circuit definition (with `params` for parametric gates and the selected `shots`) to `/api/v1/circuits/{id}/execute`, then await Supabase Realtime `result` event
+- On the circuit tab, results render in `CircuitAnalysis` (state vector, a true reduced Bloch vector per qubit from `lib/quantum-state.ts`, measurement bars). Lesson/code/simulation tabs still use `CircuitResultsPanel`
 
 ---
 
@@ -239,6 +240,11 @@ Circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no l
 
 | Shortcut | Action |
 |----------|--------|
-| `Space` (circuit canvas) | Run simulation |
-| `Delete` (circuit canvas) | Remove selected gate |
-| `H / X / C / M` (circuit canvas) | Place H / X / CX / Measurement gate |
+| `Space` | Run simulation |
+| `Delete` / `Backspace` | Remove selected gate |
+| `H / X / C / M` | Arm H / X / CX / Measurement gate for placement |
+| `Esc` | Cancel placement, then deselect |
+| `Ctrl/⌘+Z`, `Ctrl/⌘+Shift+Z` or `Ctrl+Y` | Undo / redo |
+| `Ctrl/⌘+D` | Duplicate selected gate |
+| Arrow keys | Move selected gate one cell |
+| `/` | Focus gate search |
