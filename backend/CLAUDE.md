@@ -141,7 +141,8 @@ Copy `.env.example` → `.env` in `backend/`. Required keys:
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn` (Docker) |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` / `SUPABASE_ANON_KEY` | Supabase project |
 | `SUPABASE_JWT_SECRET` | Verifies Supabase Auth access tokens (HS256) — required for `/me` and all authed routes |
-| `VERCEL_TOKEN` | Sandbox SDK auth |
+| `VERCEL_TOKEN` / `VERCEL_TEAM_ID` / `VERCEL_PROJECT_ID` | Sandbox SDK auth — all three required (`../docs/sandbox.md#production-setup`) |
+| `SANDBOX_SNAPSHOT_ID` | Qiskit-ready snapshot — build with `python -m scripts.create_sandbox_snapshot` |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `groq/openai/gpt-oss-120b` (Groq is the primary provider) |
 | `LLM_FALLBACK_MODELS` | JSON list of the rest of the model pool |
 | `LLM_MODEL_LIMITS` | JSON dict of per-model `rpm`/`rpd`/`tpm`/`tpd` overrides — see `../docs/llm-model-router.md` |
