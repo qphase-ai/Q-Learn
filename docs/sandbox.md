@@ -40,7 +40,10 @@ flowchart TD
 
 ## Production Setup
 
-Circuit execution needs four variables on the API service (Railway → `q-learn-api` → Variables). Leaving any of them unset makes every `POST /api/v1/circuits/{id}/execute` return `202` and then fail in the background with `circuit_execution_failed`.
+Circuit execution needs four variables on the API service (Railway → `q-learn-api` → Variables). Leaving any of them unset makes every `POST /api/v1/circuits/{id}/execute` return `202` and then fail in the background with `circuit_execution_failed`, for one of two reasons:
+
+- **A `VERCEL_*` variable is missing** → the sandbox is never created: `SandboxCredentialsError: Missing credentials`.
+- **`SANDBOX_SNAPSHOT_ID` (and `SANDBOX_IMAGE`) is unset** → `Settings` allows this, and the sandbox starts from the SDK default image, but that image has no Qiskit and egress is denied, so the simulation script fails on `from qiskit_aer import AerSimulator`.
 
 | Variable | Where to get it |
 |----------|-----------------|

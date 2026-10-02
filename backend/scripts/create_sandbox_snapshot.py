@@ -73,7 +73,8 @@ async def main() -> None:
                 ["-m", "pip", "install", "--no-cache-dir", *PACKAGES],
                 "pip install",
             )
-            print(await _run(builder, ["-c", IMPORT_CHECK], "import check").strip())
+            versions = await _run(builder, ["-c", IMPORT_CHECK], "import check")
+            print(versions.strip())
             # Zero disables expiration; an expiring snapshot would break
             # production silently once it lapses.
             snapshot = await builder.snapshot(expiration=0)
@@ -87,7 +88,8 @@ async def main() -> None:
             execution_time_limit=timedelta(minutes=2),
             network_policy=NetworkPolicy.deny_all(),
         ) as check:
-            print(await _run(check, ["-c", IMPORT_CHECK], "snapshot verification").strip())
+            versions = await _run(check, ["-c", IMPORT_CHECK], "snapshot verification")
+            print(versions.strip())
 
     print(f"\nSANDBOX_SNAPSHOT_ID={snapshot_id}")
 
