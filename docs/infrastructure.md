@@ -94,7 +94,7 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `VERCEL_TOKEN` / `VERCEL_TEAM_ID` / `VERCEL_PROJECT_ID` | Vercel Sandbox SDK credentials — **all three are required**; if any is missing every circuit run fails with `SandboxCredentialsError: Missing credentials`. Scope the token to the team. See [`sandbox.md`](sandbox.md#production-setup) |
 | `SANDBOX_SNAPSHOT_ID` | Qiskit-ready snapshot to restore per run (preferred) — build it with `python -m scripts.create_sandbox_snapshot` |
 | `SANDBOX_IMAGE` | Custom OCI image with Qiskit preinstalled (alternative to snapshot) |
-| `SANDBOX_VCPUS` / `SANDBOX_MEMORY` | Sandbox resources (default 1 vCPU / 512 MB) |
+| `SANDBOX_VCPUS` / `SANDBOX_MEMORY` | Sandbox resources (default 1 vCPU / 2048 MB — Vercel minimum) |
 | `SANDBOX_TIMEOUT` | microVM timeout in ms (default: `30000`) |
 | `CORS_ORIGINS` | Allowed frontend origins (Vercel URL) |
 

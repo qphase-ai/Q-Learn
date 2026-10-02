@@ -123,7 +123,7 @@ VS Code-style IDE shell with 6 zones and 6 workspace modes.
 
 | Boundary | Detail |
 |----------|--------|
-| Vercel Sandbox | `SandboxRunner.run_python()` → `vercel.sandbox.create_sandbox()` — isolated microVM, Qiskit snapshot/image, 512 MB RAM, 30s timeout |
+| Vercel Sandbox | `SandboxRunner.run_python()` → `vercel.sandbox.create_sandbox()` — isolated microVM, Qiskit snapshot/image, 2 GB RAM, 30s timeout |
 | Supabase Realtime | FastAPI publishes events; frontend subscribes via `@supabase/supabase-js` |
 | LLM provider | ChatLiteLLM (`app/agents/llm.py`) — `get_llm()` returns primary + `.with_fallbacks()`; model strings via LiteLLM format |
 | pgvector | dim=384 embeddings in `knowledge_embeddings` table |

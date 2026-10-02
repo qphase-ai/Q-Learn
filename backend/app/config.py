@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     sandbox_snapshot_id: str = ""
     sandbox_image: str = ""
     sandbox_vcpus: int = 1
-    sandbox_memory: int = 512  # MB
+    sandbox_memory: int = 2048  # MB — Vercel Sandbox minimum
     sandbox_timeout: int = 30000  # ms
 
     # Rate limiting

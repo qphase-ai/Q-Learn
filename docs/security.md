@@ -12,7 +12,7 @@ flowchart TD
     SVC["Application Services\nAuth · Learning · Quantum · Agents · RAG · Analytics · ..."]
     PG["PostgreSQL + pgvector\nSQLAlchemy parameterized queries\nAlembic migrations"]
     RT["Supabase Realtime\nWebSocket pub/sub broker"]
-    VSBOX["Vercel Sandbox microVM\ndeny-all network · 512 MB · 30s\nno in-process student code"]
+    VSBOX["Vercel Sandbox microVM\ndeny-all network · 2 GB · 30s\nno in-process student code"]
     SECRETS["Secrets\nenv vars only — never in code or frontend"]
     LLM["External LLM\nall calls proxied through backend\nno API keys exposed to client"]
 
@@ -38,7 +38,7 @@ flowchart TD
 | Rate limiting | slowapi (100 req/min default; Redis backend deferred to Phase 2) |
 | Secrets management | Environment variables only — never in code or committed to git |
 | No API keys in frontend | All LLM/API calls proxied through backend |
-| Sandboxed code execution | Vercel Sandbox microVM — deny-all network, 512 MB RAM, 30s timeout |
+| Sandboxed code execution | Vercel Sandbox microVM — deny-all network, 2 GB RAM, 30s timeout |
 | Resource limits | CPU, Memory, Time limits enforced at microVM level |
 | Timeouts | All operations have configurable timeouts |
 | Prompt injection protection | Input sanitization, system prompt boundaries |
