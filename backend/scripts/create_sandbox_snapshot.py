@@ -84,7 +84,7 @@ async def main() -> None:
         print("Verifying snapshot under the production network policy ...")
         async with sandbox.create_sandbox(
             source=SnapshotSource(snapshot_id=snapshot_id),
-            resources=SandboxResources(vcpus=1, memory=512),
+            resources=SandboxResources(vcpus=1, memory=2048),
             execution_time_limit=timedelta(minutes=2),
             network_policy=NetworkPolicy.deny_all(),
         ) as check:

@@ -13,7 +13,7 @@ flowchart TD
     SC["Student Code\nPOST /challenges/{id}/submit"]
     CS["Circuit Simulation\nPOST /simulations/execute"]
     FORK["FastAPI\nSandboxRunner → vercel.sandbox.create_sandbox()"]
-    VM["Isolated microVM\nqiskit image / snapshot\n512 MB RAM · 1 vCPU · 30s timeout\nQiskit Aer pre-installed"]
+    VM["Isolated microVM\nqiskit image / snapshot\n2 GB RAM · 1 vCPU · 30s timeout\nQiskit Aer pre-installed"]
     OUT["stdout: JSON result\nstderr: error text"]
     PARSE["FastAPI deserialises\nreturns ExecutionResult to caller"]
 

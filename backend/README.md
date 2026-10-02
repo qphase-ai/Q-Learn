@@ -148,7 +148,7 @@ QuantumBackend
 
 `QiskitAerAdapter.execute()` serializes the circuit to a self-contained Python script, forks a Vercel Sandbox microVM, runs Qiskit Aer, and deserializes the JSON result. The API never imports Qiskit.
 
-**Sandbox constraints:** microVM isolation, 512 MB RAM, 30-second timeout, Qiskit pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`).
+**Sandbox constraints:** microVM isolation, 2 GB RAM, 30-second timeout, Qiskit pre-installed via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`).
 
 ---
 

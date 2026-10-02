@@ -1058,7 +1058,7 @@ class SandboxService:
 ### Security Rules
 
 - **Isolation** — isolated microVM, fully managed by Vercel, no shared process space, plus **deny-all outbound network** via `network_policy=NetworkPolicy.deny_all()` (SDK 0.7.0). Use a Secure Compute `network_id` if selective egress is ever needed.
-- **Memory limit**: 512MB (`SANDBOX_MEMORY`, configurable)
+- **Memory limit**: 2048MB (`SANDBOX_MEMORY`, configurable; Vercel Sandbox minimum)
 - **Timeout**: 30 seconds (`SANDBOX_TIMEOUT`)
 - **Qiskit pre-installed** via a configured snapshot (`SANDBOX_SNAPSHOT_ID`) or image (`SANDBOX_IMAGE`)
 - **Hobby plan hard quota** — no billing risk, sandbox pauses when quota exhausted
@@ -1342,7 +1342,7 @@ VERCEL_TEAM_ID=your-team-id
 SANDBOX_SNAPSHOT_ID=snap_...
 SANDBOX_IMAGE=
 SANDBOX_VCPUS=1
-SANDBOX_MEMORY=512
+SANDBOX_MEMORY=2048
 SANDBOX_TIMEOUT=30000
 ```
 
@@ -1372,7 +1372,7 @@ class Settings(BaseSettings):
     sandbox_snapshot_id: str = ""
     sandbox_image: str = ""
     sandbox_vcpus: int = 1
-    sandbox_memory: int = 512
+    sandbox_memory: int = 2048
     sandbox_timeout: int = 30000
 
     class Config:
