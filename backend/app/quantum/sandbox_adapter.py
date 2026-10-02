@@ -17,9 +17,15 @@ simulator = AerSimulator()
 compiled = transpile(qc, simulator)
 
 # Statevector on a measurement-free copy: measurement collapse would otherwise
-# zero out the amplitudes the State Vector tab renders.
+# zero out the amplitudes the State Vector tab renders. A mid-circuit
+# measurement (one followed by more gates on its qubit) survives that strip and
+# collapses the state differently per shot, so there is no single statevector:
+# report null rather than failing the whole run.
 qc_sv = qc.remove_final_measurements(inplace=False)
-statevector = [[c.real, c.imag] for c in Statevector.from_instruction(qc_sv).data]
+if any(inst.operation.name == "measure" for inst in qc_sv.data):
+    statevector = None
+else:
+    statevector = [[c.real, c.imag] for c in Statevector.from_instruction(qc_sv).data]
 
 # Shots
 job = simulator.run(compiled, shots={shots})

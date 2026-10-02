@@ -198,6 +198,49 @@ def test_qasm_legacy_gates_unchanged():
     ])
 
 
+def _run_script(qasm: str) -> dict:
+    """Run the rendered sandbox script locally (needs qiskit + qiskit-aer)."""
+    import json
+    import subprocess
+    import sys
+
+    proc = subprocess.run(
+        [sys.executable, "-c", QISKIT_SCRIPT_TEMPLATE.format(qasm=qasm, shots=256)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout)
+
+
+def test_script_reports_statevector_with_final_measurements():
+    pytest.importorskip("qiskit")
+    pytest.importorskip("qiskit_aer")
+    out = _run_script(
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\n'
+        "h q[0];\ncx q[0],q[1];\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];"
+    )
+    assert set(out["measurements"]) <= {"00", "11"}
+    assert out["statevector"][0][0] == pytest.approx(2 ** -0.5)
+    assert out["statevector"][3][0] == pytest.approx(2 ** -0.5)
+
+
+def test_script_survives_mid_circuit_measurement():
+    # A gate after a measurement on the same qubit used to crash
+    # Statevector.from_instruction ("Cannot apply instruction with classical
+    # bits: measure"), failing the whole run. Counts must still come back.
+    pytest.importorskip("qiskit")
+    pytest.importorskip("qiskit_aer")
+    out = _run_script(
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\n'
+        "x q[0];\nmeasure q[0] -> c[0];\nswap q[0],q[1];\n"
+        "measure q[0] -> c[0];\nmeasure q[1] -> c[1];"
+    )
+    assert out["statevector"] is None
+    assert out["measurements"] == {"10": 256}
+
+
 def test_qasm_parametric_gates_parse_and_match_qiskit():
     qiskit = pytest.importorskip("qiskit")
     from qiskit.circuit.library import RYYGate
