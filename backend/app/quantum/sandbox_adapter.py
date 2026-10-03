@@ -14,7 +14,19 @@ from qiskit.quantum_info import Statevector
 
 qc = QuantumCircuit.from_qasm_str({qasm!r})
 simulator = AerSimulator()
-compiled = transpile(qc, simulator)
+
+# Aer only records counts for measured bits, so a circuit with no measurement
+# would fail get_counts() ("No counts for experiment"). Measure every qubit for
+# the shot run instead, on a classical-register-free copy so the count keys are
+# plain n-qubit bitstrings rather than "meas c"-style multi-register keys.
+if any(inst.operation.name == "measure" for inst in qc.data):
+    run_qc = qc
+else:
+    run_qc = QuantumCircuit(qc.num_qubits)
+    for inst in qc.data:
+        run_qc.append(inst.operation, [qc.find_bit(q).index for q in inst.qubits])
+    run_qc.measure_all()
+compiled = transpile(run_qc, simulator)
 
 # Statevector on a measurement-free copy: measurement collapse would otherwise
 # zero out the amplitudes the State Vector tab renders. A mid-circuit
