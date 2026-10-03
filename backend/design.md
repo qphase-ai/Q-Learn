@@ -206,6 +206,7 @@ GET    /api/v1/modules/{id}/lessons   — Get module lessons
 GET    /api/v1/lessons/{id}           — Get lesson content
 GET    /api/v1/lessons/{id}/progress  — Get lesson progress
 PUT    /api/v1/lessons/{id}/progress  — Update lesson progress
+GET    /api/v1/search/lessons?q=      — Search published lessons (title, content, concept name)
 ```
 
 ### Learning

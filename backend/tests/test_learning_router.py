@@ -7,6 +7,7 @@ Endpoints covered:
   GET  /api/v1/courses                    → list[CourseSummary]
   GET  /api/v1/courses/{course_id}        → CourseDetail  (404 on unknown)
   GET  /api/v1/lessons/{lesson_id}        → LessonDetail
+  GET  /api/v1/search/lessons?q=          → list[LessonSearchResult]
   GET  /api/v1/progress                   → list[ProgressItem]
   PUT  /api/v1/lessons/{lesson_id}/progress → ProgressItem
 """
@@ -323,4 +324,69 @@ async def test_upsert_progress_requires_auth(
         f"/api/v1/lessons/{lesson_id}/progress",
         json={"status": "in_progress", "completion_pct": 0.0},
     )
+    assert response.status_code in (401, 403)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/search/lessons
+# ---------------------------------------------------------------------------
+
+async def test_search_lessons_success(
+    client: AsyncClient,
+    clean_overrides,
+    monkeypatch,
+):
+    """Authed GET /search/lessons → 200, list of LessonSearchResult."""
+    hit = svc_module.LessonSearchHit(
+        lesson_id=uuid.uuid4(),
+        lesson_title="Superposition",
+        lesson_type="text",
+        is_pro=False,
+        module_id=uuid.uuid4(),
+        module_title="Foundations",
+        course_id=uuid.uuid4(),
+        course_title="Intro to Quantum",
+        snippet="…a qubit in superposition…",
+    )
+    search = AsyncMock(return_value=[hit])
+
+    app.dependency_overrides[get_db] = lambda: (x for x in [MagicMock()])
+    app.dependency_overrides[get_current_user] = lambda: _fake_user()
+    monkeypatch.setattr(svc_module.LearningService, "search_lessons", search)
+
+    response = await client.get("/api/v1/search/lessons", params={"q": "super", "limit": 5})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert len(body["data"]) == 1
+    item = body["data"][0]
+    assert item["lesson_id"] == str(hit.lesson_id)
+    assert item["course_id"] == str(hit.course_id)
+    assert item["module_title"] == "Foundations"
+    assert item["snippet"] == hit.snippet
+    search.assert_awaited_once_with("super", 5)
+
+
+@pytest.mark.parametrize("params", [{}, {"q": "a"}, {"q": "x" * 101}, {"q": "qubit", "limit": 0}, {"q": "qubit", "limit": 26}])
+async def test_search_lessons_rejects_invalid_params(
+    client: AsyncClient,
+    clean_overrides,
+    params,
+):
+    """Missing/too-short/too-long q, or out-of-range limit → 422."""
+    app.dependency_overrides[get_db] = lambda: (x for x in [MagicMock()])
+    app.dependency_overrides[get_current_user] = lambda: _fake_user()
+
+    response = await client.get("/api/v1/search/lessons", params=params)
+
+    assert response.status_code == 422
+
+
+async def test_search_lessons_requires_auth(
+    client: AsyncClient,
+    clean_overrides,
+):
+    """No auth → 401 or 403."""
+    response = await client.get("/api/v1/search/lessons", params={"q": "qubit"})
     assert response.status_code in (401, 403)

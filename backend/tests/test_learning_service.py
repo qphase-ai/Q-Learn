@@ -233,6 +233,96 @@ class TestGetLesson:
 
 
 # ---------------------------------------------------------------------------
+# search_lessons
+# ---------------------------------------------------------------------------
+
+def _rows_result(rows: list) -> MagicMock:
+    result = MagicMock()
+    result.all.return_value = rows
+    return result
+
+
+class TestSearchLessons:
+
+    @pytest.mark.asyncio
+    async def test_maps_rows_to_hits_with_context(self):
+        from app.services.learning_service import LearningService
+
+        course = _make_course()
+        module = course.modules[0]
+        lesson = module.lessons[0]
+        lesson.content = "A qubit can exist in a superposition of states."
+        db = _make_mock_db()
+        db.execute = AsyncMock(return_value=_rows_result([(lesson, module, course)]))
+
+        hits = await LearningService(db=db).search_lessons("Superposition")
+
+        assert len(hits) == 1
+        hit = hits[0]
+        assert hit.lesson_id == lesson.id
+        assert hit.lesson_title == lesson.title
+        assert hit.module_id == module.id
+        assert hit.module_title == module.title
+        assert hit.course_id == course.id
+        assert hit.course_title == course.title
+        assert hit.snippet == lesson.content
+        db.execute.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_blank_query_skips_db(self):
+        from app.services.learning_service import LearningService
+
+        db = _make_mock_db()
+        db.execute = AsyncMock()
+
+        assert await LearningService(db=db).search_lessons("   ") == []
+        db.execute.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_query_filters_published_escapes_wildcards_and_limits(self):
+        from sqlalchemy.dialects import postgresql
+        from app.services.learning_service import LearningService
+
+        db = _make_mock_db()
+        db.execute = AsyncMock(return_value=_rows_result([]))
+
+        await LearningService(db=db).search_lessons("100%_x", limit=7)
+
+        stmt = db.execute.await_args.args[0]
+        compiled = stmt.compile(dialect=postgresql.dialect())
+        sql = str(compiled)
+        assert "courses.is_published" in sql
+        assert "ILIKE" in sql
+        assert "concepts.name" in sql
+        assert "%100\\%\\_x%" in compiled.params.values()
+        assert 7 in compiled.params.values()
+
+
+class TestSnippet:
+
+    def test_excerpt_around_match_with_ellipses(self):
+        from app.services.learning_service import SNIPPET_RADIUS, _snippet
+
+        content = "a" * 200 + " Entanglement " + "b" * 200
+        snippet = _snippet(content, "entanglement")
+
+        assert snippet.startswith("…") and snippet.endswith("…")
+        assert "Entanglement" in snippet
+        assert len(snippet) <= len("Entanglement") + 2 * SNIPPET_RADIUS + 2
+
+    def test_none_when_no_content_or_no_match(self):
+        from app.services.learning_service import _snippet
+
+        assert _snippet(None, "qubit") is None
+        assert _snippet("Only gates here", "qubit") is None
+
+    def test_collapses_whitespace(self):
+        from app.services.learning_service import _snippet
+
+        assert _snippet("Bloch\n\n  sphere", "bloch") == "Bloch sphere"
+
+
+# ---------------------------------------------------------------------------
 # get_progress
 # ---------------------------------------------------------------------------
 

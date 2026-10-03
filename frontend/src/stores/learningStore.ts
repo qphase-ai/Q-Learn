@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CourseSummary, CourseDetail, LessonDetail } from "@/types";
+import type { CourseSummary, CourseDetail, LessonDetail, LessonSearchResult } from "@/types";
 import { apiFetch } from "@/lib/api";
 import { cmsContent, contentSource, isTrackableLessonId } from "@/lib/content-source";
 import { getAccessToken } from "@/lib/supabase";
@@ -30,11 +30,12 @@ interface LearningStore {
   loadCourse: (id: string) => Promise<void>;
   loadLesson: (id: string) => Promise<void>;
   markProgress: (lessonId: string, pct: number) => Promise<void>;
+  searchLessons: (query: string) => Promise<LessonSearchResult[]>;
 }
 
 export const useLearningStore = create<LearningStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // ── Initial state ────────────────────────────────────────────────────
       currentLessonId: null,
       lessonProgress: {},
@@ -100,6 +101,34 @@ export const useLearningStore = create<LearningStore>()(
           }),
           token,
         });
+      },
+
+      searchLessons: async (query) => {
+        const q = query.trim();
+        if (contentSource() === "cms") {
+          // Payload has no search route yet; match titles in the loaded course.
+          const course = get().activeCourse;
+          if (!course) return [];
+          const needle = q.toLowerCase();
+          return course.modules.flatMap((mod) =>
+            mod.lessons
+              .filter((lesson) => lesson.title.toLowerCase().includes(needle))
+              .map((lesson) => ({
+                lesson_id: lesson.id,
+                lesson_title: lesson.title,
+                lesson_type: lesson.lesson_type,
+                is_pro: lesson.is_pro,
+                module_id: mod.id,
+                module_title: mod.title,
+                course_id: course.id,
+                course_title: course.title,
+                snippet: null,
+              }))
+          );
+        }
+        const token = (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined;
+        const params = new URLSearchParams({ q, limit: "10" });
+        return apiFetch<LessonSearchResult[]>(`/api/v1/search/lessons?${params}`, { token });
       },
     }),
     {

@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -10,6 +10,7 @@ from app.schemas.learning import (
     CourseSummary,
     CourseDetail,
     LessonDetail,
+    LessonSearchResult,
     ProgressItem,
     UpdateProgressRequest,
 )
@@ -54,6 +55,20 @@ async def get_lesson(
 ):
     lesson = await LearningService(db).get_lesson(lesson_id)
     return StandardResponse(data=LessonDetail.model_validate(lesson))
+
+
+@router.get(
+    "/search/lessons",
+    response_model=StandardResponse[list[LessonSearchResult]],
+)
+async def search_lessons(
+    q: str = Query(..., min_length=2, max_length=100),
+    limit: int = Query(10, ge=1, le=25),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    hits = await LearningService(db).search_lessons(q, limit)
+    return StandardResponse(data=[LessonSearchResult.model_validate(h) for h in hits])
 
 
 @router.get(
