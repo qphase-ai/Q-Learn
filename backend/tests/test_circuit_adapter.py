@@ -255,6 +255,20 @@ def test_script_measures_all_qubits_when_circuit_has_no_measurement():
     assert out["statevector"][3][0] == pytest.approx(1.0)
 
 
+def test_script_runs_unmeasured_circuit_with_conditional():
+    # GateSpec.type is free-form, so a classically conditioned op (OpenQASM
+    # `if`) can reach the script. It must not break the measure-all shot run,
+    # and Statevector cannot simulate control flow, so it reports null.
+    pytest.importorskip("qiskit")
+    pytest.importorskip("qiskit_aer")
+    out = _run_script(
+        'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\n'
+        "x q[0];\nif(c==0) x q[1];"
+    )
+    assert out["measurements"] == {"11": 256}
+    assert out["statevector"] is None
+
+
 def test_qasm_parametric_gates_parse_and_match_qiskit():
     qiskit = pytest.importorskip("qiskit")
     from qiskit.circuit.library import RYYGate

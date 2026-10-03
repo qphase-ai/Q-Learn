@@ -9,6 +9,7 @@ from app.exceptions import SandboxExecutionError, ValidationError
 QISKIT_SCRIPT_TEMPLATE = """
 import json, sys
 from qiskit import QuantumCircuit, transpile
+from qiskit.circuit import ControlFlowOp
 from qiskit_aer import AerSimulator
 from qiskit.quantum_info import Statevector
 
@@ -17,24 +18,24 @@ simulator = AerSimulator()
 
 # Aer only records counts for measured bits, so a circuit with no measurement
 # would fail get_counts() ("No counts for experiment"). Measure every qubit for
-# the shot run instead, on a classical-register-free copy so the count keys are
-# plain n-qubit bitstrings rather than "meas c"-style multi-register keys.
-if any(inst.operation.name == "measure" for inst in qc.data):
-    run_qc = qc
-else:
-    run_qc = QuantumCircuit(qc.num_qubits)
-    for inst in qc.data:
-        run_qc.append(inst.operation, [qc.find_bit(q).index for q in inst.qubits])
-    run_qc.measure_all()
+# the shot run instead. measure_all() adds a "meas" register, which Qiskit
+# prints leftmost in multi-register count keys ("11 00"); the original register
+# is never written, so the keys are folded down to the "meas" bits below.
+measure_all = not any(inst.operation.name == "measure" for inst in qc.data)
+run_qc = qc.measure_all(inplace=False) if measure_all else qc
 compiled = transpile(run_qc, simulator)
 
 # Statevector on a measurement-free copy: measurement collapse would otherwise
 # zero out the amplitudes the State Vector tab renders. A mid-circuit
 # measurement (one followed by more gates on its qubit) survives that strip and
 # collapses the state differently per shot, so there is no single statevector:
-# report null rather than failing the whole run.
+# report null rather than failing the whole run. Classically conditioned ops
+# (OpenQASM `if`) are control flow Statevector cannot simulate either.
 qc_sv = qc.remove_final_measurements(inplace=False)
-if any(inst.operation.name == "measure" for inst in qc_sv.data):
+if any(
+    inst.operation.name == "measure" or isinstance(inst.operation, ControlFlowOp)
+    for inst in qc_sv.data
+):
     statevector = None
 else:
     statevector = [[c.real, c.imag] for c in Statevector.from_instruction(qc_sv).data]
@@ -43,6 +44,12 @@ else:
 job = simulator.run(compiled, shots={shots})
 result = job.result()
 counts = result.get_counts()
+if measure_all:
+    folded = {{}}
+    for key, n in counts.items():
+        bits = key.split(" ")[0]
+        folded[bits] = folded.get(bits, 0) + n
+    counts = folded
 total = sum(counts.values())
 
 output = {{
