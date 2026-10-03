@@ -72,7 +72,7 @@ Inside `LabShell`'s children, `/dashboard` renders the full `CentralWorkspace` w
 
 | Zone | Content |
 |------|---------|
-| `DashboardHeader` | Top bar — brand, search, backend status, theme toggle, user menu |
+| `DashboardHeader` | Top bar — brand, lesson search (`LessonSearch`: `GET /api/v1/search/lessons`, or a title match over the active course when `NEXT_PUBLIC_CONTENT_SOURCE=cms`; `⌘K`/`Ctrl+K` focuses it), backend status, theme toggle, user menu |
 | `DashboardActivityBar` | Left rail — nav items Learn / Circuits / Code / Practice / Progress / AI Tutor, plus Docs / Feedback / Settings utility icons; dims when `activityBarDim` is set (quiz focus mode). No separate "Dashboard" nav entry — `/dashboard` isn't linked from the activity bar. |
 | `CurriculumSidebar` | Left complementary panel — course/module/lesson tree; omitted when `sidebarCollapsed` |
 | Center content (`children`) | The route's main content — `CentralWorkspace` for `/dashboard`/`/learn`/`/circuit`/`/code`, `QuizWorkspace` for `/quiz` |
@@ -236,7 +236,7 @@ Copy `frontend/.env.local.example` → `frontend/.env.local`. Full reference: `.
 
 ## Keyboard Shortcuts
 
-Circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no longer an app-wide shortcut hook (`useKeyboardShortcuts` was retired along with `AppShell`; it drove `Ctrl+B`/`Ctrl+J`/`Ctrl+1…6` for the old TutorFAB/BottomPanel/workspace-switcher, none of which exist anymore). The hook takes an `enabled` flag and is called from `CentralWorkspace`, active only when `lockedTab === "circuit"` (i.e. on the standalone `/circuit` route) — not when the circuit tab is just one of several visible in the embedded `/dashboard` preview:
+Besides `⌘K`/`Ctrl+K` (focus the header lesson search, handled in `LessonSearch`), these are circuit-canvas shortcuts only (`hooks/useCircuitShortcuts.ts`) — there is no longer an app-wide shortcut hook (`useKeyboardShortcuts` was retired along with `AppShell`; it drove `Ctrl+B`/`Ctrl+J`/`Ctrl+1…6` for the old TutorFAB/BottomPanel/workspace-switcher, none of which exist anymore). The hook takes an `enabled` flag and is called from `CentralWorkspace`, active only when `lockedTab === "circuit"` (i.e. on the standalone `/circuit` route) — not when the circuit tab is just one of several visible in the embedded `/dashboard` preview:
 
 | Shortcut | Action |
 |----------|--------|

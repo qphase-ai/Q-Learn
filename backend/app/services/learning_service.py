@@ -9,21 +9,58 @@ The only exception is upsert_progress, which also returns an ORM object so
 the router can call model_validate(LearningProgress) -> ProgressItem.
 """
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import case, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.exceptions import NotFoundError
 from app.models.content_ref import ContentKind
-from app.models.learning import Course, Lesson, Module
+from app.models.learning import Concept, Course, Lesson, Module
 from app.models.progress import LearningProgress
 from app.schemas.learning import UpdateProgressRequest
 from app.services.content_ref_service import ContentRefService
 
 logger = structlog.get_logger(__name__)
+
+SNIPPET_RADIUS = 60
+
+
+@dataclass(frozen=True)
+class LessonSearchHit:
+    """A lesson matching a search query, with its module and course context."""
+
+    lesson_id: uuid.UUID
+    lesson_title: str
+    lesson_type: str
+    is_pro: bool
+    module_id: uuid.UUID
+    module_title: str
+    course_id: uuid.UUID
+    course_title: str
+    snippet: str | None
+
+
+def _like_pattern(query: str) -> str:
+    """Case-insensitive substring pattern with LIKE wildcards escaped."""
+    escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
+def _snippet(content: str | None, query: str) -> str | None:
+    """Excerpt of ``content`` around the first match of ``query``, if any."""
+    if not content:
+        return None
+    pos = content.lower().find(query.lower())
+    if pos < 0:
+        return None
+    start = max(0, pos - SNIPPET_RADIUS)
+    end = min(len(content), pos + len(query) + SNIPPET_RADIUS)
+    text = " ".join(content[start:end].split())
+    return f"{'…' if start > 0 else ''}{text}{'…' if end < len(content) else ''}"
 
 
 class LearningService:
@@ -78,6 +115,55 @@ class LearningService:
         if lesson is None:
             raise NotFoundError(f"Lesson {lesson_id} not found")
         return lesson
+
+    async def search_lessons(self, query: str, limit: int = 10) -> list[LessonSearchHit]:
+        """Return lessons of published courses whose title, content, or a
+        concept name contains ``query`` (case-insensitive).
+
+        Title matches rank first; ties keep curriculum order.
+        """
+        query = query.strip()
+        if not query:
+            return []
+        pattern = _like_pattern(query)
+        title_match = Lesson.title.ilike(pattern, escape="\\")
+        concept_match = Lesson.id.in_(
+            select(Concept.lesson_id).where(Concept.name.ilike(pattern, escape="\\"))
+        )
+        result = await self.db.execute(
+            select(Lesson, Module, Course)
+            .join(Module, Lesson.module_id == Module.id)
+            .join(Course, Module.course_id == Course.id)
+            .where(
+                Course.is_published == True,  # noqa: E712
+                or_(
+                    title_match,
+                    Lesson.content.ilike(pattern, escape="\\"),
+                    concept_match,
+                ),
+            )
+            .order_by(
+                case((title_match, 0), else_=1),
+                Course.order_index,
+                Module.order_index,
+                Lesson.order_index,
+            )
+            .limit(limit)
+        )
+        return [
+            LessonSearchHit(
+                lesson_id=lesson.id,
+                lesson_title=lesson.title,
+                lesson_type=lesson.lesson_type,
+                is_pro=lesson.is_pro,
+                module_id=module.id,
+                module_title=module.title,
+                course_id=course.id,
+                course_title=course.title,
+                snippet=_snippet(lesson.content, query),
+            )
+            for lesson, module, course in result.all()
+        ]
 
     # ------------------------------------------------------------------
     # Progress

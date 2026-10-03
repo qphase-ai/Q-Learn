@@ -67,3 +67,17 @@ class ProgressItem(BaseModel):
 class UpdateProgressRequest(BaseModel):
     status: str = "in_progress"
     completion_pct: float = 0.0
+
+
+class LessonSearchResult(BaseModel):
+    lesson_id: uuid.UUID
+    lesson_title: str
+    lesson_type: str
+    is_pro: bool
+    module_id: uuid.UUID
+    module_title: str
+    course_id: uuid.UUID
+    course_title: str
+    snippet: str | None
+
+    model_config = ConfigDict(from_attributes=True)

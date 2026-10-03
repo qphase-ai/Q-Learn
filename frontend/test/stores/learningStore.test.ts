@@ -214,3 +214,57 @@ describe("with NEXT_PUBLIC_CONTENT_SOURCE=cms", () => {
     expect(useLearningStore.getState().lessonProgress).toEqual({});
   });
 });
+
+// ---------------------------------------------------------------------------
+// searchLessons
+// ---------------------------------------------------------------------------
+describe("searchLessons", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("GETs /api/v1/search/lessons with the trimmed, encoded query", async () => {
+    const hit = {
+      lesson_id: "lesson-1",
+      lesson_title: "Lesson 1",
+      lesson_type: "text",
+      is_pro: false,
+      module_id: "mod-1",
+      module_title: "Module 1",
+      course_id: "course-1",
+      course_title: "Intro to Quantum",
+      snippet: null,
+    };
+    vi.mocked(apiFetch).mockResolvedValueOnce([hit]);
+
+    const results = await useLearningStore.getState().searchLessons("  bell & ghz ");
+
+    expect(results).toEqual([hit]);
+    const [path, opts] = vi.mocked(apiFetch).mock.calls[0];
+    expect(path).toBe("/api/v1/search/lessons?q=bell+%26+ghz&limit=10");
+    expect(opts?.token).toBe("t");
+  });
+
+  it("matches lesson titles in the active course when the content source is cms", async () => {
+    vi.stubEnv("NEXT_PUBLIC_CONTENT_SOURCE", "cms");
+    useLearningStore.setState({ activeCourse: COURSE_DETAIL });
+
+    const results = await useLearningStore.getState().searchLessons("lesson");
+
+    expect(apiFetch).not.toHaveBeenCalled();
+    expect(results).toEqual([
+      {
+        lesson_id: "lesson-1",
+        lesson_title: "Lesson 1",
+        lesson_type: "text",
+        is_pro: false,
+        module_id: "mod-1",
+        module_title: "Module 1",
+        course_id: "course-1",
+        course_title: "Intro to Quantum",
+        snippet: null,
+      },
+    ]);
+    expect(await useLearningStore.getState().searchLessons("entangle")).toEqual([]);
+  });
+});

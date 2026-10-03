@@ -110,6 +110,18 @@ export interface CourseDetail extends CourseSummary {
   modules: ModuleWithLessons[];
 }
 
+export interface LessonSearchResult {
+  lesson_id: string;
+  lesson_title: string;
+  lesson_type: LessonSummary["lesson_type"];
+  is_pro: boolean;
+  module_id: string;
+  module_title: string;
+  course_id: string;
+  course_title: string;
+  snippet: string | null;
+}
+
 export interface ConceptOut {
   id: string;
   name: string;
