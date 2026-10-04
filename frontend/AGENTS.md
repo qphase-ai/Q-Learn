@@ -44,7 +44,7 @@ frontend/src/
 | Never add direct FastAPI WebSocket connections | The backend has no ws:// endpoints — use Supabase Realtime |
 | No cross-store reactive subscriptions | Causes cascading re-renders; cross-domain reads must be point-in-time snapshots |
 | No cross-workspace component imports | Workspaces are self-contained — data flows via stores only |
-| Never hardcode colors or read token CSS vars directly in components | Tokens live in `globals.css` (light on `:root`, dark on `.dark`) — use the Tailwind semantic classes (`bg-surface`, `text-cyber-cyan`, `border-overlay/10`, …) or one theme breaks |
+| Never hardcode colors or read token CSS vars directly in components (circuit gate colors excepted) | Tokens live in `globals.css` (light on `:root`, dark on `.dark`) — use the Tailwind semantic classes (`bg-surface`, `text-cyber-cyan`, `border-overlay/10`, …) or one theme breaks. Circuit gate fills have no Tailwind classes and use the theme-independent `var(--gate-*)` tokens directly (catalog in `lib/gates.ts`) |
 | Never use `white/…`/`black/…` for translucent fills or borders | Use `overlay/…` (white in dark, black in light) |
 | Always unsubscribe Supabase channels on unmount | Channel leaks accumulate across route changes |
 | Never gate curriculum content | Lessons and course structure are free; only AI Tutor + execution + adaptive quizzes are Pro |
