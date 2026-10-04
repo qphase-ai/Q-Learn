@@ -106,25 +106,26 @@ Quiz workspace activates focus mode: ActivityBar icon opacity drops to 30%, Righ
 
 ### Color Palette
 
-| Token | Value | Usage |
+Light and dark themes (dark is the default). Tokens are HSL triplets in `src/app/globals.css` — light values on `:root`, dark on `.dark` — exposed as Tailwind semantic classes. Use the classes, never hardcoded colors or the CSS vars directly. `CLAUDE.md` has the full table.
+
+| Token | Tailwind class | Usage |
 |---|---|---|
-| `--bg-base` | `#0d0d0d` | Root background |
-| `--bg-surface` | `#141414` | Panels, cards |
-| `--bg-elevated` | `#1a1a1a` | Dropdowns, tooltips |
-| `--bg-hover` | `#242424` | Hover states |
-| `--border` | `#2a2a2a` | All borders |
-| `--quantum` | `#00d4ff` | Primary accent — quantum cyan |
-| `--quantum-dim` | `#00d4ff26` | Glow backgrounds, selections |
-| `--success` | `#3fb950` | Correct answers, passed |
-| `--warning` | `#d29922` | Partial mastery, hints |
-| `--error` | `#f85149` | Wrong answers, errors |
-| `--text-primary` | `#d4d4d4` | Body text |
-| `--text-secondary` | `#8b8b8b` | Labels, captions |
-| `--text-muted` | `#555555` | Placeholders, disabled |
+| `--background` | `bg-background` | Root background |
+| `--surface` | `bg-surface` | Panels, cards |
+| `--elevated` | `bg-elevated` | Dropdowns, tooltips, popovers |
+| `--overlay` | `bg-overlay/5`, `border-overlay/10` | Glass fills, hover states, hairline borders (always with opacity; replaces `white/…`/`black/…`) |
+| `--foreground` | `text-foreground` | Primary text |
+| `--muted-foreground` | `text-muted-foreground` | Secondary text |
+| `--cyber-cyan` | `text-cyber-cyan` / `bg-cyber-cyan` | Primary accent — CTAs, active states, links |
+| `--electric-purple` | `text-electric-purple` | Secondary accent |
+| `--neon-green` | `text-neon-green` | Tertiary accent |
+| `--success-ds` | `text-success` | Correct answers, passed |
+| `--warning-ds` | `text-warning` | Partial mastery, hints |
+| `--error-ds` | `text-error` | Wrong answers, errors |
 
-**No `box-shadow`.** Depth is expressed through `--border` and `--quantum` glow (`0 0 8px #00d4ff40`) only.
+**Depth:** `backdrop-blur-*` with translucent `border-overlay/10` and `bg-overlay/[x]` fills; `shadow-glow-{cyan,purple,green}` for accent glows. `box-shadow` is allowed.
 
-StatusBar background uses `--quantum` with dark text — the one solid-color surface in the UI.
+**Legacy tokens** (`--bg-base`, `--bg-surface`, `--border`, `--quantum`, `--quantum-dim`, `--text-*`, …) remain in `globals.css` for components not yet migrated. Don't build new UI on them; they are slated for removal.
 
 ### Gate Colors
 
@@ -154,7 +155,7 @@ Base: 14px root. Monospace everywhere except lesson prose. Math notation rendere
 
 - Base unit: 4px
 - Border radius: 4px for components, 2px for inputs
-- Active states: `--quantum` 2px left border — never background fills for nav items
+- Selected/active items (sidebar lessons, search results): `bg-cyber-cyan/10 text-cyber-cyan`
 
 ---
 
@@ -183,7 +184,7 @@ Multi-column VS Code-style learning studio that unifies curriculum tracking, act
 
 ### Learn
 
-- **Left 220px:** Lesson Outline Panel — scrollable section tree. Active section: `--quantum` 2px left border.
+- **Left 220px:** Lesson Outline Panel — scrollable section tree. Active section: `bg-cyber-cyan/10 text-cyber-cyan`.
 - **Center:** Lesson Content — rendered markdown, KaTeX math, inline circuit SVG previews. "Open in Circuit Builder" CTA teleports the circuit to the Circuit workspace.
 - **BottomPanel:** Hidden by default. Auto-opens (read-only circuit preview) when lesson references a circuit.
 
