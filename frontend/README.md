@@ -206,13 +206,15 @@ Gates are HTML5 drag sources from `GatePalette`. Dropping onto a wire creates a 
 
 ## Design System
 
-All design tokens live in `src/app/globals.css` as CSS custom properties. Never hardcode hex values in components.
+All design tokens live in `src/app/globals.css` (light on `:root`, dark on `.dark`; dark is the default) and are exposed as Tailwind semantic classes. See `CLAUDE.md` for the full token table.
 
-Key tokens: `--bg-base` · `--bg-surface` · `--border` · `--quantum` (`#00d4ff`) · `--success` · `--warning` · `--error`
+Key classes: `bg-background` · `bg-surface` · `bg-elevated` · `bg-overlay/5` · `border-overlay/10` · `text-foreground` · `text-muted-foreground` · `text-cyber-cyan` · `text-success` · `text-warning` · `text-error`
 
 Rules:
-- No `box-shadow` — depth via `--border` and `--quantum` glow only
-- Active nav items: `--quantum` 2px left border, never background fill
+- Use the Tailwind semantic classes — never hardcode colors or read the CSS vars directly; use `overlay/…`, not `white/…`/`black/…`. Exception: circuit gate fills use the theme-independent `var(--gate-*)` tokens directly
+- Depth via `backdrop-blur-*`, translucent overlay fills and `shadow-glow-*` glows — `box-shadow` is allowed
+- Selected/active items: `bg-cyber-cyan/10 text-cyber-cyan`
+- Don't build new UI on the legacy tokens (`--quantum`, `--bg-base`, …)
 - Math: KaTeX only
 - Fonts: Geist Mono/Sans for UI chrome; JetBrains Mono for code
 
