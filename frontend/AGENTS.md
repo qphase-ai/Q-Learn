@@ -44,9 +44,8 @@ frontend/src/
 | Never add direct FastAPI WebSocket connections | The backend has no ws:// endpoints — use Supabase Realtime |
 | No cross-store reactive subscriptions | Causes cascading re-renders; cross-domain reads must be point-in-time snapshots |
 | No cross-workspace component imports | Workspaces are self-contained — data flows via stores only |
-| Never hardcode color hex values in components | All tokens defined in `globals.css` — use CSS custom properties |
-| No `box-shadow` | Depth via `--border` and `--quantum` glow only |
-| Active nav states use 2px left border | Never background fills for active items |
+| Never hardcode colors or read token CSS vars directly in components | Tokens live in `globals.css` (light on `:root`, dark on `.dark`) — use the Tailwind semantic classes (`bg-surface`, `text-cyber-cyan`, `border-overlay/10`, …) or one theme breaks |
+| Never use `white/…`/`black/…` for translucent fills or borders | Use `overlay/…` (white in dark, black in light) |
 | Always unsubscribe Supabase channels on unmount | Channel leaks accumulate across route changes |
 | Never gate curriculum content | Lessons and course structure are free; only AI Tutor + execution + adaptive quizzes are Pro |
 
@@ -182,13 +181,14 @@ Routes are in `app/`. Page files should contain only a React component that impo
 
 ## Design system
 
-All tokens in `src/app/globals.css`. Key rules:
+All tokens in `src/app/globals.css`; `CLAUDE.md` is the full reference. Key rules:
 
-- No `box-shadow` — depth via `--border` and `--quantum` glow (`0 0 8px #00d4ff40`)
-- Active states: `--quantum` 2px left border, never background fill
+- Light and dark themes (dark default) — style with the Tailwind semantic classes; see the token table in `CLAUDE.md`
+- Depth: `backdrop-blur-*` with translucent `border-overlay/10` and `bg-overlay/[x]` fills; `shadow-glow-{cyan,purple,green}` for accent glows. `box-shadow` is allowed
+- Selected/active items (sidebar lessons, search results): `bg-cyber-cyan/10 text-cyber-cyan`
+- Don't build new UI on the legacy tokens (`--quantum`, `--bg-base`, …) in `globals.css`; they are slated for removal
 - Math: KaTeX only (not MathJax)
 - Fonts: Geist Mono (UI), Geist Sans (prose), JetBrains Mono (code)
-- The only solid-color surface is the StatusBar (`--quantum` background)
 
 ---
 
