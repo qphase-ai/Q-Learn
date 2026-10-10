@@ -201,3 +201,137 @@ class TestRunAndStream:
             if isinstance(a, AgentMessage) and a.role == "assistant" and getattr(a, "content", "")
         ]
         assert good_assistant == []
+
+
+# ---------------------------------------------------------------------------
+# run_and_stream — history- and lesson-aware retrieval query
+# ---------------------------------------------------------------------------
+
+def _msg(role, content):
+    m = MagicMock()
+    m.role = role
+    m.content = content
+    return m
+
+
+async def _run_capturing(db, message, lesson_id=None, chunks=None, tokens=("ok",)):
+    """Run run_and_stream with everything patched; return (retrieve_mock, stream_mock)."""
+    from app.services.tutor_service import run_and_stream
+
+    retrieve_mock = AsyncMock(return_value=_canned_chunks() if chunks is None else chunks)
+    stream_mock = MagicMock(return_value=_aiter(list(tokens)))
+    spy_complete = AsyncMock()
+    with (
+        patch(
+            "app.services.tutor_service.AsyncSessionLocal",
+            MagicMock(return_value=_make_session_cm(db)()),
+        ),
+        patch("app.services.tutor_service.retrieve", retrieve_mock),
+        patch("app.services.tutor_service.stream_tutor_answer", stream_mock),
+        patch("app.services.tutor_service.publish_tutor_token", AsyncMock()),
+        patch("app.services.tutor_service.publish_tutor_complete", spy_complete),
+    ):
+        await run_and_stream(uuid.uuid4(), uuid.uuid4(), message, lesson_id)
+    return retrieve_mock, stream_mock, spy_complete
+
+
+class TestRetrievalQuery:
+    @pytest.mark.asyncio
+    async def test_follow_up_query_includes_prior_user_turn(self):
+        from app.rag.retrieval import RetrievalQuery
+
+        db = _make_mock_db()
+        db.execute.return_value.scalars.return_value.all.return_value = [
+            _msg("user", "what does the hadamard gate do"),
+            _msg("assistant", "It creates an equal superposition [1]."),
+            _msg("user", "why?"),  # the current message, already persisted
+        ]
+
+        retrieve_mock, stream_mock, _ = await _run_capturing(db, "why?")
+
+        query = retrieve_mock.await_args.args[1]
+        assert isinstance(query, RetrievalQuery)
+        assert "what does the hadamard gate do" in query.text
+        assert query.text.endswith("why?")
+        assert query.content_ref_id is None
+        # the history is still passed to the model, without the current message
+        prior = stream_mock.call_args.kwargs["prior_messages"]
+        assert [m.content for m in prior] == [
+            "what does the hadamard gate do",
+            "It creates an equal superposition [1].",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_first_turn_query_is_just_the_message(self):
+        db = _make_mock_db()
+        db.execute.return_value.scalars.return_value.all.return_value = [_msg("user", "what is a qubit")]
+
+        retrieve_mock, _, _ = await _run_capturing(db, "what is a qubit")
+
+        assert retrieve_mock.await_args.args[1].text == "what is a qubit"
+
+    @pytest.mark.asyncio
+    async def test_query_capped_at_150_words_keeping_current_message_last(self):
+        db = _make_mock_db()
+        db.execute.return_value.scalars.return_value.all.return_value = [
+            _msg("user", " ".join(f"old{i}" for i in range(200))),
+            _msg("assistant", "answer"),
+            _msg("user", "current question here"),
+        ]
+
+        retrieve_mock, _, _ = await _run_capturing(db, "current question here")
+
+        words = retrieve_mock.await_args.args[1].text.split()
+        assert len(words) == 150
+        assert words[-3:] == ["current", "question", "here"]
+        assert words[-4] == "old199"  # the prior turn's most recent words survive
+
+    @pytest.mark.asyncio
+    async def test_lesson_id_sets_boost_and_concept_from_lesson_title(self):
+        lesson_id = uuid.uuid4()
+        db = _make_mock_db()
+        db.scalar = AsyncMock(return_value="The Hadamard Gate")
+
+        retrieve_mock, stream_mock, _ = await _run_capturing(db, "explain this", lesson_id=lesson_id)
+
+        query = retrieve_mock.await_args.args[1]
+        assert query.content_ref_id == lesson_id
+        assert stream_mock.call_args.kwargs["context"]["concept"] == "The Hadamard Gate"
+
+    @pytest.mark.asyncio
+    async def test_unknown_lesson_id_keeps_default_concept(self):
+        lesson_id = uuid.uuid4()
+        db = _make_mock_db()
+        db.scalar = AsyncMock(return_value=None)
+
+        _, stream_mock, spy_complete = await _run_capturing(
+            db, "explain this", lesson_id=lesson_id
+        )
+
+        context = stream_mock.call_args.kwargs["context"] or {}
+        assert "concept" not in context
+        assert "error" not in spy_complete.await_args.args[1]
+
+    @pytest.mark.asyncio
+    async def test_no_lesson_id_skips_lesson_lookup(self):
+        db = _make_mock_db()
+        db.scalar = AsyncMock()
+
+        retrieve_mock, _, _ = await _run_capturing(db, "hi")
+
+        db.scalar.assert_not_awaited()
+        assert retrieve_mock.await_args.args[1].content_ref_id is None
+
+    @pytest.mark.asyncio
+    async def test_logs_retrieval_once_per_turn(self):
+        db = _make_mock_db()
+        with patch("app.services.tutor_service.logger") as log:
+            await _run_capturing(db, "what is superposition")
+
+        calls = [c for c in log.info.call_args_list if c.args and c.args[0] == "rag_retrieved"]
+        assert len(calls) == 1
+        kw = calls[0].kwargs
+        assert kw["n"] == 1
+        assert kw["top_score"] == pytest.approx(0.9)
+        assert kw["lesson_boost"] is False
+        assert kw["ms"] >= 0
