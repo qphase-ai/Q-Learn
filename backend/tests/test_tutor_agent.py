@@ -317,3 +317,21 @@ def test_normalise_math_leaves_code_and_plain_text_alone():
     assert tutor.normalise_math(code) == code
     assert tutor.normalise_math("`\\(a\\)` and $a$ [1]") == "`\\(a\\)` and $a$ [1]"
     assert tutor.normalise_math("no math [1].") == "no math [1]."
+
+
+def test_normalise_math_stays_fast_on_pathological_input():
+    # whitespace-heavy math once made the in-math citation regex backtrack
+    # cubically (2,000 spaces took ~8 s on the event loop)
+    import time
+
+    samples = [
+        "\\[ x" + " " * 20000 + "y \\]",
+        "$$ " + "\\, " * 5000 + "$$",
+        "\\[" * 5000,
+        "$" * 20000,
+        "\\[ a " + "\\quad " * 3000 + "\\text{[1]} \\]",
+    ]
+    start = time.perf_counter()
+    for s in samples:
+        tutor.normalise_math(s)
+    assert time.perf_counter() - start < 1.0

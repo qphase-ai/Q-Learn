@@ -38,12 +38,44 @@ _MATH_RE = re.compile(
     r"\\\[(?P<d1>.+?)\\\]|\$\$(?P<d2>.+?)\$\$|\\\((?P<i1>[^\n]+?)\\\)|(?<!\$)\$(?P<i2>[^$\n]+?)\$",
     re.DOTALL,
 )
-# A citation the model put inside math, e.g. `\quad\text{[1]}`, with its spacing.
-_MATH_CITATION_RE = re.compile(
-    r"\s*(?:\\q?quad|\\[,;:! ]|~)*\s*\\text\{\s*\[(\d+(?:\s*,\s*\d+)*)\]\s*\}"
-)
+# A citation the model put inside math, e.g. `\text{[1]}`. Anchored on the literal
+# `\text{` so matching stays linear; the spacing before it (`\quad`, `\,`, ...)
+# is trimmed separately by _rstrip_math_spacing.
+_MATH_CITATION_RE = re.compile(r"\\text\{[ \t]*\[(\d+(?:[ \t]*,[ \t]*\d+)*)\][ \t]*\}")
+_MATH_SPACING = ("\\qquad", "\\quad", "\\,", "\\;", "\\:", "\\!", "\\ ", "~")
 # A closing tag of one of the data blocks, tolerant of case and inner spaces.
 _DATA_CLOSING_TAG_RE = re.compile(r"<\s*/\s*(sources|student_circuit)\s*>", re.IGNORECASE)
+
+
+def _rstrip_math_spacing(text: str) -> str:
+    """Drop trailing whitespace and LaTeX spacing commands (`\\quad`, `\\,`, `~`).
+
+    Scans back from the end one token at a time, so it stays linear.
+    """
+    end = len(text)
+    while end:
+        for command in _MATH_SPACING:
+            if text.endswith(command, 0, end):
+                end -= len(command)
+                break
+        else:
+            if not text[end - 1].isspace():
+                break
+            end -= 1
+    return text[:end]
+
+
+def _pull_math_citations(inner: str) -> tuple[str, list[str]]:
+    """Remove `\\text{[n]}` citations (and the spacing before them) from math."""
+    cites: list[str] = []
+    out: list[str] = []
+    pos = 0
+    for m in _MATH_CITATION_RE.finditer(inner):
+        cites.append(m.group(1))
+        out.append(_rstrip_math_spacing(inner[pos:m.start()]))
+        pos = m.end()
+    out.append(inner[pos:])
+    return "".join(out), cites
 
 
 def _normalise_math_span(text: str) -> str:
@@ -53,11 +85,11 @@ def _normalise_math_span(text: str) -> str:
     for m in _MATH_RE.finditer(text):
         display = m.group("d1") is not None or m.group("d2") is not None
         inner = next(g for g in (m.group("d1"), m.group("d2"), m.group("i1"), m.group("i2")) if g is not None)
-        cites = [c.group(1) for c in _MATH_CITATION_RE.finditer(inner)]
+        inner, cites = _pull_math_citations(inner)
         dollar_form = m.group("d2") is not None or m.group("i2") is not None
         if dollar_form and not cites:
             continue  # already renderable; leave it exactly as written
-        inner = _MATH_CITATION_RE.sub("", inner).strip()
+        inner = inner.strip()
         markers = "".join(f"[{c}]" for c in cites)
         before = text[pos:m.start()]
         if display:

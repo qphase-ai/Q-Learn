@@ -13,6 +13,7 @@ Flow (mirrors circuits_service):
 """
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 
@@ -205,8 +206,9 @@ async def run_and_stream(
                 await publish_tutor_token(str(session_id), token)
 
             # Math into the $…$ / $$…$$ forms the clients render, with any
-            # citations moved out of it, before the markers are counted.
-            content = normalise_math(content)
+            # citations moved out of it, before the markers are counted. Off the
+            # event loop: it is pure CPU on model-written text.
+            content = await asyncio.to_thread(normalise_math, content)
             # Only sources the answer actually cites; none if it cited nothing.
             cited = [chunks[i - 1] for i in cited_indices(content, len(chunks))]
             citations = _citations_from_chunks(cited)
