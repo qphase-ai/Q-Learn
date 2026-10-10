@@ -180,6 +180,16 @@ async def test_k_caps_results():
     assert [o.title for o in out] == ["D0", "D1", "D2"]
 
 
+@pytest.mark.parametrize("k", [0, -1])
+async def test_non_positive_k_returns_empty_without_touching_db(k):
+    db = AsyncMock()
+    with _embed() as embed:
+        out = await retrieve(db, "what is a qubit", k=k)
+    assert out == []
+    db.execute.assert_not_awaited()
+    embed.assert_not_awaited()
+
+
 async def test_blank_query_skips_db():
     db = AsyncMock()
     with _embed() as embed:

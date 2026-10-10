@@ -84,11 +84,11 @@ async def retrieve(
 ) -> list[RetrievedChunk]:
     """Return up to k relevant chunks, best first. Empty when nothing is relevant."""
     q = RetrievalQuery(text=query) if isinstance(query, str) else query
-    if not q.text.strip():
+    settings = get_settings()
+    top_k = k if k is not None else settings.rag_top_k
+    if top_k <= 0 or not q.text.strip():
         return []
 
-    settings = get_settings()
-    top_k = k or settings.rag_top_k
     candidate_k = max(settings.rag_candidate_k, top_k)
 
     query_vec = await aembed_text(q.text)
