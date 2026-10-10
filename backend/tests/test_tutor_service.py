@@ -139,7 +139,7 @@ class TestRunAndStream:
             patch("app.services.tutor_service.retrieve", AsyncMock(return_value=_canned_chunks())),
             patch(
                 "app.services.tutor_service.stream_tutor_answer",
-                MagicMock(return_value=_aiter(["Super", "position"])),
+                MagicMock(return_value=_aiter(["Super", "position [1]"])),
             ),
             patch("app.services.tutor_service.publish_tutor_token", spy_token),
             patch("app.services.tutor_service.publish_tutor_complete", spy_complete),
@@ -148,19 +148,19 @@ class TestRunAndStream:
 
         # tokens streamed in order
         token_args = [c.args[1] for c in spy_token.await_args_list]
-        assert token_args == ["Super", "position"]
+        assert token_args == ["Super", "position [1]"]
 
         # assistant message persisted with citations
         added = [call.args[0] for call in db.add.call_args_list]
         assistant = [a for a in added if isinstance(a, AgentMessage) and a.role == "assistant"]
         assert len(assistant) == 1
-        assert assistant[0].content == "Superposition"
+        assert assistant[0].content == "Superposition [1]"
         assert assistant[0].citations and assistant[0].citations[0]["title"] == "Superposition"
 
         # complete published with citations
         spy_complete.assert_awaited_once()
         complete_payload = spy_complete.await_args.args[1]
-        assert complete_payload["content"] == "Superposition"
+        assert complete_payload["content"] == "Superposition [1]"
         assert complete_payload["citations"][0]["title"] == "Superposition"
         assert "error" not in complete_payload
 
@@ -335,3 +335,58 @@ class TestRetrievalQuery:
         assert kw["top_score"] == pytest.approx(0.9)
         assert kw["lesson_boost"] is False
         assert kw["ms"] >= 0
+
+
+# ---------------------------------------------------------------------------
+# run_and_stream — only sources the answer cites become citations
+# ---------------------------------------------------------------------------
+
+def _two_chunks():
+    return [
+        RetrievedChunk(content="Superposition ...", title="Superposition",
+                       source_url="https://qlearn.dev/s", chunk_index=0, score=0.9),
+        RetrievedChunk(content="Hadamard ...", title="The Hadamard Gate",
+                       source_url="qlearn://lesson/h", chunk_index=0, score=0.7),
+    ]
+
+
+def _persisted_assistant(db):
+    from app.models.agent import AgentMessage
+
+    added = [call.args[0] for call in db.add.call_args_list]
+    assistant = [a for a in added if isinstance(a, AgentMessage) and a.role == "assistant"]
+    assert len(assistant) == 1
+    return assistant[0]
+
+
+class TestCitedOnlyCitations:
+    @pytest.mark.asyncio
+    async def test_answer_citing_2_gets_exactly_that_citation(self):
+        db = _make_mock_db()
+        _, _, spy_complete = await _run_capturing(
+            db, "q", chunks=_two_chunks(), tokens=("H makes a superposition ", "[2].")
+        )
+
+        expected = [{"title": "The Hadamard Gate", "url": "qlearn://lesson/h", "score": 0.7}]
+        assert _persisted_assistant(db).citations == expected
+        assert spy_complete.await_args.args[1]["citations"] == expected
+
+    @pytest.mark.asyncio
+    async def test_answer_without_markers_gets_no_citations(self):
+        db = _make_mock_db()
+        _, _, spy_complete = await _run_capturing(
+            db, "q", chunks=_two_chunks(), tokens=("No markers ", "here.")
+        )
+
+        assert _persisted_assistant(db).citations == []
+        assert spy_complete.await_args.args[1]["citations"] == []
+
+    @pytest.mark.asyncio
+    async def test_citations_follow_first_cited_order_and_ignore_out_of_range(self):
+        db = _make_mock_db()
+        _, _, spy_complete = await _run_capturing(
+            db, "q", chunks=_two_chunks(), tokens=("See [2], then [1] and [7]. Again [2].",)
+        )
+
+        titles = [c["title"] for c in spy_complete.await_args.args[1]["citations"]]
+        assert titles == ["The Hadamard Gate", "Superposition"]

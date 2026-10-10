@@ -7,8 +7,9 @@ Flow (mirrors circuits_service):
     Router enqueues run_and_stream() as a BackgroundTask (module-level so it owns
     its own DB session): load history → retrieve() with the previous user turn
     and the current lesson → stream_tutor_answer() publishing each token
-    via publish_tutor_token, persist the assistant AgentMessage + citations, then
-    publish a `complete` event. Never raises — errors publish an error `complete`.
+    via publish_tutor_token, persist the assistant AgentMessage with citations
+    for only the sources the answer cites, then publish a `complete` event.
+    Never raises — errors publish an error `complete`.
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tutor import stream_tutor_answer
+from app.agents.tutor import cited_indices, stream_tutor_answer
 from app.database import AsyncSessionLocal
 from app.exceptions import NotFoundError
 from app.models.agent import AgentSession, AgentMessage
@@ -194,7 +195,9 @@ async def run_and_stream(
                 content += token
                 await publish_tutor_token(str(session_id), token)
 
-            citations = _citations_from_chunks(chunks)
+            # Only sources the answer actually cites; none if it cited nothing.
+            cited = [chunks[i - 1] for i in cited_indices(content, len(chunks))]
+            citations = _citations_from_chunks(cited)
             assistant = AgentMessage(
                 session_id=session_id,
                 role="assistant",
