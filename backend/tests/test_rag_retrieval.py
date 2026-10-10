@@ -164,3 +164,26 @@ async def test_blank_query_skips_db():
     assert out == []
     db.execute.assert_not_awaited()
     embed.assert_not_awaited()
+
+
+async def test_sparse_arm_matches_any_query_term_with_bound_text():
+    """Long, history-aware queries must not need every term in one chunk (OR, not AND)."""
+    from sqlalchemy.dialects import postgresql
+
+    db = _db(dense=[], sparse=[])
+    question = "what does the hadamard gate do? why?'; drop table x; --"
+    with _embed():
+        await retrieve(db, question)
+
+    sparse_stmt = db.execute.await_args_list[2].args[0]
+    compiled = sparse_stmt.compile(dialect=postgresql.dialect())
+    sql = str(compiled)
+    assert "websearch_to_tsquery" not in sql
+    assert "plainto_tsquery" in sql
+    assert "to_tsquery" in sql
+    assert "replace(" in sql
+    # The OR-join literals are present and the user's text is only ever a bound parameter.
+    params = list(compiled.params.values())
+    assert " & " in params and " | " in params
+    assert question in params
+    assert "drop table" not in sql

@@ -2,8 +2,8 @@
 
 Both arms fetch up to `rag_candidate_k` chunks:
 - dense: cosine distance to the query embedding, via the HNSW index;
-- sparse: `websearch_to_tsquery('english', q)` against `document_chunks.content_tsv`,
-  ranked by `ts_rank_cd`.
+- sparse: any stemmed query term (OR) against `document_chunks.content_tsv`,
+  ranked by `ts_rank_cd`, so chunks matching more terms still rank first.
 
 A dense-only candidate must clear the `rag_min_score` similarity floor; any
 sparse match is kept. The two rankings are fused with Reciprocal Rank Fusion,
@@ -16,7 +16,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select, text
+from sqlalchemy import Text, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -62,6 +62,20 @@ def rrf_fuse(
     return sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
 
 
+def _any_term_tsquery(query_text: str):
+    """tsquery matching ANY of the query's stemmed, non-stopword terms.
+
+    `plainto_tsquery` ANDs every term, which a multi-sentence query almost never
+    satisfies. Its output is a normalised tsquery (quoted lexemes joined by ` & `),
+    so swapping the joins for ` | ` and re-parsing is safe: the user's text is only
+    ever a bound parameter. The 'simple' config re-reads the already-stemmed
+    lexemes without stemming them again. An all-stopword query yields an empty
+    tsquery, which matches nothing and does not error.
+    """
+    anded = cast(func.plainto_tsquery("english", query_text), Text)
+    return func.to_tsquery("simple", func.replace(anded, " & ", " | "))
+
+
 async def retrieve(
     db: AsyncSession, query: RetrievalQuery | str, k: int | None = None
 ) -> list[RetrievedChunk]:
@@ -90,7 +104,7 @@ async def retrieve(
     dense_rows = (await db.execute(dense_stmt)).all()
 
     # Sparse arm.
-    tsquery = func.websearch_to_tsquery("english", q.text)
+    tsquery = _any_term_tsquery(q.text)
     sparse_stmt = (
         select(DocumentChunk.id, KnowledgeDocument.content_ref_id)
         .join(KnowledgeDocument, KnowledgeDocument.id == DocumentChunk.document_id)
