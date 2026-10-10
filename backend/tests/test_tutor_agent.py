@@ -210,6 +210,42 @@ def test_cited_indices_filters_dedupes_and_keeps_order():
     assert tutor.cited_indices("use q[1] then see [2]", 3) == [2]
 
 
+FENCED = "Measure both [1]:\n```python\nqc.measure([0, 1], [0, 1])\nx = data[2]\n```\nDone [2]."
+
+
+def test_markers_inside_fenced_code_are_not_citations():
+    assert tutor.cited_indices(FENCED, 3) == [1, 2]
+    assert tutor.renumber_citations("```\nl = [2]\n```\nsee [3]", 3) == "```\nl = [2]\n```\nsee [1]"
+    # an unterminated fence runs to the end
+    assert tutor.cited_indices("see [1]\n```\nl = [2]", 3) == [1]
+
+
+def test_markers_inside_inline_code_are_not_citations():
+    assert tutor.cited_indices("call `f([1], [2])` and `[3]` then [2]", 3) == [2]
+    assert tutor.renumber_citations("``a [1]`` b [2]", 2) == "``a [1]`` b [1]"
+
+
+def test_list_arguments_in_unquoted_code_are_not_citations():
+    # Inside an open call's parentheses, [n] is an argument, not a citation.
+    assert tutor.cited_indices("Use qc.measure([0], [1]) to read out [2].", 3) == [2]
+    # prose parentheses still hold citations
+    assert tutor.cited_indices("(see [1]) and also ([2])", 3) == [1]
+
+
+def test_comma_list_markers_expand_to_each_source():
+    assert tutor.cited_indices("Both agree [3, 1] and [1,2].", 3) == [3, 1, 2]
+    assert tutor.cited_indices("only [1, 9]", 2) == [1]
+    assert tutor.renumber_citations("Both agree [3, 1], then [2].", 3) == "Both agree [1, 2], then [3]."
+
+
+def test_strip_citations_leaves_code_intact():
+    strip = tutor._strip_citations
+    assert strip("Run qc.measure([0], [0]) now [1].") == "Run qc.measure([0], [0]) now."
+    assert strip("Lists [1, 2] and [3][4] go.") == "Lists and go."
+    assert strip(FENCED) == "Measure both:\n```python\nqc.measure([0, 1], [0, 1])\nx = data[2]\n```\nDone."
+    assert strip("keep `a [1]` here [2]") == "keep `a [1]` here"
+
+
 @pytest.mark.asyncio
 async def test_chunk_text_cannot_close_the_sources_block(monkeypatch):
     evil = RetrievedChunk(

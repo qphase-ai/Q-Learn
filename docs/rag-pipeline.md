@@ -113,7 +113,12 @@ the retrieval that follows.
 - **Citations:** after streaming, only the sources the answer actually cites
   (`[n]` markers, in first-cited order) are persisted and published as
   `citations: [{title, url, score}]`. An answer without markers gets `[]`. The
-  payload shape is unchanged for web and mobile.
+  answer's markers are then renumbered to their position in that list (`[2] …
+  [4]` becomes `[1] … [2]`), and `complete.content` carries the renumbered text,
+  which clients show in place of the streamed tokens. A marker is `[n]` or a
+  comma list `[n, m]`; brackets inside code (fenced blocks, inline backticks, or
+  the arguments of a call such as `qc.measure([0], [0])`) and indexing (`q[1]`)
+  are never citations. The payload shape is unchanged for web and mobile.
 
 Each turn logs `rag_retrieved` (`n`, `top_score`, `lesson_boost`, `ms`).
 
