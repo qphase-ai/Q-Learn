@@ -13,9 +13,26 @@ from app.rag.retrieval import RetrievedChunk
 from app.schemas.tutor import TutorChatRequest
 
 
+class _Savepoint:
+    """Stands in for AsyncSession.begin_nested(): records the exception it saw."""
+
+    def __init__(self):
+        self.entered = False
+        self.exc = None
+
+    async def __aenter__(self):
+        self.entered = True
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        self.exc = exc
+        return False  # never swallow, like the real savepoint
+
+
 def _make_mock_db():
     db = AsyncMock()
     db.add = MagicMock()
+    db.begin_nested = MagicMock(return_value=_Savepoint())
     db.flush = AsyncMock()
     db.commit = AsyncMock()
     # db.execute is AsyncMock by default; its return_value must support
@@ -310,6 +327,32 @@ class TestRetrievalQuery:
 
         context = stream_mock.call_args.kwargs["context"] or {}
         assert "concept" not in context
+        assert "error" not in spy_complete.await_args.args[1]
+
+    @pytest.mark.asyncio
+    async def test_lesson_lookup_runs_in_a_savepoint(self):
+        db = _make_mock_db()
+        db.scalar = AsyncMock(return_value="The Hadamard Gate")
+
+        await _run_capturing(db, "explain this", lesson_id=uuid.uuid4())
+
+        db.begin_nested.assert_called_once()
+        assert db.begin_nested.return_value.entered
+
+    @pytest.mark.asyncio
+    async def test_failed_lesson_lookup_rolls_back_its_savepoint_and_still_retrieves(self):
+        db = _make_mock_db()
+        boom = RuntimeError("relation lessons does not exist")
+        db.scalar = AsyncMock(side_effect=boom)
+
+        retrieve_mock, stream_mock, spy_complete = await _run_capturing(
+            db, "explain this", lesson_id=uuid.uuid4()
+        )
+
+        # the error left through the savepoint, so only the savepoint is rolled back
+        assert db.begin_nested.return_value.exc is boom
+        retrieve_mock.assert_awaited_once()
+        assert "concept" not in (stream_mock.call_args.kwargs["context"] or {})
         assert "error" not in spy_complete.await_args.args[1]
 
     @pytest.mark.asyncio

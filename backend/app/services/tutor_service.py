@@ -123,11 +123,15 @@ async def _lesson_concept(db: AsyncSession, lesson_id: uuid.UUID | None) -> str 
     lesson_id is a content_refs id; legacy `lessons` rows share the same UUID
     (see app/models/content_ref.py). An id with no lessons row (e.g. a
     Payload-only lesson) keeps the default concept.
+
+    The lookup runs in a savepoint: a DB error here would otherwise abort the
+    whole transaction, and the retrieval that follows would fail with it.
     """
     if lesson_id is None:
         return None
     try:
-        return await db.scalar(select(Lesson.title).where(Lesson.id == lesson_id))
+        async with db.begin_nested():
+            return await db.scalar(select(Lesson.title).where(Lesson.id == lesson_id))
     except Exception as exc:  # noqa: BLE001 — the concept is a nice-to-have
         logger.warning("tutor_lesson_lookup_failed", lesson_id=str(lesson_id), error=str(exc))
         return None

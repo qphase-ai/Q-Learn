@@ -29,6 +29,17 @@ from app.rag.retrieval import RetrievedChunk
 # indexing in code (q[1], f(x)[0]) isn't mistaken for one; [1][2] still counts.
 _CITATION_RE = re.compile(r"(?<![\w)])\[(\d+)\]")
 _CITATION_STRIP_RE = re.compile(r"[ \t]*(?<![\w)])\[\d+\]")
+# A closing tag of one of the data blocks, tolerant of case and inner spaces.
+_DATA_CLOSING_TAG_RE = re.compile(r"<\s*/\s*(sources|student_circuit)\s*>", re.IGNORECASE)
+
+
+def _neutralise_closing_tags(text: str) -> str:
+    """Escape </sources> and </student_circuit> inside inserted data.
+
+    Chunk and circuit text is untrusted; a literal closing tag in it would end
+    the data block early and let the rest read as instructions.
+    """
+    return _DATA_CLOSING_TAG_RE.sub(lambda m: f"&lt;/{m.group(1)}&gt;", text)
 
 
 def _format_context(retrieved_chunks: list[RetrievedChunk]) -> str:
@@ -59,11 +70,12 @@ def _user_turn(
 ) -> str:
     """Sources (or the not-covered note), then the circuit, then the question."""
     if retrieved_chunks:
-        turn = TUTOR_SOURCES_BLOCK.format(context=_format_context(retrieved_chunks))
+        context = _neutralise_closing_tags(_format_context(retrieved_chunks))
+        turn = TUTOR_SOURCES_BLOCK.format(context=context)
     else:
         turn = TUTOR_NO_SOURCES_NOTE
     if circuit:
-        turn += TUTOR_CIRCUIT_BLOCK.format(circuit=circuit)
+        turn += TUTOR_CIRCUIT_BLOCK.format(circuit=_neutralise_closing_tags(circuit))
     return turn + TUTOR_QUESTION_BLOCK.format(question=question)
 
 
