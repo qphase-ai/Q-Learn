@@ -55,7 +55,7 @@ External compute (quantum simulation, student code) exits the process via `Sandb
 | `routers/` | Thin route handlers — delegate all logic to services; no business logic here |
 | `services/` | Business logic — one service file per domain |
 | `agents/` | LangGraph agent definitions — all prompts/configs centralized here |
-| `rag/` | RAG pipeline: BM25 + pgvector hybrid, RRF fusion, Cross-Encoder reranker |
+| `rag/` | RAG pipeline: pgvector HNSW + Postgres FTS hybrid, RRF fusion, relevance floor, lesson boost; no reranker yet (`../docs/rag-pipeline.md`) |
 | `quantum/` | `QuantumBackend` ABC (`base.py`), `QiskitAerAdapter` (`sandbox_adapter.py`), `QuantumExecutionService` (`execution_service.py`) |
 | `core/` | Shared utilities |
 | `alembic/` | Migration scripts — **only way** to change the schema |
@@ -114,7 +114,7 @@ All endpoints return:
 - **Never** call `Base.metadata.create_all()` — Alembic only
 - **Always** use SQLAlchemy 2.x async patterns (`async with session`, `await session.execute(select(...))`)
 - ORM models live in `app/models/` — one file per domain group
-- `pgvector` column is `Vector(384)` in `knowledge_embeddings`; index type `ivfflat`
+- `pgvector` column is `Vector(384)` in `knowledge_embeddings`; index type HNSW (cosine). `document_chunks.content_tsv` is a generated `tsvector` with a GIN index
 - UUID primary keys throughout; `server_default=func.now()` for timestamps
 
 ---

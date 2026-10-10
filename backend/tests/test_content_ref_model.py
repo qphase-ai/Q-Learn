@@ -63,5 +63,6 @@ def test_content_refs_migration_is_single_head():
     cfg = Config(str(BACKEND_DIR / "alembic.ini"))
     cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["d4e5f6a7b8c9"]
+    assert "d4e5f6a7b8c9" in {r.revision for r in script.walk_revisions()}
+    assert len(script.get_heads()) == 1
     assert script.get_revision("d4e5f6a7b8c9").down_revision == "c3d4e5f6a7b8"

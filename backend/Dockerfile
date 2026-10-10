@@ -7,6 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pyproject.toml .
 RUN pip install --no-cache-dir -e .
+# Bake the embedding model weights into the image so prod never downloads them
+# on the first request.
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+# From here on the weights come from the baked cache only: no Hub lookups at
+# runtime (startup can't hang on, or fail because of, the network).
+ENV HF_HUB_OFFLINE=1
 
 COPY . .
 

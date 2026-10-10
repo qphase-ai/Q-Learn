@@ -89,7 +89,7 @@ Pattern: **Router → Service → Repository → SQLAlchemy model → PostgreSQL
 | `routers/` | Thin route handlers — delegate all logic to services |
 | `services/` | Business logic |
 | `agents/` | LangGraph agent definitions — centralize all prompts/configs here |
-| `rag/` | RAG pipeline (BM25 + pgvector + RRF + Cross-Encoder reranker) |
+| `rag/` | RAG pipeline: pgvector HNSW + Postgres full-text search, fused with RRF, relevance floor, lesson boost (no reranker yet). Ingest with `python -m scripts.ingest_lessons` + `scripts.seed_knowledge`; eval with `scripts.rag_eval`. See `docs/rag-pipeline.md` |
 | `quantum/` | `QiskitAerAdapter` and `QuantumBackend` interface — never import Qiskit directly in services |
 | `core/` | Shared utilities |
 

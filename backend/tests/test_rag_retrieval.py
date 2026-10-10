@@ -1,71 +1,222 @@
-"""Tests for RAG retrieval — retrieve() with a mocked DB session.
+"""Tests for RAG retrieval — hybrid retrieve() with a mocked DB session.
 
-Hermetic: embed_text is patched; db.execute returns canned (chunk, doc, distance)
-rows. We assert retrieve maps rows to RetrievedChunk with citation metadata,
-preserves DB ordering, and converts cosine distance to a similarity score.
+Hermetic: aembed_text is patched; db.execute returns canned results in call
+order: SET LOCAL hnsw.ef_search, dense candidates (chunk_id, distance,
+content_ref_id), sparse candidates (chunk_id, distance, content_ref_id), then
+the hydrate query (chunk, doc). With the default settings rag_min_score is 0.30
+(any candidate) and rag_min_score_fts is 0.20 (a candidate the FTS arm matched).
 """
+import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.rag.retrieval import retrieve, RetrievedChunk
+from app.rag.retrieval import RetrievalQuery, RetrievedChunk, retrieve
 
 
-def _make_chunk(content: str, index: int) -> MagicMock:
+def _chunk(content: str, index: int = 0) -> MagicMock:
     c = MagicMock()
+    c.id = uuid.uuid4()
     c.content = content
     c.chunk_index = index
     return c
 
 
-def _make_doc(title: str, url: str) -> MagicMock:
+def _doc(title: str, url: str | None = None, content_ref_id=None) -> MagicMock:
     d = MagicMock()
     d.title = title
-    d.source_url = url
+    d.source_url = url or f"https://example.com/{title.lower()}"
+    d.content_ref_id = content_ref_id
     return d
 
 
-def _make_result(rows):
+def _result(rows):
     result = MagicMock()
     result.all.return_value = rows
     return result
 
 
-@pytest.mark.asyncio
-async def test_retrieve_maps_rows_to_retrieved_chunks_in_order():
-    rows = [
-        (_make_chunk("Superposition lets a qubit be 0 and 1.", 0),
-         _make_doc("Superposition", "https://example.com/superposition"), 0.10),
-        (_make_chunk("The Hadamard gate creates superposition.", 1),
-         _make_doc("Hadamard", "https://example.com/hadamard"), 0.25),
+def _db(dense, sparse, hydrate=None):
+    """dense and sparse: [(chunk, doc, distance)], hydrate: [(chunk, doc)]."""
+    if hydrate is None:
+        seen: dict = {}
+        for chunk, doc, *_ in [*dense, *sparse]:
+            seen[chunk.id] = (chunk, doc)
+        hydrate = list(seen.values())
+    results = [
+        _result([]),  # SET LOCAL
+        _result([(c.id, dist, d.content_ref_id) for c, d, dist in dense]),
+        _result([(c.id, dist, d.content_ref_id) for c, d, dist in sparse]),
+        _result(hydrate),
     ]
     db = AsyncMock()
-    db.execute = AsyncMock(return_value=_make_result(rows))
+    db.execute = AsyncMock(side_effect=results)
+    return db
 
-    with patch("app.rag.retrieval.embed_text", return_value=[0.1] * 384):
-        out = await retrieve(db, "what is superposition", k=5)
 
-    assert len(out) == 2
+def _embed():
+    return patch("app.rag.retrieval.aembed_text", AsyncMock(return_value=[0.1] * 384))
+
+
+async def test_maps_rows_to_retrieved_chunks_in_order_from_plain_string():
+    s, h = _chunk("Superposition lets a qubit be 0 and 1."), _chunk("The Hadamard gate.", 1)
+    sd, hd = _doc("Superposition"), _doc("Hadamard")
+    db = _db(dense=[(s, sd, 0.10), (h, hd, 0.25)], sparse=[])
+
+    with _embed() as embed:
+        out = await retrieve(db, "what is superposition")
+
+    embed.assert_awaited_once_with("what is superposition")
+    assert [o.title for o in out] == ["Superposition", "Hadamard"]
     assert all(isinstance(o, RetrievedChunk) for o in out)
-
     first = out[0]
     assert first.content.startswith("Superposition lets")
-    assert first.title == "Superposition"
     assert first.source_url == "https://example.com/superposition"
     assert first.chunk_index == 0
-    # score is a cosine similarity (1 - distance); higher for the closer row
+    assert first.chunk_id == s.id
+    # score is the dense cosine similarity (1 - distance)
     assert first.score == pytest.approx(0.90)
     assert out[1].score == pytest.approx(0.75)
-    assert first.score > out[1].score
 
 
-@pytest.mark.asyncio
-async def test_retrieve_passes_k_as_limit():
-    db = AsyncMock()
-    db.execute = AsyncMock(return_value=_make_result([]))
+async def test_sets_hnsw_ef_search_before_dense_query():
+    db = _db(dense=[], sparse=[])
+    with _embed():
+        await retrieve(db, "query")
+    first_stmt = str(db.execute.await_args_list[0].args[0])
+    assert "SET LOCAL hnsw.ef_search" in first_stmt
 
-    with patch("app.rag.retrieval.embed_text", return_value=[0.0] * 384):
-        out = await retrieve(db, "query", k=3)
+
+async def test_below_floor_dense_only_hit_is_dropped():
+    good, weak = _chunk("relevant"), _chunk("unrelated")
+    db = _db(dense=[(good, _doc("Good"), 0.40), (weak, _doc("Weak"), 0.85)], sparse=[])
+
+    with _embed():
+        out = await retrieve(db, "q")
+
+    assert [o.title for o in out] == ["Good"]
+
+
+async def test_sparse_only_hit_above_fts_floor_is_kept_with_its_dense_score():
+    kw = _chunk("CNOT entangles two qubits")
+    db = _db(dense=[], sparse=[(kw, _doc("CNOT"), 0.75)])
+
+    with _embed():
+        out = await retrieve(db, "CNOT")
+
+    assert [o.title for o in out] == ["CNOT"]
+    assert out[0].score == pytest.approx(0.25)
+
+
+async def test_sparse_hit_below_fts_floor_is_dropped():
+    """A shared word alone ("transformer" ~ "Fourier Transform") is not relevance."""
+    stray = _chunk("H is the 1-qubit Quantum Fourier Transform")
+    db = _db(dense=[], sparse=[(stray, _doc("Hadamard"), 0.96)])
+
+    with _embed():
+        out = await retrieve(db, "how does a transformer neural network use attention")
 
     assert out == []
-    db.execute.assert_awaited_once()
+    assert db.execute.await_count == 3  # no hydrate
+
+
+async def test_below_floor_dense_hit_kept_when_sparse_also_matched():
+    c = _chunk("CNOT")
+    doc = _doc("CNOT")
+    db = _db(dense=[(c, doc, 0.75)], sparse=[(c, doc, 0.75)])
+
+    with _embed():
+        out = await retrieve(db, "CNOT")
+
+    assert [o.title for o in out] == ["CNOT"]
+    assert out[0].score == pytest.approx(0.25)
+
+
+async def test_dense_only_hit_between_the_floors_is_dropped():
+    c = _chunk("near miss")
+    db = _db(dense=[(c, _doc("Near"), 0.75)], sparse=[])
+
+    with _embed():
+        out = await retrieve(db, "q")
+
+    assert out == []
+
+
+async def test_lesson_boost_reorders():
+    lesson_id = uuid.uuid4()
+    other, lesson = _chunk("other"), _chunk("lesson")
+    dense = [(other, _doc("Other"), 0.10), (lesson, _doc("Lesson", content_ref_id=lesson_id), 0.20)]
+
+    with _embed():
+        plain = await retrieve(_db(dense=dense, sparse=[]), RetrievalQuery(text="q"))
+        boosted = await retrieve(
+            _db(dense=dense, sparse=[]), RetrievalQuery(text="q", content_ref_id=lesson_id)
+        )
+
+    assert [o.title for o in plain] == ["Other", "Lesson"]
+    assert [o.title for o in boosted] == ["Lesson", "Other"]
+
+
+async def test_zero_candidates_returns_empty_without_hydrate_query():
+    db = _db(dense=[], sparse=[])
+    with _embed():
+        out = await retrieve(db, "recipe for chocolate cake")
+    assert out == []
+    assert db.execute.await_count == 3  # SET LOCAL, dense, sparse — no hydrate
+
+
+async def test_all_dense_below_floor_returns_empty():
+    db = _db(dense=[(_chunk("x"), _doc("X"), 0.9)], sparse=[])
+    with _embed():
+        out = await retrieve(db, "q")
+    assert out == []
+    assert db.execute.await_count == 3
+
+
+async def test_k_caps_results():
+    rows = [(_chunk(f"c{i}"), _doc(f"D{i}"), 0.1 + i * 0.01) for i in range(6)]
+    with _embed():
+        out = await retrieve(_db(dense=rows, sparse=[]), "q", k=3)
+    assert [o.title for o in out] == ["D0", "D1", "D2"]
+
+
+@pytest.mark.parametrize("k", [0, -1])
+async def test_non_positive_k_returns_empty_without_touching_db(k):
+    db = AsyncMock()
+    with _embed() as embed:
+        out = await retrieve(db, "what is a qubit", k=k)
+    assert out == []
+    db.execute.assert_not_awaited()
+    embed.assert_not_awaited()
+
+
+async def test_blank_query_skips_db():
+    db = AsyncMock()
+    with _embed() as embed:
+        out = await retrieve(db, "   ")
+    assert out == []
+    db.execute.assert_not_awaited()
+    embed.assert_not_awaited()
+
+
+async def test_sparse_arm_matches_any_query_term_with_bound_text():
+    """Long, history-aware queries must not need every term in one chunk (OR, not AND)."""
+    from sqlalchemy.dialects import postgresql
+
+    db = _db(dense=[], sparse=[])
+    question = "what does the hadamard gate do? why?'; drop table x; --"
+    with _embed():
+        await retrieve(db, question)
+
+    sparse_stmt = db.execute.await_args_list[2].args[0]
+    compiled = sparse_stmt.compile(dialect=postgresql.dialect())
+    sql = str(compiled)
+    assert "websearch_to_tsquery" not in sql
+    assert "plainto_tsquery" in sql
+    assert "to_tsquery" in sql
+    assert "replace(" in sql
+    # The OR-join literals are present and the user's text is only ever a bound parameter.
+    params = list(compiled.params.values())
+    assert " & " in params and " | " in params
+    assert question in params
+    assert "drop table" not in sql

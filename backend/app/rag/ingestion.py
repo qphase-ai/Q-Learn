@@ -2,24 +2,36 @@
 
 `chunk_text` is a pure whitespace-token windowing helper. `ingest_document`
 writes one KnowledgeDocument, N DocumentChunk rows, and N KnowledgeEmbedding
-rows (vectors from `embed_batch`). No schema migration — the knowledge tables
-already exist.
+rows (vectors from `embed_batch`). `source_url` is a document's identity:
+re-ingesting it replaces the old document, so ingestion scripts are safe to
+re-run.
 """
 from __future__ import annotations
 
+import uuid
+
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.models.knowledge import KnowledgeDocument, DocumentChunk, KnowledgeEmbedding
 from app.rag.embeddings import embed_batch
 
 
-def chunk_text(text: str, size: int = 800, overlap: int = 120) -> list[str]:
+def chunk_text(text: str, size: int | None = None, overlap: int | None = None) -> list[str]:
     """Split text into overlapping windows of whitespace tokens.
 
     Windows are `size` tokens wide and advance by `size - overlap`, so adjacent
     chunks share `overlap` tokens. Every token is covered; the final window is
     clamped to the end of the text. Returns [] for empty text.
+
+    `size` and `overlap` default to settings.rag_chunk_words / rag_chunk_overlap,
+    which fit the embedder's 256-wordpiece window.
     """
+    if size is None or overlap is None:
+        settings = get_settings()
+        size = settings.rag_chunk_words if size is None else size
+        overlap = settings.rag_chunk_overlap if overlap is None else overlap
     words = text.split()
     if not words:
         return []
@@ -43,33 +55,53 @@ async def ingest_document(
     source_url: str | None,
     source_type: str,
     text: str,
+    content_ref_id: uuid.UUID | None = None,
 ) -> KnowledgeDocument:
-    """Create a document + its chunks + embeddings, then commit.
+    """Create (or replace) a document + its chunks + embeddings, then commit.
 
-    Embeddings are computed in a single `embed_batch` call over the chunk list.
+    If a document with the same `source_url` exists it is deleted first (its
+    chunks and embeddings cascade), in the same transaction as the insert, so a
+    re-run leaves exactly one copy and a failure leaves the old one in place.
+    `content_ref_id` links an ingested lesson to its content_refs row, which
+    retrieval uses to boost the student's current lesson.
+
+    Embeddings are computed in a single `embed_batch` call over the chunk list,
+    before anything is written.
     """
-    document = KnowledgeDocument(
-        title=title,
-        source_url=source_url,
-        source_type=source_type,
-    )
-    db.add(document)
-    await db.flush()  # assign document.id for the chunk FKs
-
     chunks = chunk_text(text)
     vectors = embed_batch(chunks) if chunks else []
 
-    for index, (content, vector) in enumerate(zip(chunks, vectors)):
-        chunk = DocumentChunk(
-            document_id=document.id,
-            content=content,
-            chunk_index=index,
-            token_count=len(content.split()),
+    try:
+        if source_url is not None:
+            await db.execute(
+                delete(KnowledgeDocument)
+                .where(KnowledgeDocument.source_url == source_url)
+                .execution_options(synchronize_session=False)
+            )
+
+        document = KnowledgeDocument(
+            title=title,
+            source_url=source_url,
+            source_type=source_type,
+            content_ref_id=content_ref_id,
         )
-        db.add(chunk)
-        await db.flush()  # assign chunk.id for the embedding FK
+        db.add(document)
+        await db.flush()  # assign document.id for the chunk FKs
 
-        db.add(KnowledgeEmbedding(chunk_id=chunk.id, embedding=vector))
+        for index, (content, vector) in enumerate(zip(chunks, vectors)):
+            chunk = DocumentChunk(
+                document_id=document.id,
+                content=content,
+                chunk_index=index,
+                token_count=len(content.split()),
+            )
+            db.add(chunk)
+            await db.flush()  # assign chunk.id for the embedding FK
 
-    await db.commit()
+            db.add(KnowledgeEmbedding(chunk_id=chunk.id, embedding=vector))
+
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
     return document
