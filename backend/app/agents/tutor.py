@@ -32,8 +32,99 @@ _CITATION_RE = re.compile(r"(?<![\w)(\[])\[(\d+(?:[ \t]*,[ \t]*\d+)*)\]")
 # Code the model writes: fenced blocks (an unclosed fence runs to the end) and
 # inline spans. Brackets in code are never citations.
 _CODE_RE = re.compile(r"```.*?(?:```|\Z)|(`+)[^\n]*?\1", re.DOTALL)
+# Math in an answer: \[…\] or $$…$$ (display), \(…\) or $…$ (inline). Clients
+# render only the dollar forms.
+_MATH_RE = re.compile(
+    r"\\\[(?P<d1>.+?)\\\]|\$\$(?P<d2>.+?)\$\$|\\\((?P<i1>[^\n]+?)\\\)|(?<!\$)\$(?P<i2>[^$\n]+?)\$",
+    re.DOTALL,
+)
+# A citation the model put inside math, e.g. `\text{[1]}`. Anchored on the literal
+# `\text{` so matching stays linear; the spacing before it (`\quad`, `\,`, ...)
+# is trimmed separately by _rstrip_math_spacing.
+_MATH_CITATION_RE = re.compile(r"\\text\{[ \t]*\[(\d+(?:[ \t]*,[ \t]*\d+)*)\][ \t]*\}")
+_MATH_SPACING = ("\\qquad", "\\quad", "\\,", "\\;", "\\:", "\\!", "\\ ", "~")
 # A closing tag of one of the data blocks, tolerant of case and inner spaces.
 _DATA_CLOSING_TAG_RE = re.compile(r"<\s*/\s*(sources|student_circuit)\s*>", re.IGNORECASE)
+
+
+def _rstrip_math_spacing(text: str) -> str:
+    """Drop trailing whitespace and LaTeX spacing commands (`\\quad`, `\\,`, `~`).
+
+    Scans back from the end one token at a time, so it stays linear.
+    """
+    end = len(text)
+    while end:
+        for command in _MATH_SPACING:
+            if text.endswith(command, 0, end):
+                end -= len(command)
+                break
+        else:
+            if not text[end - 1].isspace():
+                break
+            end -= 1
+    return text[:end]
+
+
+def _pull_math_citations(inner: str) -> tuple[str, list[str]]:
+    """Remove `\\text{[n]}` citations (and the spacing before them) from math."""
+    cites: list[str] = []
+    out: list[str] = []
+    pos = 0
+    for m in _MATH_CITATION_RE.finditer(inner):
+        cites.append(m.group(1))
+        out.append(_rstrip_math_spacing(inner[pos:m.start()]))
+        pos = m.end()
+    out.append(inner[pos:])
+    return "".join(out), cites
+
+
+def _normalise_math_span(text: str) -> str:
+    """normalise_math for text with no code in it."""
+    out: list[str] = []
+    pos = 0
+    for m in _MATH_RE.finditer(text):
+        display = m.group("d1") is not None or m.group("d2") is not None
+        inner = next(g for g in (m.group("d1"), m.group("d2"), m.group("i1"), m.group("i2")) if g is not None)
+        inner, cites = _pull_math_citations(inner)
+        dollar_form = m.group("d2") is not None or m.group("i2") is not None
+        if dollar_form and not cites:
+            continue  # already renderable; leave it exactly as written
+        inner = inner.strip()
+        markers = "".join(f"[{c}]" for c in cites)
+        before = text[pos:m.start()]
+        if display:
+            if markers:
+                body = before.rstrip()
+                before = f"{body} {markers}{before[len(body):]}"
+            if before and not before.endswith("\n"):
+                before += "\n"
+            block = f"$$\n{inner}\n$$"
+            if m.end() < len(text) and text[m.end()] != "\n":
+                block += "\n"
+            out.append(before + block)
+        else:
+            out.append(before + f"${inner}$" + (f" {markers}" if markers else ""))
+        pos = m.end()
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def normalise_math(answer: str) -> str:
+    """Rewrite the answer's math into the delimiters the clients render.
+
+    Web (remark-math) and mobile only recognise `$…$` and `$$…$$`; `\\[…\\]` shows
+    up as "[ … ]". Display math goes on its own lines, and citations the model
+    put inside math (`\\quad\\text{[1]}`) move outside it so they render as
+    citations. Code is left untouched.
+    """
+    out: list[str] = []
+    pos = 0
+    for code in _CODE_RE.finditer(answer):
+        out.append(_normalise_math_span(answer[pos:code.start()]))
+        out.append(code.group(0))
+        pos = code.end()
+    out.append(_normalise_math_span(answer[pos:]))
+    return "".join(out)
 
 
 def _neutralise_closing_tags(text: str) -> str:

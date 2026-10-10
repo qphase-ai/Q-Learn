@@ -98,8 +98,10 @@ the retrieval that follows.
 
 ## Prompt layout and citations
 
-- **System message:** role, level, concept, citation rules and LaTeX rules
-  only. No retrieved text.
+- **System message:** role, level, concept, citation rules, answer format
+  (direct answer first, short paragraphs, about 250 words, a one-line takeaway)
+  and LaTeX rules (`$…$` and `$$…$$` only, citations never inside math). No
+  retrieved text.
 - **History:** earlier turns. `[n]` markers are stripped from earlier
   answers, because those numbers referred to other sources.
 - **Latest user turn:** `<sources>` with numbered chunks (`[1] Title: text`),
@@ -107,6 +109,11 @@ the retrieval that follows.
   are marked as data, not instructions. Any `</sources>` or `</student_circuit>`
   inside chunk or circuit text is escaped (`&lt;/sources&gt;`), so data cannot
   close its block early.
+- **Math normalisation:** web (remark-math) and mobile render only `$…$` and
+  `$$…$$`. Before citations are counted, `normalise_math` rewrites any `\[…\]`
+  and `\(…\)` the model still writes into those forms, puts display math on its
+  own lines, and moves citations written inside math (`\quad\text{[1]}`) out
+  into the prose. Code is left untouched.
 - **No sources:** when retrieval returns nothing, a `<no_sources>` note replaces
   the block. The tutor opens with "This isn't covered in the course material
   yet", answers from general knowledge, and cites nothing.

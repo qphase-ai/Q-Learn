@@ -292,3 +292,46 @@ async def test_circuit_text_cannot_close_the_student_circuit_block(monkeypatch):
 def test_neutralise_leaves_ordinary_text_alone():
     text = "a < b and c > d; <sources> is fine; H|0> = |+>"
     assert tutor._neutralise_closing_tags(text) == text
+
+
+def test_normalise_math_converts_bracket_delimiters_to_dollars():
+    # clients render only $…$ / $$…$$; \[…\] showed up as "[ … ]"
+    answer = "State:\n\\[ |\\psi\\rangle = \\alpha|0\\rangle \\]\nwith \\(\\alpha\\) complex."
+    assert tutor.normalise_math(answer) == (
+        "State:\n$$\n|\\psi\\rangle = \\alpha|0\\rangle\n$$\nwith $\\alpha$ complex."
+    )
+
+
+def test_normalise_math_moves_citations_out_of_display_math():
+    answer = "must satisfy\n\\[ |\\alpha|^2+|\\beta|^2=1 \\quad\\text{[1]} . \\]\nso"
+    assert tutor.normalise_math(answer) == "must satisfy [1]\n$$\n|\\alpha|^2+|\\beta|^2=1 .\n$$\nso"
+
+
+def test_normalise_math_moves_citations_out_of_dollar_math():
+    assert tutor.normalise_math("$$ H^2 = I \;\\text{[2]} $$") == " [2]\n$$\nH^2 = I\n$$"
+    assert tutor.normalise_math("so $p=1/2\\ \\text{[3]}$ here") == "so $p=1/2$ [3] here"
+
+
+def test_normalise_math_leaves_code_and_plain_text_alone():
+    code = "```python\nx = r'\\[ 1 \\]'\n```"
+    assert tutor.normalise_math(code) == code
+    assert tutor.normalise_math("`\\(a\\)` and $a$ [1]") == "`\\(a\\)` and $a$ [1]"
+    assert tutor.normalise_math("no math [1].") == "no math [1]."
+
+
+def test_normalise_math_stays_fast_on_pathological_input():
+    # whitespace-heavy math once made the in-math citation regex backtrack
+    # cubically (2,000 spaces took ~8 s on the event loop)
+    import time
+
+    samples = [
+        "\\[ x" + " " * 20000 + "y \\]",
+        "$$ " + "\\, " * 5000 + "$$",
+        "\\[" * 5000,
+        "$" * 20000,
+        "\\[ a " + "\\quad " * 3000 + "\\text{[1]} \\]",
+    ]
+    start = time.perf_counter()
+    for s in samples:
+        tutor.normalise_math(s)
+    assert time.perf_counter() - start < 1.0
