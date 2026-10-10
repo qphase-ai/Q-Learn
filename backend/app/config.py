@@ -84,6 +84,11 @@ class Settings(BaseSettings):
     # registers published content in content_refs. Empty disables the endpoint.
     cms_webhook_secret: str = ""
 
+    # RAG — chunk width in words. Must stay <= embeddings.MAX_WORDS_PER_CHUNK so
+    # the embedder sees the whole chunk (see app/rag/embeddings.py).
+    rag_chunk_words: int = 200
+    rag_chunk_overlap: int = 40
+
 
 @lru_cache
 def get_settings() -> Settings:

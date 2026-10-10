@@ -9,17 +9,25 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.models.knowledge import KnowledgeDocument, DocumentChunk, KnowledgeEmbedding
 from app.rag.embeddings import embed_batch
 
 
-def chunk_text(text: str, size: int = 800, overlap: int = 120) -> list[str]:
+def chunk_text(text: str, size: int | None = None, overlap: int | None = None) -> list[str]:
     """Split text into overlapping windows of whitespace tokens.
 
     Windows are `size` tokens wide and advance by `size - overlap`, so adjacent
     chunks share `overlap` tokens. Every token is covered; the final window is
     clamped to the end of the text. Returns [] for empty text.
+
+    `size` and `overlap` default to settings.rag_chunk_words / rag_chunk_overlap,
+    which fit the embedder's 256-wordpiece window.
     """
+    if size is None or overlap is None:
+        settings = get_settings()
+        size = settings.rag_chunk_words if size is None else size
+        overlap = settings.rag_chunk_overlap if overlap is None else overlap
     words = text.split()
     if not words:
         return []

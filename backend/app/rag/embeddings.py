@@ -9,6 +9,10 @@ from __future__ import annotations
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384
+# all-MiniLM-L6-v2 truncates input at 256 wordpieces. English prose runs about
+# 1.3 wordpieces per word, so ~200 words is the widest chunk embedded in full.
+# settings.rag_chunk_words must not exceed this.
+MAX_WORDS_PER_CHUNK = 200
 
 _model = None
 

@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from app.config import get_settings
+from app.rag import embeddings
 from app.rag.ingestion import chunk_text, ingest_document
 from app.models.knowledge import KnowledgeDocument, DocumentChunk, KnowledgeEmbedding
 
@@ -43,6 +45,28 @@ def test_chunk_text_splits_with_overlap_and_covers_all_tokens():
         seen.update(c.split())
     assert seen == set(words)
     assert "w999" in chunks[-1].split()
+
+
+def test_chunk_text_defaults_fit_the_embedder_window():
+    """Default chunks are <= 200 words and adjacent chunks share exactly 40."""
+    text = " ".join(f"w{i}" for i in range(1000))
+
+    chunks = [c.split() for c in chunk_text(text)]
+
+    assert len(chunks) > 1
+    assert all(len(c) <= 200 for c in chunks)
+    for prev, nxt in zip(chunks, chunks[1:]):
+        assert len(set(prev) & set(nxt)) == 40
+        assert prev[-40:] == nxt[:40]
+
+
+def test_chunk_words_fit_embedder_max_words():
+    """A chunk wider than the embedder's window would be silently truncated."""
+    settings = get_settings()
+    assert settings.rag_chunk_words == 200
+    assert settings.rag_chunk_overlap == 40
+    assert embeddings.MAX_WORDS_PER_CHUNK == 200
+    assert embeddings.MAX_WORDS_PER_CHUNK >= settings.rag_chunk_words
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +110,7 @@ async def test_ingest_document_writes_document_chunks_and_embeddings():
     embeddings = [a for a in added if isinstance(a, KnowledgeEmbedding)]
 
     assert len(docs) == 1
-    n_chunks = len(chunk_text(text, size=800, overlap=120))
+    n_chunks = len(chunk_text(text))
     assert len(chunks) == n_chunks
     assert len(embeddings) == n_chunks
     # embed_batch called once over the chunk list
