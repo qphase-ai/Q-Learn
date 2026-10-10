@@ -1,77 +1,31 @@
-"""Seed the RAG knowledge base with a curated quantum-computing corpus.
+"""Seed the RAG knowledge base with trimmed Qiskit-documentation excerpts.
 
-Run once against a database with the knowledge tables + pgvector:
+Safe to re-run against a database with the knowledge tables + pgvector:
 
     python -m scripts.seed_knowledge
 
-The corpus reuses the Slice 2a lesson bodies (Markdown + KaTeX) plus a few
-trimmed Qiskit-documentation excerpts, each carrying a `source_url` so the tutor
-can cite it. `all-MiniLM-L6-v2` downloads on first use.
+Lessons are not seeded here: `python -m scripts.ingest_lessons` ingests them
+from the `lessons` table. Each excerpt carries a `source_url` so the tutor can
+cite it, and re-ingesting a source_url replaces the old copy. The seed also
+removes the lesson duplicates that earlier versions of this script inserted
+(LEGACY_LESSON_URLS); that is a no-op once they are gone.
+`all-MiniLM-L6-v2` downloads on first use.
 """
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.knowledge import KnowledgeDocument
 from app.rag.ingestion import ingest_document
 
 
 # ---------------------------------------------------------------------------
 # Curated corpus
 # ---------------------------------------------------------------------------
-
-_SUPERPOSITION = r"""# Superposition
-
-A classical bit is either 0 or 1. A qubit, by contrast, can exist in a
-superposition of both states simultaneously, described by the state vector
-|psi> = alpha|0> + beta|1>, where alpha and beta are complex probability
-amplitudes satisfying the normalisation condition |alpha|^2 + |beta|^2 = 1.
-
-|alpha|^2 is the probability of measuring |0> and |beta|^2 is the probability of
-measuring |1>. Once we measure the qubit, it collapses to one of those two basis
-states and the superposition is destroyed.
-
-A single-qubit pure state can be visualised as a point on the Bloch sphere. The
-north pole corresponds to |0> and the south pole to |1>. Quantum parallelism,
-the ability to act on all basis states at once, stems directly from
-superposition: a register of n qubits can represent 2^n classical states
-simultaneously.
-"""
-
-_HADAMARD = r"""# The Hadamard Gate
-
-The Hadamard gate H is the most fundamental single-qubit gate. It creates an
-equal superposition from either computational basis state:
-H|0> = (|0> + |1>)/sqrt(2), written |+>, and H|1> = (|0> - |1>)/sqrt(2),
-written |->.
-
-Its matrix is (1/sqrt(2)) [[1, 1], [1, -1]]. The Hadamard gate is Hermitian
-(H = H-dagger) and self-inverse (H^2 = I), so applying H twice returns the qubit
-to its original state.
-
-Applying H to |0> then measuring gives 0 or 1 with equal probability one half, a
-perfect quantum coin flip. The Hadamard gate is the entry point to most quantum
-algorithms: it builds the equal superposition starting state for Grover's
-search, is the single-qubit Quantum Fourier Transform, and, followed by CNOT,
-prepares an entangled Bell state.
-"""
-
-_ENTANGLEMENT = r"""# Bell States and Entanglement
-
-Entanglement is a non-classical correlation between qubits: measuring one qubit
-instantly determines the state of its entangled partner, regardless of distance.
-
-To prepare the Bell state |Phi+> start with two qubits in |00> and apply a
-Hadamard H to qubit 0, then a CNOT with qubit 0 as control and qubit 1 as
-target. The result is |Phi+> = (|00> + |11>)/sqrt(2).
-
-The four Bell states |Phi+->, |Psi+-> form a maximally entangled orthonormal
-basis for the two-qubit Hilbert space. When you measure qubit 0 of |Phi+>, if
-you get 0 the partner collapses to |0>, and if you get 1 the partner collapses
-to |1>. This perfect correlation underpins quantum teleportation, superdense
-coding, and quantum key distribution.
-"""
 
 _CIRCUITS = r"""# Quantum Circuit Basics
 
@@ -103,24 +57,6 @@ that the desired answer is the most probable measurement outcome.
 
 CORPUS: list[dict] = [
     {
-        "title": "Superposition",
-        "source_url": "https://qlearn.dev/lessons/superposition",
-        "source_type": "course",
-        "text": _SUPERPOSITION,
-    },
-    {
-        "title": "The Hadamard Gate",
-        "source_url": "https://qlearn.dev/lessons/hadamard",
-        "source_type": "course",
-        "text": _HADAMARD,
-    },
-    {
-        "title": "Bell States & Entanglement",
-        "source_url": "https://qlearn.dev/lessons/entanglement",
-        "source_type": "course",
-        "text": _ENTANGLEMENT,
-    },
-    {
         "title": "Quantum Circuit Basics",
         "source_url": "https://docs.quantum.ibm.com/guides/construct-circuits",
         "source_type": "documentation",
@@ -135,8 +71,35 @@ CORPUS: list[dict] = [
 ]
 
 
-async def seed(db: AsyncSession) -> int:
-    """Ingest every corpus document. Returns the number of documents ingested."""
+# Lesson copies inserted by earlier versions of this seed. The same lessons now
+# come from scripts.ingest_lessons (qlearn://lesson/<id>), so these are duplicates.
+LEGACY_LESSON_URLS: tuple[str, ...] = (
+    "https://qlearn.dev/lessons/superposition",
+    "https://qlearn.dev/lessons/hadamard",
+    "https://qlearn.dev/lessons/entanglement",
+)
+
+
+@dataclass
+class SeedResult:
+    ingested: int
+    removed_legacy: int
+
+
+async def remove_legacy_lesson_documents(db: AsyncSession) -> int:
+    """Delete the legacy lesson duplicates (chunks and embeddings cascade)."""
+    result = await db.execute(
+        delete(KnowledgeDocument)
+        .where(KnowledgeDocument.source_url.in_(LEGACY_LESSON_URLS))
+        .execution_options(synchronize_session=False)
+    )
+    await db.commit()
+    return result.rowcount or 0
+
+
+async def seed(db: AsyncSession) -> SeedResult:
+    """Remove legacy lesson duplicates, then (re-)ingest every corpus document."""
+    removed = await remove_legacy_lesson_documents(db)
     for doc in CORPUS:
         await ingest_document(
             db,
@@ -145,15 +108,18 @@ async def seed(db: AsyncSession) -> int:
             source_type=doc["source_type"],
             text=doc["text"],
         )
-    return len(CORPUS)
+    return SeedResult(ingested=len(CORPUS), removed_legacy=removed)
 
 
 async def _main() -> None:
     from app.database import AsyncSessionLocal
 
     async with AsyncSessionLocal() as db:
-        count = await seed(db)
-    print(f"Seeded {count} knowledge documents.")
+        result = await seed(db)
+    print(
+        f"Seeded {result.ingested} knowledge documents; "
+        f"removed {result.removed_legacy} legacy lesson duplicates."
+    )
 
 
 if __name__ == "__main__":
