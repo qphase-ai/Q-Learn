@@ -64,8 +64,9 @@ e.g. `RAG_MIN_SCORE_FTS`) unless marked as a constant.
 | Returned chunks | 4 (`rag_top_k`) | |
 | Reranker | none yet (see Deferred) | |
 
-The embedding model is loaded at startup (`rag_warmup_embeddings`, off the
-event loop), and its weights are baked into the Docker image. Query embedding
+The embedding model is loaded at startup in a background task
+(`rag_warmup_embeddings`, in a worker thread; boot doesn't wait for it), and its
+weights are baked into the Docker image, which then sets `HF_HUB_OFFLINE=1`. Query embedding
 runs in a worker thread (`aembed_text`).
 
 ---

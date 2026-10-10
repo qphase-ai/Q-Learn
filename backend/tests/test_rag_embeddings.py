@@ -3,9 +3,12 @@
 Hermetic — the SentenceTransformer model is never loaded. We monkeypatch the
 loader with a fake encoder so tests need no model download or network.
 """
+import asyncio
+import threading
 from unittest.mock import MagicMock
 
 import pytest
+from structlog.testing import capture_logs
 
 import app.rag.embeddings as embeddings
 
@@ -90,10 +93,13 @@ def test_warm_up_loads_model_exactly_once(fake_loader):
 # ---------------------------------------------------------------------------
 
 async def _run_lifespan():
+    """Run the lifespan, letting the background warm-up finish before shutdown."""
     import app.main as main
 
     async with main.lifespan(main.app):
-        pass
+        task = main.app.state.embedding_warmup
+        if task is not None:
+            await asyncio.wait_for(asyncio.shield(task), timeout=5)
 
 
 @pytest.mark.asyncio
@@ -104,9 +110,11 @@ async def test_lifespan_warms_up_embeddings(monkeypatch):
     monkeypatch.setattr(main, "warm_up", warm)
     monkeypatch.setattr(main.settings, "rag_warmup_embeddings", True)
 
-    await _run_lifespan()
+    with capture_logs() as logs:
+        await _run_lifespan()
 
     warm.assert_called_once()
+    assert any(entry["event"] == "embedding_warmup" for entry in logs)
 
 
 @pytest.mark.asyncio
@@ -120,6 +128,7 @@ async def test_lifespan_skips_warm_up_when_disabled(monkeypatch):
     await _run_lifespan()
 
     warm.assert_not_called()
+    assert main.app.state.embedding_warmup is None
 
 
 @pytest.mark.asyncio
@@ -129,4 +138,34 @@ async def test_lifespan_survives_warm_up_failure(monkeypatch):
     monkeypatch.setattr(main, "warm_up", MagicMock(side_effect=OSError("no network")))
     monkeypatch.setattr(main.settings, "rag_warmup_embeddings", True)
 
-    await _run_lifespan()  # must not raise
+    with capture_logs() as logs:
+        await _run_lifespan()  # must not raise
+
+    failed = [entry for entry in logs if entry["event"] == "embedding_warmup_failed"]
+    assert failed and "no network" in failed[0]["error"]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_does_not_wait_for_warm_up_and_cancels_it_on_shutdown(monkeypatch):
+    import app.main as main
+
+    release = threading.Event()
+    started = threading.Event()
+
+    def slow_warm_up():
+        started.set()
+        release.wait(timeout=5)
+
+    monkeypatch.setattr(main, "warm_up", slow_warm_up)
+    monkeypatch.setattr(main.settings, "rag_warmup_embeddings", True)
+
+    try:
+        # Boot reaches the app body while the model is still loading.
+        async with main.lifespan(main.app):
+            task = main.app.state.embedding_warmup
+            await asyncio.wait_for(asyncio.to_thread(started.wait, 5), timeout=5)
+            assert not task.done()
+        # Shutdown with the warm-up still running: cancelled, nothing raised.
+        assert task.cancelled()
+    finally:
+        release.set()
