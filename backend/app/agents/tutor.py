@@ -65,6 +65,22 @@ def cited_indices(answer: str, n: int) -> list[int]:
     return seen
 
 
+def renumber_citations(answer: str, n: int) -> str:
+    """Rewrite in-range [n] markers to their position in `cited_indices` order.
+
+    The citations list holds only the cited sources, in first-cited order, and
+    clients label them [1], [2], ... by position; the answer's markers must match.
+    Markers outside 1..n cite nothing and are left as they are.
+    """
+    new_number = {old: new for new, old in enumerate(cited_indices(answer, n), start=1)}
+
+    def _sub(match: re.Match[str]) -> str:
+        i = int(match.group(1))
+        return f"[{new_number[i]}]" if i in new_number else match.group(0)
+
+    return _CITATION_RE.sub(_sub, answer)
+
+
 def _user_turn(
     question: str, retrieved_chunks: list[RetrievedChunk], circuit: str | None
 ) -> str:

@@ -433,3 +433,23 @@ class TestCitedOnlyCitations:
 
         titles = [c["title"] for c in spy_complete.await_args.args[1]["citations"]]
         assert titles == ["The Hadamard Gate", "Superposition"]
+        # markers renumbered to the citations list's 1-based positions; [7] cites nothing
+        expected = "See [1], then [2] and [7]. Again [1]."
+        assert spy_complete.await_args.args[1]["content"] == expected
+        assert _persisted_assistant(db).content == expected
+
+    @pytest.mark.asyncio
+    async def test_sparse_markers_are_renumbered_to_list_positions(self):
+        db = _make_mock_db()
+        chunks = _two_chunks() + [
+            RetrievedChunk(content="c", title="Third", source_url="u3", chunk_index=0, score=0.5),
+            RetrievedChunk(content="d", title="Fourth", source_url="u4", chunk_index=0, score=0.4),
+        ]
+        _, _, spy_complete = await _run_capturing(
+            db, "q", chunks=chunks, tokens=("First [2] ", "and then [4].")
+        )
+
+        payload = spy_complete.await_args.args[1]
+        assert [c["title"] for c in payload["citations"]] == ["The Hadamard Gate", "Fourth"]
+        assert payload["content"] == "First [1] and then [2]."
+        assert _persisted_assistant(db).content == "First [1] and then [2]."

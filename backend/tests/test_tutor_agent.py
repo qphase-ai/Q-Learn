@@ -193,6 +193,15 @@ async def test_history_citation_markers_are_stripped(monkeypatch):
     assert messages[2].content == "It makes an equal superposition. Apply qc.h(q[0]) to try it."
 
 
+def test_renumber_citations_maps_to_first_cited_positions():
+    assert tutor.renumber_citations("[2] then [4]", 4) == "[1] then [2]"
+    # repeated markers keep their new number
+    assert tutor.renumber_citations("[3] a [1] b [3][1] c [3]", 3) == "[1] a [2] b [1][2] c [1]"
+    # out of range and code indexing are left alone
+    assert tutor.renumber_citations("see [2] and [9], q[2]", 2) == "see [1] and [9], q[2]"
+    assert tutor.renumber_citations("no markers", 3) == "no markers"
+
+
 def test_cited_indices_filters_dedupes_and_keeps_order():
     assert tutor.cited_indices("see [2] and [1][2] and [9]", 3) == [2, 1]
     assert tutor.cited_indices("no markers here", 3) == []

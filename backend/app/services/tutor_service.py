@@ -20,7 +20,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tutor import cited_indices, stream_tutor_answer
+from app.agents.tutor import cited_indices, renumber_citations, stream_tutor_answer
 from app.database import AsyncSessionLocal
 from app.exceptions import NotFoundError
 from app.models.agent import AgentSession, AgentMessage
@@ -202,6 +202,10 @@ async def run_and_stream(
             # Only sources the answer actually cites; none if it cited nothing.
             cited = [chunks[i - 1] for i in cited_indices(content, len(chunks))]
             citations = _citations_from_chunks(cited)
+            # The tokens went out with the model's numbers; `complete` carries the
+            # final text, renumbered to match the citations list. Clients replace
+            # the streamed text with it.
+            content = renumber_citations(content, len(chunks))
             assistant = AgentMessage(
                 session_id=session_id,
                 role="assistant",
