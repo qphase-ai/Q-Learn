@@ -88,6 +88,8 @@ class Settings(BaseSettings):
     # the embedder sees the whole chunk (see app/rag/embeddings.py).
     rag_chunk_words: int = 200
     rag_chunk_overlap: int = 40
+    # Load the embedding model at startup instead of on the first tutor turn.
+    rag_warmup_embeddings: bool = True
 
 
 @lru_cache

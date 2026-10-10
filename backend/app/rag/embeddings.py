@@ -4,8 +4,14 @@ The SentenceTransformer model is heavy (loads weights, may download on first use
 so it is created lazily on the first embed call and cached as a module-level
 singleton — never at import time. Tests monkeypatch `_load_model` and reset
 `_model` to stay hermetic.
+
+Encoding is CPU-bound: async callers use `aembed_text`, which runs it in a
+worker thread so the event loop keeps serving. The app lifespan calls
+`warm_up` so the first tutor request does not pay the model load.
 """
 from __future__ import annotations
+
+import asyncio
 
 MODEL_NAME = "all-MiniLM-L6-v2"
 EMBEDDING_DIM = 384
@@ -35,6 +41,16 @@ def embed_text(text: str) -> list[float]:
     """Embed a single string into a 384-dim vector."""
     vec = _get_model().encode(text)
     return list(vec)
+
+
+async def aembed_text(text: str) -> list[float]:
+    """Embed a single string without blocking the event loop."""
+    return await asyncio.to_thread(embed_text, text)
+
+
+def warm_up() -> None:
+    """Load the model now (idempotent). Blocking — call it via a thread."""
+    _get_model()
 
 
 def embed_batch(texts: list[str]) -> list[list[float]]:

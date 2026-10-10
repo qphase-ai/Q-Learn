@@ -1,18 +1,30 @@
+import asyncio
+
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.core.logging import configure_logging
 from app.exceptions import QlearnError, qlearn_exception_handler
+from app.rag.embeddings import warm_up
 from app.routers import auth, circuits, content_refs, learning, tutor
 
 configure_logging()
 settings = get_settings()
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    # Startup — preload the embedding model off the event loop. A failure only
+    # means the first tutor turn loads it; it must never block boot.
+    if settings.rag_warmup_embeddings:
+        try:
+            await asyncio.to_thread(warm_up)
+            logger.info("embedding_warmup")
+        except Exception as exc:
+            logger.warning("embedding_warmup_failed", error=str(exc))
     yield
     # Shutdown
 

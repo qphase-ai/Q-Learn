@@ -53,3 +53,80 @@ def test_model_loaded_once_across_calls(fake_loader):
     embeddings.embed_text("second")
     embeddings.embed_batch(["third", "fourth"])
     assert fake_loader.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Async embedding + warm-up
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_aembed_text_returns_vector_off_the_event_loop(monkeypatch):
+    import threading
+
+    caller = threading.get_ident()
+    seen: list[int] = []
+
+    def _fake_embed(text):
+        seen.append(threading.get_ident())
+        return [0.5] * 384
+
+    monkeypatch.setattr(embeddings, "embed_text", _fake_embed)
+
+    vec = await embeddings.aembed_text("hello")
+
+    assert vec == [0.5] * 384
+    assert seen and seen[0] != caller  # ran in a worker thread
+
+
+def test_warm_up_loads_model_exactly_once(fake_loader):
+    embeddings.warm_up()
+    embeddings.warm_up()
+    embeddings.embed_text("after warm-up")
+    assert fake_loader.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# App lifespan preloads the model, but never blocks boot
+# ---------------------------------------------------------------------------
+
+async def _run_lifespan():
+    import app.main as main
+
+    async with main.lifespan(main.app):
+        pass
+
+
+@pytest.mark.asyncio
+async def test_lifespan_warms_up_embeddings(monkeypatch):
+    import app.main as main
+
+    warm = MagicMock()
+    monkeypatch.setattr(main, "warm_up", warm)
+    monkeypatch.setattr(main.settings, "rag_warmup_embeddings", True)
+
+    await _run_lifespan()
+
+    warm.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_lifespan_skips_warm_up_when_disabled(monkeypatch):
+    import app.main as main
+
+    warm = MagicMock()
+    monkeypatch.setattr(main, "warm_up", warm)
+    monkeypatch.setattr(main.settings, "rag_warmup_embeddings", False)
+
+    await _run_lifespan()
+
+    warm.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_lifespan_survives_warm_up_failure(monkeypatch):
+    import app.main as main
+
+    monkeypatch.setattr(main, "warm_up", MagicMock(side_effect=OSError("no network")))
+    monkeypatch.setattr(main.settings, "rag_warmup_embeddings", True)
+
+    await _run_lifespan()  # must not raise
