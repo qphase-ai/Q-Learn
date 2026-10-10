@@ -8,7 +8,7 @@ Adds document_chunks.content_tsv (a stored generated tsvector) with a GIN index
 for the full-text half of hybrid retrieval, knowledge_documents.content_ref_id
 (nullable FK to content_refs, so retrieval can boost the current lesson) and a
 partial unique index on knowledge_documents.source_url (re-ingestion upserts by
-source).
+source). Duplicate source_url rows are deleted first, keeping the newest.
 
 Downgrade restores the ivfflat index and drops the new columns and indexes.
 The dropped columns hold only derived (content_tsv) or re-ingestable
@@ -56,6 +56,17 @@ def upgrade() -> None:
     )
     op.create_index(
         "ix_knowledge_documents_content_ref_id", "knowledge_documents", ["content_ref_id"]
+    )
+    # Earlier seeding could insert the same source twice; keep the newest
+    # (latest ingested_at, then highest id) so the unique index can build.
+    # Chunks and embeddings of the dropped rows go with them (ON DELETE CASCADE).
+    op.execute(
+        "DELETE FROM knowledge_documents WHERE id IN ("
+        "SELECT id FROM ("
+        "SELECT id, row_number() OVER ("
+        "PARTITION BY source_url ORDER BY ingested_at DESC NULLS LAST, id DESC"
+        ") AS rn FROM knowledge_documents WHERE source_url IS NOT NULL"
+        ") ranked WHERE rn > 1)"
     )
     op.create_index(
         "uq_knowledge_documents_source_url",

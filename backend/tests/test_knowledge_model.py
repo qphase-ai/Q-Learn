@@ -60,3 +60,36 @@ def test_rag_hybrid_search_migration_is_head():
     script = ScriptDirectory.from_config(cfg)
     assert script.get_heads() == ["e5f6a7b8c9d0"]
     assert script.get_revision("e5f6a7b8c9d0").down_revision == "d4e5f6a7b8c9"
+
+
+def test_rag_hybrid_search_migration_dedupes_source_url_before_unique_index(monkeypatch):
+    """Duplicate source_url rows would make CREATE UNIQUE INDEX fail on upgrade."""
+    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+    module = ScriptDirectory.from_config(cfg).get_revision("e5f6a7b8c9d0").module
+
+    calls: list[tuple[str, str]] = []
+
+    class _Op:
+        def execute(self, sql):
+            calls.append(("execute", str(sql)))
+
+        def add_column(self, *a, **k):
+            calls.append(("add_column", ""))
+
+        def create_index(self, name, *a, **k):
+            calls.append(("create_index", name))
+
+    monkeypatch.setattr(module, "op", _Op())
+    module.upgrade()
+
+    unique_at = calls.index(("create_index", "uq_knowledge_documents_source_url"))
+    dedupe = [
+        i for i, (kind, sql) in enumerate(calls)
+        if kind == "execute" and "DELETE FROM knowledge_documents" in sql
+    ]
+    assert dedupe and dedupe[0] < unique_at
+    sql = calls[dedupe[0]][1]
+    # newest wins, deterministic tie-break, NULL source_urls untouched
+    assert "ingested_at DESC" in sql and "id DESC" in sql
+    assert "source_url IS NOT NULL" in sql
