@@ -115,7 +115,8 @@ def renumber_citations(answer: str, n: int) -> str:
 
     The citations list holds only the cited sources, in first-cited order, and
     clients label them [1], [2], ... by position; the answer's markers must match.
-    Numbers outside 1..n cite nothing and are left as they are.
+    Numbers outside 1..n cite nothing and are dropped, and a marker left empty is
+    removed, so the answer never shows a citation with no source behind it.
     """
     new_number = {old: new for new, old in enumerate(cited_indices(answer, n), start=1)}
     out: list[str] = []
@@ -123,11 +124,14 @@ def renumber_citations(answer: str, n: int) -> str:
     for marker in _citation_markers(answer):
         renumbered: list[int] = []
         for i in _numbers(marker):
-            j = new_number.get(i, i)
-            if j not in renumbered:
+            j = new_number.get(i)
+            if j is not None and j not in renumbered:
                 renumbered.append(j)
-        out.append(answer[pos:marker.start()])
-        out.append("[" + ", ".join(str(j) for j in renumbered) + "]")
+        if renumbered:
+            out.append(answer[pos:marker.start()])
+            out.append("[" + ", ".join(str(j) for j in renumbered) + "]")
+        else:
+            out.append(answer[pos:marker.start()].rstrip(" \t"))
         pos = marker.end()
     out.append(answer[pos:])
     return "".join(out)

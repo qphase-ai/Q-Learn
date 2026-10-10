@@ -198,7 +198,7 @@ def test_renumber_citations_maps_to_first_cited_positions():
     # repeated markers keep their new number
     assert tutor.renumber_citations("[3] a [1] b [3][1] c [3]", 3) == "[1] a [2] b [1][2] c [1]"
     # out of range and code indexing are left alone
-    assert tutor.renumber_citations("see [2] and [9], q[2]", 2) == "see [1] and [9], q[2]"
+    assert tutor.renumber_citations("see [2] and [9], q[2]", 2) == "see [1] and, q[2]"
     assert tutor.renumber_citations("no markers", 3) == "no markers"
 
 
@@ -236,6 +236,15 @@ def test_comma_list_markers_expand_to_each_source():
     assert tutor.cited_indices("Both agree [3, 1] and [1,2].", 3) == [3, 1, 2]
     assert tutor.cited_indices("only [1, 9]", 2) == [1]
     assert tutor.renumber_citations("Both agree [3, 1], then [2].", 3) == "Both agree [1, 2], then [3]."
+
+
+def test_renumber_citations_drops_numbers_that_cite_nothing():
+    # [9] has no source: drop it from a list, and drop a marker left empty
+    assert tutor.renumber_citations("Mixed [2, 9] here.", 2) == "Mixed [1] here."
+    assert tutor.renumber_citations("Only a ghost [9].", 2) == "Only a ghost."
+    assert tutor.renumber_citations("Zero [0] too [1]", 1) == "Zero too [1]"
+    # with no sources at all, every marker goes
+    assert tutor.renumber_citations("Claimed [1].", 0) == "Claimed."
 
 
 def test_strip_citations_leaves_code_intact():
