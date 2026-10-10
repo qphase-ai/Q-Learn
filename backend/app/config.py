@@ -89,11 +89,13 @@ class Settings(BaseSettings):
     rag_chunk_words: int = 200
     rag_chunk_overlap: int = 40
     # Retrieval — chunks returned to the tutor, candidates per arm (dense, FTS)
-    # fused with RRF, and the dense cosine-similarity floor a dense-only hit must
-    # clear. rag_min_score is provisional until scripts/rag_eval.py calibrates it.
+    # fused with RRF, and the dense cosine-similarity floors a candidate must
+    # clear: rag_min_score in general, rag_min_score_fts when the full-text arm
+    # matched it too. Calibrated with scripts/rag_eval.py (docs/rag-pipeline.md).
     rag_top_k: int = 4
     rag_candidate_k: int = 20
     rag_min_score: float = 0.30
+    rag_min_score_fts: float = 0.20
     # Load the embedding model at startup instead of on the first tutor turn.
     rag_warmup_embeddings: bool = True
 

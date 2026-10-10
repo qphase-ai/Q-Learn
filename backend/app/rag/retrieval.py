@@ -5,11 +5,14 @@ Both arms fetch up to `rag_candidate_k` chunks:
 - sparse: any stemmed query term (OR) against `document_chunks.content_tsv`,
   ranked by `ts_rank_cd`, so chunks matching more terms still rank first.
 
-A dense-only candidate must clear the `rag_min_score` similarity floor; any
-sparse match is kept. The two rankings are fused with Reciprocal Rank Fusion,
-chunks of the student's current lesson get a multiplicative boost, and the top
-`rag_top_k` are hydrated. `RetrievedChunk.score` is the dense cosine similarity
-(0.0 for a chunk only the sparse arm found), so higher is better.
+Every candidate must clear a dense cosine-similarity floor: `rag_min_score`,
+or the lower `rag_min_score_fts` when the sparse arm matched it too. The OR
+query matches almost any on-topic text, so a shared word alone is weak evidence:
+"transformer" stems to "transform" and matches "Quantum Fourier Transform". The
+surviving rankings are fused with Reciprocal Rank Fusion, chunks of the
+student's current lesson get a multiplicative boost, and the top `rag_top_k`
+are hydrated. `RetrievedChunk.score` is the dense cosine similarity, so higher
+is better.
 """
 from __future__ import annotations
 
@@ -103,10 +106,11 @@ async def retrieve(
     )
     dense_rows = (await db.execute(dense_stmt)).all()
 
-    # Sparse arm.
+    # Sparse arm. It also reads each match's dense distance for the floor.
     tsquery = _any_term_tsquery(q.text)
     sparse_stmt = (
-        select(DocumentChunk.id, KnowledgeDocument.content_ref_id)
+        select(DocumentChunk.id, distance.label("distance"), KnowledgeDocument.content_ref_id)
+        .join(KnowledgeEmbedding, KnowledgeEmbedding.chunk_id == DocumentChunk.id)
         .join(KnowledgeDocument, KnowledgeDocument.id == DocumentChunk.document_id)
         .where(DocumentChunk.content_tsv.op("@@")(tsquery))
         .order_by(func.ts_rank_cd(DocumentChunk.content_tsv, tsquery).desc())
@@ -114,20 +118,22 @@ async def retrieve(
     )
     sparse_rows = (await db.execute(sparse_stmt)).all()
 
-    similarity = {cid: 1.0 - float(dist) for cid, dist, _ in dense_rows}
-    sparse_ids = [cid for cid, _ in sparse_rows]
-    sparse_set = set(sparse_ids)
-    dense_ids = [
-        cid for cid, _, _ in dense_rows
-        if similarity[cid] >= settings.rag_min_score or cid in sparse_set
-    ]
+    similarity = {cid: 1.0 - float(dist) for cid, dist, _ in [*dense_rows, *sparse_rows]}
+    sparse_set = {cid for cid, _, _ in sparse_rows}
+
+    def relevant(cid: uuid.UUID) -> bool:
+        floor = settings.rag_min_score_fts if cid in sparse_set else settings.rag_min_score
+        return similarity[cid] >= floor
+
+    dense_ids = [cid for cid, _, _ in dense_rows if relevant(cid)]
+    sparse_ids = [cid for cid, _, _ in sparse_rows if relevant(cid)]
 
     boosts: dict[uuid.UUID, float] = {}
     if q.content_ref_id is not None:
         for cid, _, ref in dense_rows:
             if ref == q.content_ref_id:
                 boosts[cid] = LESSON_BOOST
-        for cid, ref in sparse_rows:
+        for cid, _, ref in sparse_rows:
             if ref == q.content_ref_id:
                 boosts[cid] = LESSON_BOOST
 
@@ -154,7 +160,7 @@ async def retrieve(
                 title=doc.title,
                 source_url=doc.source_url,
                 chunk_index=chunk.chunk_index,
-                score=similarity.get(cid, 0.0),
+                score=similarity[cid],
                 chunk_id=cid,
             )
         )

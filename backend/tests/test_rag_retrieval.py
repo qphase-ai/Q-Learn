@@ -2,8 +2,9 @@
 
 Hermetic: aembed_text is patched; db.execute returns canned results in call
 order: SET LOCAL hnsw.ef_search, dense candidates (chunk_id, distance,
-content_ref_id), sparse candidates (chunk_id, content_ref_id), then the hydrate
-query (chunk, doc). With the default settings rag_min_score is 0.30.
+content_ref_id), sparse candidates (chunk_id, distance, content_ref_id), then
+the hydrate query (chunk, doc). With the default settings rag_min_score is 0.30
+(any candidate) and rag_min_score_fts is 0.20 (a candidate the FTS arm matched).
 """
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -36,7 +37,7 @@ def _result(rows):
 
 
 def _db(dense, sparse, hydrate=None):
-    """dense: [(chunk, doc, distance)], sparse: [(chunk, doc)], hydrate: [(chunk, doc)]."""
+    """dense and sparse: [(chunk, doc, distance)], hydrate: [(chunk, doc)]."""
     if hydrate is None:
         seen: dict = {}
         for chunk, doc, *_ in [*dense, *sparse]:
@@ -45,7 +46,7 @@ def _db(dense, sparse, hydrate=None):
     results = [
         _result([]),  # SET LOCAL
         _result([(c.id, dist, d.content_ref_id) for c, d, dist in dense]),
-        _result([(c.id, d.content_ref_id) for c, d in sparse]),
+        _result([(c.id, dist, d.content_ref_id) for c, d, dist in sparse]),
         _result(hydrate),
     ]
     db = AsyncMock()
@@ -96,27 +97,49 @@ async def test_below_floor_dense_only_hit_is_dropped():
     assert [o.title for o in out] == ["Good"]
 
 
-async def test_sparse_only_hit_is_kept_with_zero_score():
+async def test_sparse_only_hit_above_fts_floor_is_kept_with_its_dense_score():
     kw = _chunk("CNOT entangles two qubits")
-    db = _db(dense=[], sparse=[(kw, _doc("CNOT"))])
+    db = _db(dense=[], sparse=[(kw, _doc("CNOT"), 0.75)])
 
     with _embed():
         out = await retrieve(db, "CNOT")
 
     assert [o.title for o in out] == ["CNOT"]
-    assert out[0].score == 0.0
+    assert out[0].score == pytest.approx(0.25)
+
+
+async def test_sparse_hit_below_fts_floor_is_dropped():
+    """A shared word alone ("transformer" ~ "Fourier Transform") is not relevance."""
+    stray = _chunk("H is the 1-qubit Quantum Fourier Transform")
+    db = _db(dense=[], sparse=[(stray, _doc("Hadamard"), 0.96)])
+
+    with _embed():
+        out = await retrieve(db, "how does a transformer neural network use attention")
+
+    assert out == []
+    assert db.execute.await_count == 3  # no hydrate
 
 
 async def test_below_floor_dense_hit_kept_when_sparse_also_matched():
     c = _chunk("CNOT")
     doc = _doc("CNOT")
-    db = _db(dense=[(c, doc, 0.80)], sparse=[(c, doc)])
+    db = _db(dense=[(c, doc, 0.75)], sparse=[(c, doc, 0.75)])
 
     with _embed():
         out = await retrieve(db, "CNOT")
 
     assert [o.title for o in out] == ["CNOT"]
-    assert out[0].score == pytest.approx(0.20)
+    assert out[0].score == pytest.approx(0.25)
+
+
+async def test_dense_only_hit_between_the_floors_is_dropped():
+    c = _chunk("near miss")
+    db = _db(dense=[(c, _doc("Near"), 0.75)], sparse=[])
+
+    with _embed():
+        out = await retrieve(db, "q")
+
+    assert out == []
 
 
 async def test_lesson_boost_reorders():
