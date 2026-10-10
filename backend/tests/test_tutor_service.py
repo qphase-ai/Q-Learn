@@ -433,8 +433,9 @@ class TestCitedOnlyCitations:
 
         titles = [c["title"] for c in spy_complete.await_args.args[1]["citations"]]
         assert titles == ["The Hadamard Gate", "Superposition"]
-        # markers renumbered to the citations list's 1-based positions; [7] cites nothing
-        expected = "See [1], then [2] and [7]. Again [1]."
+        # markers renumbered to the citations list's 1-based positions; [7] cites
+        # nothing, so it is dropped rather than shown without a source
+        expected = "See [1], then [2] and. Again [1]."
         assert spy_complete.await_args.args[1]["content"] == expected
         assert _persisted_assistant(db).content == expected
 
