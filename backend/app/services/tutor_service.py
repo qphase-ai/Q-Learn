@@ -20,7 +20,12 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tutor import cited_indices, renumber_citations, stream_tutor_answer
+from app.agents.tutor import (
+    cited_indices,
+    normalise_math,
+    renumber_citations,
+    stream_tutor_answer,
+)
 from app.database import AsyncSessionLocal
 from app.exceptions import NotFoundError
 from app.models.agent import AgentSession, AgentMessage
@@ -199,6 +204,9 @@ async def run_and_stream(
                 content += token
                 await publish_tutor_token(str(session_id), token)
 
+            # Math into the $…$ / $$…$$ forms the clients render, with any
+            # citations moved out of it, before the markers are counted.
+            content = normalise_math(content)
             # Only sources the answer actually cites; none if it cited nothing.
             cited = [chunks[i - 1] for i in cited_indices(content, len(chunks))]
             citations = _citations_from_chunks(cited)
