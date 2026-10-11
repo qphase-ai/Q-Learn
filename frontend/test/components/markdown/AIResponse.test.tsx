@@ -315,3 +315,15 @@ qc.cx(0, 1)
   });
 });
 
+
+describe("AIResponse circuit fences", () => {
+  it.each([
+    ["missing gates", '{"qubits": 2}'],
+    ["array instead of object", "[]"],
+    ["non-object gates", '{"qubits": 2, "gates": [1]}'],
+    ["malformed JSON", '{"qubits": 2,'],
+  ])("falls back to a code block for an invalid spec (%s)", (_name, json) => {
+    const { container } = render(<AIResponse content={"```circuit\n" + json + "\n```"} />);
+    expect(container.querySelector(".ai-codeblock")).not.toBeNull();
+  });
+});

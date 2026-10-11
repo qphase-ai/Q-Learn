@@ -65,7 +65,12 @@ function detectCallout(children: ReactNode): CalloutKind | null {
 
 function parseCircuit(raw: string): CircuitSpec | null {
   try {
-    return JSON.parse(raw) as CircuitSpec;
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== "object" || v === null) return null;
+    const { qubits, gates } = v as Partial<CircuitSpec>;
+    if (typeof qubits !== "number" || !Array.isArray(gates)) return null;
+    if (gates.some((g) => typeof g !== "object" || g === null)) return null;
+    return v as CircuitSpec;
   } catch {
     return null;
   }
