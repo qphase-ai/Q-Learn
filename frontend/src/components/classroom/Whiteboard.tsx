@@ -35,7 +35,10 @@ export function AnnotationNote({ id, note }: { id: string; note: AnnotationObjec
 function RunInBuilderButton({ id, obj, stepTitle }: { id: string; obj: CircuitObject; stepTitle?: string }) {
   const router = useRouter();
   const handleClick = () => {
-    stashCircuitForBuilder({ qubits: obj.qubits, gates: obj.gates, name: stepTitle });
+    if (!stashCircuitForBuilder({ qubits: obj.qubits, gates: obj.gates, name: stepTitle })) {
+      toast.error("Couldn't open the Circuit Builder — browser storage is unavailable.");
+      return;
+    }
     toast.success("Opening in Circuit Builder…");
     router.push("/circuit");
   };

@@ -17,6 +17,18 @@ export const MIN_QUBITS = 1;
 export const MAX_QUBITS = 8;
 const HISTORY_LIMIT = 50;
 
+// Run generation + active Realtime unsubscribe, module-level so any action that
+// replaces/clears the circuit can invalidate an in-flight run: a late result
+// for the old circuit must not land on the new one.
+let runGeneration = 0;
+let activeUnsub: (() => void) | null = null;
+
+function invalidateRun() {
+  runGeneration += 1;
+  activeUnsub?.();
+  activeUnsub = null;
+}
+
 /** Snapshot of the editable circuit, used by undo/redo. */
 interface CircuitSnapshot {
   nodes: Node[];
@@ -324,11 +336,13 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
     },
 
     clearCircuit: () => {
+      invalidateRun();
       if (get().nodes.length > 0) commit();
       set({ nodes: [], edges: [], results: null, runState: "idle", error: null });
     },
 
     loadFromSpec: (spec, name) => {
+      invalidateRun();
       const qubitCount = Math.min(MAX_QUBITS, Math.max(MIN_QUBITS, Math.round(spec.qubits)));
       const occupied = new Set<string>();
       const nodes: Node[] = [];
@@ -340,11 +354,12 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
           type: g.type,
           qubit: target,
           column: 0,
-          ...(isTwoQubitGate(g.type) ? { control: g.control ?? Math.max(0, target - 1) } : {}),
+          ...(isTwoQubitGate(g.type) ? { control: g.control ?? (target > 0 ? target - 1 : target + 1) } : {}),
           ...(g.params ?? defaultParams(g.type) ? { params: { ...(defaultParams(g.type) ?? {}), ...g.params } } : {}),
         };
+        if (data.control !== undefined && data.control === data.qubit) continue; // control == target is invalid
         const rows = gateRows(data);
-        if (!inRange(rows, qubitCount)) continue; // drop gates the target qubit count can't hold
+        if (!inRange(rows, qubitCount)) continue; // drop (also covers a missing control row) gates the target qubit count can't hold
         const column = nextFreeColumn(occupied, rows, 0);
         const placed = { ...data, column };
         gateRows(placed).forEach((q) => occupied.add(`${q}:${column}`));
@@ -389,6 +404,8 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
     // ── runSimulation orchestrator ─────────────────────────────────────────
 
     runSimulation: async () => {
+      invalidateRun(); // a new run supersedes any earlier one
+      const generation = runGeneration;
       const circuitId = crypto.randomUUID();
       const circuit = nodesToCircuitSpec(get().nodes, get().qubitCount);
 
@@ -396,14 +413,17 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
       const unsub = subscribeToCircuitResult<SimulationResult>(
         circuitId,
         (payload) => {
+          if (generation !== runGeneration) return; // stale: circuit changed since this run
           set({
             results: payload,
             runState: payload.status === "failed" ? "error" : "success",
           });
 
           unsub();
+          if (activeUnsub === unsub) activeUnsub = null;
         }
       );
+      activeUnsub = unsub;
 
       set({ runState: "running", error: null });
 
@@ -418,15 +438,18 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
           token: (await getAccessToken()) ?? useAuthStore.getState().jwt ?? undefined,
         });
       } catch (err) {
+        if (generation !== runGeneration) return; // stale: already unsubscribed
         const message = err instanceof Error ? err.message : String(err);
         set({ runState: "error", error: message });
         unsub();
+        if (activeUnsub === unsub) activeUnsub = null;
       }
     },
 
     // ── Reset ──────────────────────────────────────────────────────────────
 
-    reset: () =>
+    reset: () => {
+      invalidateRun();
       set({
         nodes: [],
         edges: [],
@@ -437,6 +460,7 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
         future: [],
         selectedGateType: null,
         draggingGateType: null,
-      }),
+      });
+    },
   };
 });

@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 
 vi.mock("@/lib/supabase", () => ({ subscribeToClassroom: vi.fn(() => () => {}), getAccessToken: vi.fn(async () => undefined) }));
 vi.mock("@/lib/api", () => ({ apiFetch: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
@@ -52,6 +54,26 @@ describe("Whiteboard", () => {
       gates: [{ type: "H", targets: [0] }, { type: "CX", targets: [1], control: 0 }],
       name: "Bell state",
     });
+  });
+});
+
+describe("Whiteboard handoff failure", () => {
+  it("toasts an error and stays put when storage is unavailable", async () => {
+    const user = userEvent.setup();
+    push.mockClear();
+    toast.success.mockClear();
+    toast.error.mockClear();
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    let b = emptyBoard();
+    b = applyEvent(b, { ...ev({ action: "draw_quantum_circuit", object_id: "c1", qubits: 1, gates: [{ type: "H", targets: [0] }] }), step_id: "s1" });
+    render(<BoardView board={b} steps={[{ id: "s1", title: "H", done: false }]} />);
+    await user.click(screen.getByTestId("run-in-builder-c1"));
+    setItem.mockRestore();
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 });
 

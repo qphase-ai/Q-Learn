@@ -431,4 +431,97 @@ describe("loadFromSpec", () => {
     });
     expect(useCircuitStore.getState().nodes).toHaveLength(1);
   });
+
+  it("defaults a missing control to target-1, or target+1 for target 0", () => {
+    useCircuitStore.getState().loadFromSpec({
+      qubits: 2,
+      gates: [
+        { type: "CX", targets: [1] },
+        { type: "CX", targets: [0] },
+      ],
+    });
+    const { nodes, qubitCount } = useCircuitStore.getState();
+    expect(nodesToCircuitSpec(nodes, qubitCount).gates).toEqual([
+      { type: "CX", control: 0, targets: [1] },
+      { type: "CX", control: 1, targets: [0] },
+    ]);
+  });
+
+  it("skips a two-qubit gate with no valid control row on a 1-qubit circuit", () => {
+    useCircuitStore.getState().loadFromSpec({
+      qubits: 1,
+      gates: [{ type: "CX", targets: [0] }, { type: "H", targets: [0] }],
+    });
+    const { nodes } = useCircuitStore.getState();
+    expect(nodes).toHaveLength(1);
+    expect((nodes[0].data as { type: string }).type).toBe("H");
+  });
+
+  it("skips a two-qubit gate whose explicit control equals its target", () => {
+    useCircuitStore.getState().loadFromSpec({
+      qubits: 2,
+      gates: [{ type: "CX", targets: [1], control: 1 }, { type: "H", targets: [0] }],
+    });
+    const { nodes } = useCircuitStore.getState();
+    expect(nodes).toHaveLength(1);
+    expect((nodes[0].data as { type: string }).type).toBe("H");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stale run results
+// ---------------------------------------------------------------------------
+describe("stale run invalidation", () => {
+  const payload = { status: "completed" } as unknown as SimulationResult;
+
+  async function startRun() {
+    const unsub = vi.fn();
+    vi.mocked(subscribeToCircuitResult).mockImplementationOnce((_id, onResult) => {
+      capturedOnResult = onResult as (p: SimulationResult) => void;
+      return unsub;
+    });
+    await useCircuitStore.getState().runSimulation();
+    return unsub;
+  }
+
+  it("ignores a late result after loadFromSpec replaced the circuit", async () => {
+    const unsub = await startRun();
+    const oldCallback = capturedOnResult!;
+    useCircuitStore.getState().loadFromSpec({ qubits: 2, gates: [{ type: "H", targets: [0] }] });
+    expect(unsub).toHaveBeenCalled();
+    oldCallback(payload);
+    expect(useCircuitStore.getState().results).toBeNull();
+    expect(useCircuitStore.getState().runState).toBe("idle");
+  });
+
+  it("ignores a late result after clearCircuit and reset", async () => {
+    let unsub = await startRun();
+    let cb = capturedOnResult!;
+    useCircuitStore.getState().clearCircuit();
+    expect(unsub).toHaveBeenCalled();
+    cb(payload);
+    expect(useCircuitStore.getState().results).toBeNull();
+
+    unsub = await startRun();
+    cb = capturedOnResult!;
+    useCircuitStore.getState().reset();
+    expect(unsub).toHaveBeenCalled();
+    cb(payload);
+    expect(useCircuitStore.getState().results).toBeNull();
+    expect(useCircuitStore.getState().runState).toBe("idle");
+  });
+
+  it("does not flag an error when a stale request rejects", async () => {
+    const unsub = vi.fn();
+    vi.mocked(subscribeToCircuitResult).mockImplementationOnce(() => unsub);
+    let reject: ((e: Error) => void) | undefined;
+    vi.mocked(apiFetch).mockImplementationOnce(() => new Promise((_, r) => { reject = r; }));
+    const run = useCircuitStore.getState().runSimulation();
+    await vi.waitFor(() => expect(reject).toBeDefined());
+    useCircuitStore.getState().clearCircuit();
+    reject!(new Error("boom"));
+    await run;
+    expect(useCircuitStore.getState().runState).toBe("idle");
+    expect(useCircuitStore.getState().error).toBeNull();
+  });
 });

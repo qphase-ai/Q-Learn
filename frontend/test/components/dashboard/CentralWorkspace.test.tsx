@@ -96,6 +96,20 @@ describe("CentralWorkspace", () => {
     expect(screen.getByText("CircuitWorkspaceMock")).toBeInTheDocument();
   });
 
+  it("standaloneSandbox hides the lesson breadcrumb and summary even when a lesson is loaded", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" standaloneSandbox />);
+    expect(screen.getByRole("heading", { name: "Circuit Builder" })).toBeInTheDocument();
+    expect(screen.queryByText("Level 1 › 1.2 Multi-Qubit Gates")).toBeNull();
+    expect(screen.queryByText(/CNOT creates entanglement/)).toBeNull();
+  });
+
+  it("without standaloneSandbox a loaded lesson keeps its title, breadcrumb and summary on the circuit tab", () => {
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(screen.getByRole("heading", { name: "Multi-Qubit Gates" })).toBeInTheDocument();
+    expect(screen.getByText("Level 1 › 1.2 Multi-Qubit Gates")).toBeInTheDocument();
+    expect(screen.getByText(/CNOT creates entanglement/)).toBeInTheDocument();
+  });
+
   it("standaloneSandbox has no effect on tabs other than circuit", () => {
     useLearningStore.setState({ activeLesson: null });
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="lesson" standaloneSandbox />);
