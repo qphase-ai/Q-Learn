@@ -327,6 +327,7 @@ describe("AIResponse circuit fences", () => {
     ["fractional qubits", '{"qubits": 1.5, "gates": []}'],
     ["out-of-range target", '{"qubits": 2, "gates": [{"type": "H", "targets": [5]}]}'],
     ["bad control", '{"qubits": 2, "gates": [{"type": "CX", "targets": [0], "control": -1}]}'],
+    ["empty targets", '{"qubits": 2, "gates": [{"type": "H", "targets": []}]}'],
     ["gate without type", '{"qubits": 2, "gates": [{"targets": [0]}]}'],
   ])("falls back to a code block for an invalid spec (%s)", (_name, json) => {
     const { container } = render(<AIResponse content={"```circuit\n" + json + "\n```"} />);

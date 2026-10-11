@@ -83,7 +83,7 @@ function parseCircuit(raw: string): CircuitSpec | null {
     const n = qubits as number;
     const valid = gates.every((g) => {
       if (typeof g !== "object" || g === null || typeof g.type !== "string") return false;
-      if (g.targets !== undefined && !(Array.isArray(g.targets) && g.targets.length <= n && g.targets.every((t) => isQubitIndex(t, n)))) {
+      if (g.targets !== undefined && !(Array.isArray(g.targets) && g.targets.length > 0 && g.targets.length <= n && g.targets.every((t) => isQubitIndex(t, n)))) {
         return false;
       }
       return g.control === undefined || isQubitIndex(g.control, n);
