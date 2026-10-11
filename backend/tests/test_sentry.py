@@ -42,6 +42,9 @@ def test_init_sentry_initializes_client_with_dsn():
         assert client.options["environment"] == "test"
         assert client.options["traces_sample_rate"] == 0.1
         assert client.options["send_default_pii"] is False
+        assert client.options["include_local_variables"] is False
+        assert client.options["before_send"] is _scrub_event
+        assert client.options["before_send_transaction"] is _scrub_event
     finally:
         sentry_sdk.get_global_scope().client = sentry_sdk.Client()
 
@@ -56,6 +59,7 @@ def test_scrub_event_strips_sensitive_headers():
             },
             "data": {"password": "hunter2"},
             "cookies": {"session": "abc"},
+            "query_string": "token=secret123",
         }
     }
 
@@ -67,3 +71,4 @@ def test_scrub_event_strips_sensitive_headers():
     assert headers["User-Agent"] == "pytest"
     assert "data" not in scrubbed["request"]
     assert "cookies" not in scrubbed["request"]
+    assert "query_string" not in scrubbed["request"]

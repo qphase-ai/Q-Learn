@@ -16,9 +16,15 @@ response content.
 
 ## What is NOT sent to Sentry
 
-- Request/response bodies, cookies, `Authorization` headers (stripped in
-  `backend/app/core/sentry.py`'s `before_send` and the frontend's
-  `beforeSend` in `sentry.{client,server}.config.ts`)
+- Request/response bodies, cookies, query strings, `Authorization` headers
+  (stripped in `backend/app/core/sentry.py`'s `before_send`/
+  `before_send_transaction`, and in the frontend's `beforeSend` in
+  `src/instrumentation-client.ts` and `frontend/sentry.server.config.ts` —
+  the client-side hook only strips cookies/request data since the browser
+  SDK doesn't see server-only headers)
+- Stack-frame local variables (`include_local_variables=False` on the
+  backend — the same leak vector the structlog fix in `core/logging.py`
+  already guards against for regular log output)
 - LLM prompts, completions, or chain-of-thought — `agents/llm.py` only
   attaches `model` name and token counts as breadcrumbs
 - Submitted code / sandbox stdout — `quantum/sandbox_runner.py` only reports
@@ -44,8 +50,9 @@ response content.
 |---|---|---|
 | `NEXT_PUBLIC_SENTRY_DSN` | *(empty)* | Public by necessity (bundled into the client); empty disables the SDK |
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | `development` | Client-side environment tag |
-| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | `0.05` | Client tracing sample rate |
-| `SENTRY_ENVIRONMENT` / `SENTRY_TRACES_SAMPLE_RATE` | same defaults | Server/edge runtime equivalents |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | unset → `1.0` in dev, `0.1` otherwise | Client tracing sample rate (`src/instrumentation-client.ts`) |
+| `SENTRY_ENVIRONMENT` | `development` | Server/edge runtime environment tag |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0.05` | Server/edge runtime tracing sample rate |
 | `SENTRY_ORG` / `SENTRY_PROJECT` / `SENTRY_AUTH_TOKEN` | *(empty)* | Build-time only, for source-map upload. Set in Vercel/CI, **never** locally, **never** `NEXT_PUBLIC_*` |
 
 ### Manual steps required
@@ -63,10 +70,13 @@ response content.
 
 ## Sampling and cost
 
-Both `*_TRACES_SAMPLE_RATE` defaults (`0.05`) are deliberately conservative —
-tune per environment via env vars, not by editing the code defaults. Backend
-profiling (`SENTRY_PROFILES_SAMPLE_RATE`) stays at `0.0` until a concrete need
-for CPU-level profiles justifies the overhead.
+Backend tracing defaults to `0.05`. Frontend client-side tracing defaults to
+`1.0` in development (full visibility while building) and `0.1` in
+production unless `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` overrides it; the
+frontend's server/edge runtime defaults to `0.05` like the backend. Tune per
+environment via env vars, not by editing the code defaults. Backend profiling
+(`SENTRY_PROFILES_SAMPLE_RATE`) stays at `0.0` until a concrete need for
+CPU-level profiles justifies the overhead.
 
 ## Disabling locally
 
@@ -79,6 +89,17 @@ Leave `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` unset (the default in
 - **No events showing up:** confirm the DSN is set and not the placeholder from `.env.example`; check `sentry_enabled`/`sentry_disabled` in the structlog output at API startup.
 - **Expected (`QlearnError`) exceptions appearing as issues:** they shouldn't — if they do, check that the route didn't re-raise after the handler ran, or that a bug bypassed `qlearn_exception_handler`.
 - **Frontend build fails on source-map upload:** unset `SENTRY_AUTH_TOKEN` locally; the webpack plugin is already skipped automatically when it's absent (see `frontend/next.config.mjs`).
+
+## Known gap: Next.js 14.2 server-error hook
+
+`src/instrumentation.ts` exports `onRequestError` (Sentry's recommended
+App Router request-error hook), but Next.js only started calling that hook
+in a later release than the `14.2.0` pinned here — on this version it's
+inert, forward-compatible code that starts working automatically on the
+next Next.js upgrade. Server-side unhandled exceptions are still captured
+in the meantime through the Node SDK's own global exception handlers
+(installed by `Sentry.init()` in `sentry.server.config.ts`), just without
+the extra Next.js route metadata `onRequestError` would attach.
 
 ## Opportunities not implemented here
 

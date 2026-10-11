@@ -11,12 +11,12 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  // Skip the upload entirely without an auth token — keeps local builds and
-  // PR builds working with no Sentry account configured.
-  disableServerWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
-  disableClientWebpackPlugin: !process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: {
+    // Skip the upload entirely without an auth token — keeps local builds
+    // and PR builds working with no Sentry account configured.
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
   widenClientFileUpload: true,
-  hideSourceMaps: true,
   tunnelRoute: false,
   webpack: {
     treeshake: { removeDebugLogging: true },

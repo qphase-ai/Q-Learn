@@ -23,6 +23,7 @@ def _scrub_event(event: dict, hint: dict) -> dict | None:
             }
         request.pop("data", None)
         request.pop("cookies", None)
+        request.pop("query_string", None)
     return event
 
 
@@ -56,7 +57,12 @@ def init_sentry(settings: Settings) -> None:
         traces_sample_rate=settings.sentry_traces_sample_rate,
         profiles_sample_rate=settings.sentry_profiles_sample_rate,
         send_default_pii=False,
+        # Stack-frame locals can carry the same secrets the structlog fix in
+        # core/logging.py already guards against (see its docstring) — off
+        # here too.
+        include_local_variables=False,
         before_send=_scrub_event,
+        before_send_transaction=_scrub_event,
     )
     logger.info(
         "sentry_enabled",
