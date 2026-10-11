@@ -1,11 +1,8 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
 import { cn } from "@/lib/utils";
 import type { TutorMessage } from "@/types";
+import AIResponse from "@/components/markdown/AIResponse";
 import CitationBadge from "@/components/tutor/CitationBadge";
 
 /**
@@ -13,7 +10,13 @@ import CitationBadge from "@/components/tutor/CitationBadge";
  * (same pipeline as the lesson renderer) and any grounding citations; user
  * turns render as a plain accented bubble.
  */
-export default function ChatMessage({ message }: { message: TutorMessage }) {
+export default function ChatMessage({
+  message,
+  streaming = false,
+}: {
+  message: TutorMessage;
+  streaming?: boolean;
+}) {
   const isUser = message.role === "user";
   const citations = message.citations ?? [];
 
@@ -32,11 +35,7 @@ export default function ChatMessage({ message }: { message: TutorMessage }) {
         {isUser || message.error ? (
           <p className="whitespace-pre-wrap">{message.content}</p>
         ) : (
-          <div className="tutor-markdown space-y-2">
-            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-              {message.content}
-            </ReactMarkdown>
-          </div>
+          <AIResponse variant="chat" content={message.content} streaming={streaming} />
         )}
       </div>
 

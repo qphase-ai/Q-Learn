@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTutorStore } from "@/stores/tutorStore";
 import ChatMessage from "@/components/tutor/ChatMessage";
 import SuggestedPrompts from "@/components/tutor/SuggestedPrompts";
@@ -19,9 +19,35 @@ export default function AITutorPanel() {
 
   const [draft, setDraft] = useState("");
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const nearBottom = useRef(true);
+
+  const scrollToBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // jsdom has no scrollTo; assigning scrollTop works everywhere.
+    el.scrollTop = el.scrollHeight;
+  };
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
+
+  useEffect(() => {
+    if (nearBottom.current) scrollToBottom();
+  }, [messages, isStreaming]);
+
+  const lastMessage = messages[messages.length - 1];
+  const waitingForTokens =
+    isStreaming &&
+    (!lastMessage || lastMessage.role !== "assistant" || lastMessage.content === "");
+
   const send = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isStreaming) return;
+    nearBottom.current = true;
     void sendMessage(trimmed);
     setDraft("");
   };
@@ -33,7 +59,11 @@ export default function AITutorPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 space-y-4 overflow-y-auto p-3">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 space-y-4 overflow-y-auto p-3"
+      >
         {messages.length === 0 ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -46,11 +76,17 @@ export default function AITutorPanel() {
             />
           </div>
         ) : (
-          messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+          messages.map((message, i) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              streaming={
+                isStreaming && i === messages.length - 1 && message.role === "assistant"
+              }
+            />
           ))
         )}
-        {isStreaming && (
+        {waitingForTokens && (
           <p className="animate-pulse text-xs text-cyber-cyan">Tutor is thinking…</p>
         )}
       </div>
