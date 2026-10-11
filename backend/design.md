@@ -277,6 +277,17 @@ POST   /api/v1/agents/research        — Research query
 GET    /api/v1/agents/sessions/{id}   — Get agent session history
 ```
 
+### AI Classroom
+
+```
+POST   /api/v1/classroom/sessions                     — Create a classroom session            → 201 {session_id}
+POST   /api/v1/classroom/sessions/{id}/turns          — {message<=2000, client_message_id}    → 202 {turn_id} (idempotent)
+POST   /api/v1/classroom/sessions/{id}/interrupt      — Stop the running turn                → {interrupted}
+GET    /api/v1/classroom/sessions/{id}                — Status + chat history
+GET    /api/v1/classroom/sessions/{id}/state?after_seq=N — Board snapshot + durable events after N
+```
+Full contract (envelope, event types, actions, rate limits): `docs/api.md`.
+
 ### RAG / Knowledge
 
 ```
@@ -635,8 +646,7 @@ class DocumentChunk(Base):
     id = Column(UUID, primary_key=True, default=uuid4)
     document_id = Column(UUID, ForeignKey("knowledge_documents.id"), nullable=False)
     content = Column(Text, nullable=False)
-    metadata = Column(JSON, default={})
-    chunk_index = Column(Integer, nullable=False)
+    chunk_index = Column(Integer, nullable=False)  # no `metadata` column; content_tsv is a generated tsvector
     token_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -650,7 +660,7 @@ class KnowledgeEmbedding(Base):
 
     __table_args__ = (
         Index("ix_embeddings_chunk_id", "chunk_id"),
-        Index("ix_embedding_search", "embedding", postgresql_using="ivfflat"),
+        Index("ix_knowledge_embeddings_hnsw", "embedding", postgresql_using="hnsw"),  # cosine, m=16, ef_construction=64
     )
 ```
 
@@ -660,7 +670,7 @@ class AgentSession(Base):
     __tablename__ = "agent_sessions"
     id = Column(UUID, primary_key=True, default=uuid4)
     user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
-    session_type = Column(String(50), nullable=False)  # tutor, circuit_explain, quiz, research
+    session_type = Column(String(50), nullable=False)  # tutor, circuit, quiz, evaluation, classroom
     context = Column(JSON, default={})  # Learning context, skill levels
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -669,12 +679,40 @@ class AgentMessage(Base):
     __tablename__ = "agent_messages"
     id = Column(UUID, primary_key=True, default=uuid4)
     session_id = Column(UUID, ForeignKey("agent_sessions.id"), nullable=False)
-    agent_name = Column(String(50), nullable=False)
     role = Column(String(20), nullable=False)  # system, user, assistant, tool
     content = Column(Text, nullable=False)
     tool_calls = Column(JSON)  # Function calling data
-    metadata = Column(JSON, default={})
+    citations = Column(JSON)
+    # AI Classroom (nullable): author agent, owning turn, client idempotency key.
+    # UNIQUE(session_id, client_message_id) makes a retried turn a no-op.
+    agent_name = Column(String(50))
+    turn_id = Column(UUID, index=True)
+    client_message_id = Column(UUID)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    # There is no `metadata` column.
+
+class ClassroomSession(Base):          # app/models/classroom.py — id is the LangGraph thread_id
+    __tablename__ = "classroom_sessions"
+    id = Column(UUID, primary_key=True)
+    user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
+    agent_session_id = Column(UUID, ForeignKey("agent_sessions.id"), unique=True)
+    title = Column(String(200))
+    status = Column(String(20))        # idle | running | completed | failed
+    active_run_id = Column(UUID)       # the only run allowed to write events
+    run_lease_expires_at = Column(DateTime(timezone=True))
+    summary = Column(Text); summary_version = Column(Integer)
+    last_event_seq = Column(Integer)   # atomic sequence allocator
+
+class WhiteboardEvent(Base):           # UNIQUE(session_id, sequence_no), UNIQUE(session_id, event_id)
+    __tablename__ = "whiteboard_events"
+    session_id = Column(UUID, ForeignKey("classroom_sessions.id")); sequence_no = Column(Integer)
+    event_id = Column(String(64)); schema_version = Column(Integer); event_type = Column(String(50))
+    step_id = Column(String(100)); turn_id = Column(UUID); payload = Column(JSONB)
+
+class WhiteboardSnapshot(Base):        # one row per session
+    __tablename__ = "whiteboard_snapshots"
+    session_id = Column(UUID, ForeignKey("classroom_sessions.id"), primary_key=True)
+    version = Column(Integer); board_state = Column(JSONB); last_sequence_no = Column(Integer)
 ```
 
 ---
@@ -970,10 +1008,12 @@ class AgentOrchestratorService:
         # Conditional routing from orchestrator
         workflow.add_conditional_edges("orchestrator", self._route_to_agent)
 
-        # Compile with persistent PostgreSQL checkpointer (survives restarts, works across replicas)
-        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-        checkpointer = AsyncPostgresSaver.from_conn_string(settings.database_url)
-        app = workflow.compile(checkpointer=checkpointer)
+        # Compile with the PostgreSQL checkpointer. Implemented today for the AI Classroom
+        # graph only (app/agents/classroom/checkpointer.py): it needs a direct/session-mode URL
+        # (CHECKPOINT_DATABASE_URL), opens a psycopg pool in the lifespan, and degrades to no
+        # checkpointer if unavailable. The sketch below is the aspirational orchestrator.
+        from app.agents.classroom.checkpointer import get_checkpointer
+        app = workflow.compile(checkpointer=get_checkpointer())
         return app
 
     async def process(self, user_message: str, user_id: uuid) -> AgentResponse:
@@ -1000,6 +1040,17 @@ class AgentOrchestratorService:
             mastery_updates=result["agent_output"].get("mastery_updates", [])
         )
 ```
+
+### AI Classroom Backend
+
+Package `app/agents/classroom/` (graph, nodes, prompts) + `app/services/classroom_service.py` (persistence, lease, publishing) + `app/routers/classroom.py`. Node-level description and the graph diagram: `docs/agents.md`.
+
+- **Graph** (`graph.py`): `load_context → orchestrate → [plan] → teacher → [circuit_agent → math_agent → validate ⟲ retry≤1] → emit`. Built with `build_graph(checkpointer)`; collaborators (`emitter`, `context_loader`) come via `config["configurable"]`, state keys are reset per turn by `initial_state()`.
+- **Checkpointer** (`checkpointer.py`): `AsyncPostgresSaver` on a `psycopg_pool` opened in the FastAPI lifespan against `CHECKPOINT_DATABASE_URL` (direct/session-mode; the app's `DATABASE_URL` is usually the :6543 pooler). Failure logs a warning and the graph compiles without a checkpointer.
+- **Run protocol** (`classroom_service.py`): `start_turn` locks the session row, inserts the user message (idempotent on `client_message_id`), and sets `active_run_id` + a lease; `run_turn` is the background task. Every durable event is one transaction: `UPDATE classroom_sessions SET last_event_seq = last_event_seq + 1 … WHERE active_run_id = :run RETURNING last_event_seq` (atomic sequence + ownership + lease heartbeat), insert into `whiteboard_events`, snapshot when due. `RunSupersededError` stops a superseded/interrupted run.
+- **Board** (`schemas/whiteboard.py`): strict action union + pure `apply_event`/`replay`; snapshots are `replay(None, events)` materialised, so reload = snapshot + tail.
+- **Realtime** (`services/realtime_service.py`): `classroom:{session_id}` publishers with a cached subscribed channel (idle TTL 300 s) and `ClassroomTokenBatcher` (~100 ms). The older `_broadcast` (subscribe/unsubscribe per call) is unchanged and still used by the tutor and circuit publishers.
+- **Rate limiting** (`core/limiter.py`): slowapi decorators on the classroom routes only; key = hashed bearer token, one bucket per route.
 
 ### Agent Prompt Configuration
 
@@ -1297,6 +1348,7 @@ class AgentTracer:
 APP_ENV=development
 APP_DEBUG=true
 SECRET_KEY=your-secret-key
+# CHECKPOINT_DATABASE_URL=postgresql://...:5432/...   # direct/session-mode URL for the LangGraph checkpointer
 API_BASE_URL=http://localhost:8000
 
 # Supabase (Production)

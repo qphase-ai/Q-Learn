@@ -9,7 +9,12 @@ from app.config import get_settings
 from app.core.logging import configure_logging
 from app.exceptions import QlearnError, qlearn_exception_handler
 from app.rag.embeddings import warm_up
-from app.routers import auth, circuits, content_refs, learning, tutor
+from slowapi.errors import RateLimitExceeded
+
+from app.agents.classroom.checkpointer import close_checkpointer, open_checkpointer
+from app.core.limiter import limiter, rate_limit_exceeded_handler
+from app.routers import auth, circuits, classroom, content_refs, learning, tutor
+from app.services.realtime_service import close_all_classroom_channels
 
 configure_logging()
 settings = get_settings()
@@ -38,9 +43,19 @@ async def lifespan(app: FastAPI):
     app.state.embedding_warmup = (
         asyncio.create_task(_warm_up_embeddings()) if settings.rag_warmup_embeddings else None
     )
+    # Classroom checkpointer: opens its own psycopg pool in the background so boot
+    # never waits on it; until it is ready (or if it fails, which is logged) the
+    # classroom graph runs without resumability. get_graph() picks it up once open.
+    checkpointer_task = asyncio.create_task(open_checkpointer(settings))
     try:
         yield
     finally:
+        if not checkpointer_task.done():
+            checkpointer_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await checkpointer_task
+        await close_checkpointer()
+        await close_all_classroom_channels()
         # Shutdown — stop waiting on an unfinished warm-up. The worker thread
         # can't be interrupted; it ends on its own.
         task = app.state.embedding_warmup
@@ -68,11 +83,15 @@ def create_app() -> FastAPI:
     )
 
     app.add_exception_handler(QlearnError, qlearn_exception_handler)
+    # slowapi: limits are declared per route (classroom only); no global middleware.
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
     app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
     app.include_router(circuits.router, prefix="/api/v1/circuits", tags=["circuits"])
     app.include_router(learning.router, prefix="/api/v1", tags=["learning"])
     app.include_router(tutor.router, prefix="/api/v1/tutor", tags=["tutor"])
+    app.include_router(classroom.router, prefix="/api/v1/classroom", tags=["classroom"])
     app.include_router(content_refs.router, prefix="/api/v1/internal", tags=["internal"])
 
     @app.get("/health")

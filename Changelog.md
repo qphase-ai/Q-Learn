@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — AI Classroom backend (text-first slice)
+
+- **`/api/v1/classroom`**: `POST /sessions`, `POST /sessions/{id}/turns` (202, idempotent on `client_message_id`), `POST /sessions/{id}/interrupt`, `GET /sessions/{id}`, `GET /sessions/{id}/state?after_seq=N`. Per-user slowapi limits on these routes only.
+- **`app/agents/classroom/`**: LangGraph workflow (context, heuristics-first orchestrator, bounded planner, teacher, circuit and math agents, deterministic validator with one bounded retry, emit). Circuits are validated through `QiskitAerAdapter.validate`; all prompts are in `prompts.py`; at most 4 LLM calls per turn.
+- **Whiteboard**: strict versioned action schema and the pure `apply_event` reducer (`app/schemas/whiteboard.py`); durable ordered events and snapshots (`whiteboard_events`, `whiteboard_snapshots`) with atomic sequence allocation, a run lease and supersede/late-event rejection (`classroom_sessions`).
+- **Realtime**: `classroom:{session_id}` publishers with a cached channel and a ~100 ms token batcher. The tutor/circuit publishers are unchanged.
+- **Persistence**: `AsyncPostgresSaver` checkpointer (`CHECKPOINT_DATABASE_URL`, opened in the lifespan, degrades to no checkpointer with a warning). New deps `langgraph-checkpoint-postgres`, `psycopg[binary,pool]`.
+- **Migration `f6a7b8c9d0e1`** (additive): three new tables with RLS enabled; `agent_messages.agent_name/turn_id/client_message_id` with UNIQUE(session_id, client_message_id).
+
+### Fixed — docs drift
+
+- `docs/agents.md`, `docs/database.md` and `backend/design.md` no longer claim a `metadata` column on `agent_messages`/`document_chunks`, an IVFFlat index (it is HNSW), or a checkpointer for every agent (only the classroom graph uses one).
+
 ### Added — Payload CMS curriculum store
 
 - **`cms/`**: a standalone Payload 3.90.2 / Next.js 16 app. It has the Curriculums → Levels → Modules → Lessons collections with drafts and versions, the closed 10-block lesson registry stored as JSONB (`blocksAsJSON`), Media with the Supabase Storage (S3) adapter, and isolated `cmsUsers` with `author`/`publisher` roles. It lives in its own `payload` Postgres schema, managed by migrations only.

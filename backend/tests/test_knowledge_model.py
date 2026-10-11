@@ -58,7 +58,9 @@ def test_rag_hybrid_search_migration_is_head():
     cfg = Config(str(BACKEND_DIR / "alembic.ini"))
     cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["e5f6a7b8c9d0"]
+    # Later migrations may build on it (AI Classroom is f6a7b8c9d0e1): it must stay in the chain.
+    assert len(script.get_heads()) == 1
+    assert "e5f6a7b8c9d0" in {r.revision for r in script.walk_revisions()}
     assert script.get_revision("e5f6a7b8c9d0").down_revision == "d4e5f6a7b8c9"
 
 

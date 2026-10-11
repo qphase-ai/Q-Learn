@@ -7,6 +7,7 @@ from app.models.circuit import Circuit, CircuitExecution
 from app.models.assessment import QuizQuestion, QuizAttempt, CodingChallenge, ChallengeAttempt
 from app.models.knowledge import KnowledgeDocument, DocumentChunk, KnowledgeEmbedding
 from app.models.agent import AgentSession, AgentMessage
+from app.models.classroom import ClassroomSession, WhiteboardEvent, WhiteboardSnapshot
 
 __all__ = [
     "Base",
@@ -17,4 +18,5 @@ __all__ = [
     "QuizQuestion", "QuizAttempt", "CodingChallenge", "ChallengeAttempt",
     "KnowledgeDocument", "DocumentChunk", "KnowledgeEmbedding",
     "AgentSession", "AgentMessage",
+    "ClassroomSession", "WhiteboardEvent", "WhiteboardSnapshot",
 ]

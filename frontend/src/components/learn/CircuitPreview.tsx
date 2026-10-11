@@ -1,9 +1,12 @@
 "use client";
 
+import { GATES, isGateType } from "@/lib/gates";
+
 export interface CircuitGate {
   type: string;
   targets?: number[];
   control?: number;
+  params?: { theta?: number; phi?: number; lambda?: number };
 }
 
 export interface CircuitSpec {
@@ -13,21 +16,39 @@ export interface CircuitSpec {
 
 interface Props {
   spec: CircuitSpec;
+  /**
+   * Pack gates into shared columns (a gate shares a column with earlier gates
+   * when its qubit span does not overlap). Default false keeps the original
+   * one-gate-per-column layout used by lessons and chat.
+   */
+  pack?: boolean;
+  /** Draw a dashed accent frame around the diagram (whiteboard highlight). */
+  highlighted?: boolean;
+  ariaLabel?: string;
 }
-
-const GATE_TOKEN_MAP: Record<string, string> = {
-  H: "var(--gate-H)",
-  X: "var(--gate-X)",
-  Y: "var(--gate-Y)",
-  Z: "var(--gate-Z)",
-  CX: "var(--gate-CX)",
-  CNOT: "var(--gate-CX)",
-  M: "var(--gate-M)",
-};
 
 function gateColor(type: string | undefined): string {
   const key = String(type ?? "").toUpperCase();
-  return GATE_TOKEN_MAP[key] ?? "var(--quantum)";
+  const canonical = key === "CNOT" ? "CX" : key;
+  return isGateType(canonical) ? GATES[canonical].color : "var(--quantum)";
+}
+
+/** Column index per gate. Sequential unless `pack` is set. */
+export function assignColumns(gates: CircuitGate[], qubits: number, pack: boolean): number[] {
+  if (!pack) return gates.map((_, i) => i);
+  const next = Array.from({ length: Math.max(1, qubits) }, () => 0);
+  return gates.map((g) => {
+    const qs = [...(g.targets ?? [0]), ...(g.control !== undefined ? [g.control] : [])].filter(
+      (q) => q >= 0 && q < next.length
+    );
+    if (qs.length === 0) return 0;
+    const lo = Math.min(...qs);
+    const hi = Math.max(...qs);
+    let col = 0;
+    for (let q = lo; q <= hi; q++) col = Math.max(col, next[q]);
+    for (let q = lo; q <= hi; q++) next[q] = col + 1;
+    return col;
+  });
 }
 
 // Layout constants
@@ -38,12 +59,13 @@ const GATE_W = 36;
 const GATE_H = 30;
 const GATE_COL_W = 50; // horizontal spacing between gate columns
 
-export default function CircuitPreview({ spec }: Props) {
+export default function CircuitPreview({ spec, pack = false, highlighted = false, ariaLabel = "Circuit diagram" }: Props) {
   const { qubits, gates } = spec;
   const safeQubits = Math.max(1, qubits);
 
   // Assign each gate to a column (simple sequential layout)
-  const columns = gates.length;
+  const colOf = assignColumns(gates, safeQubits, pack);
+  const columns = gates.length === 0 ? 0 : Math.max(...colOf) + 1;
   const svgWidth = WIRE_START_X + (columns + 1) * GATE_COL_W + 20;
   const svgHeight = TOP_PAD + safeQubits * WIRE_HEIGHT + 20;
 
@@ -58,8 +80,24 @@ export default function CircuitPreview({ spec }: Props) {
       width={svgWidth}
       height={svgHeight}
       style={{ display: "block", background: "var(--bg-surface)" }}
-      aria-label="Circuit diagram"
+      role="img"
+      aria-label={ariaLabel}
+      data-highlighted={highlighted ? "true" : undefined}
     >
+      {highlighted && (
+        <rect
+          data-testid="circuit-highlight"
+          x={1}
+          y={1}
+          width={svgWidth - 2}
+          height={svgHeight - 2}
+          rx={6}
+          fill="none"
+          stroke="var(--quantum)"
+          strokeWidth={2}
+          strokeDasharray="6 4"
+        />
+      )}
       {/* Qubit wires */}
       {Array.from({ length: safeQubits }, (_, q) => (
         <line
@@ -90,7 +128,7 @@ export default function CircuitPreview({ spec }: Props) {
 
       {/* Gates */}
       {gates.map((gate, colIdx) => {
-        const cx = gateX(colIdx);
+        const cx = gateX(colOf[colIdx]);
         const color = gateColor(gate.type);
         const targets = gate.targets ?? [0];
 
@@ -103,6 +141,17 @@ export default function CircuitPreview({ spec }: Props) {
                 y1={wireY(gate.control)}
                 x2={cx}
                 y2={wireY(targets[0])}
+                stroke={color}
+                strokeWidth={1.5}
+              />
+            )}
+
+            {gate.control === undefined && targets.length > 1 && (
+              <line
+                x1={cx}
+                y1={wireY(Math.min(...targets))}
+                x2={cx}
+                y2={wireY(Math.max(...targets))}
                 stroke={color}
                 strokeWidth={1.5}
               />

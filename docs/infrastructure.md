@@ -86,6 +86,7 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `SUPABASE_JWT_SECRET` | Project JWT secret — backend verifies Supabase Auth access tokens (HS256) |
 | `SECRET_KEY` | App secret (misc. signing) |
 | `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) — see the two-URL model below |
+| `CHECKPOINT_DATABASE_URL` | Direct or session-mode `postgresql://…` URL (port 5432, not the `:6543` pooler) for the AI Classroom LangGraph checkpointer. Optional: falls back to `DATABASE_URL` when that is not on the pooler, otherwise the classroom runs without resumability |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
 | `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-3.8-flash"]` |
 | `LLM_TEMPERATURE` | Default `0.7` |
