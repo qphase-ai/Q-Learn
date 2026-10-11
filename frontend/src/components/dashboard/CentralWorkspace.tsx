@@ -29,10 +29,17 @@ export default function CentralWorkspace({
   onExplainCircuit,
   lockedTab,
   showTabBar = lockedTab === undefined,
+  standaloneSandbox = false,
 }: {
   onExplainCircuit: () => void;
   lockedTab?: CentralTab;
   showTabBar?: boolean;
+  /**
+   * Render the circuit tab without a selected lesson (e.g. a circuit handed
+   * off from the AI Classroom, which isn't tied to any lesson). Only applies
+   * when `lockedTab === "circuit"` — every other tab still requires a lesson.
+   */
+  standaloneSandbox?: boolean;
 }) {
   const activeCourse = useLearningStore((s) => s.activeCourse);
   const activeLesson = useLearningStore((s) => s.activeLesson);
@@ -70,7 +77,7 @@ export default function CentralWorkspace({
     await runSimulation();
   }
 
-  if (!activeLesson) {
+  if (!activeLesson && !(lockedTab === "circuit" && standaloneSandbox)) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-2 overflow-auto p-6 text-center">
         <p className="text-sm font-medium text-foreground">
@@ -119,7 +126,9 @@ export default function CentralWorkspace({
       </div>
 
       <div>
-        <h1 className="text-xl font-semibold text-foreground">{activeLesson.title}</h1>
+        <h1 className="text-xl font-semibold text-foreground">
+          {activeLesson ? activeLesson.title : "Circuit Builder"}
+        </h1>
         {summary && <p className="mt-1 text-sm text-muted-foreground">{summary}</p>}
       </div>
 
@@ -135,7 +144,7 @@ export default function CentralWorkspace({
         </Tabs>
       )}
 
-      {tab === "lesson" && (
+      {tab === "lesson" && activeLesson && (
         <div className="flex flex-col gap-4">
           {activeLesson.concepts.map((concept) => (
             <ConceptCard key={concept.id} concept={concept} />

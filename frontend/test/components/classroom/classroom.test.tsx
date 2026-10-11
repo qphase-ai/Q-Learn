@@ -4,9 +4,12 @@ import userEvent from "@testing-library/user-event";
 
 vi.mock("@/lib/supabase", () => ({ subscribeToClassroom: vi.fn(() => () => {}), getAccessToken: vi.fn(async () => undefined) }));
 vi.mock("@/lib/api", () => ({ apiFetch: vi.fn() }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 import Composer from "@/components/classroom/Composer";
 import { BoardView } from "@/components/classroom/Whiteboard";
+import { takeStashedCircuit } from "@/lib/circuit-handoff";
 import CircuitPreview, { assignColumns } from "@/components/learn/CircuitPreview";
 import { applyEvent, emptyBoard } from "@/lib/whiteboard";
 import type { ClassroomEvent } from "@/types/classroom";
@@ -27,8 +30,28 @@ describe("Whiteboard", () => {
     expect(within(screen.getByTestId("circuit-preview")).getByText("H")).toBeInTheDocument();
     expect(container.querySelector(".katex")).not.toBeNull();
     expect(screen.getByTestId("annotation-a1")).toBeInTheDocument();
+    expect(screen.getByRole("note", { name: "Entangles both" })).toBeInTheDocument();
     expect(screen.getByTestId("circuit-highlight")).toBeInTheDocument();
     expect(screen.getByTestId("board-object-c1")).toHaveAttribute("data-highlighted", "true");
+  });
+
+  it("hands a drawn circuit off to the Circuit Builder and redirects there", async () => {
+    const user = userEvent.setup();
+    let b = emptyBoard();
+    b = applyEvent(b, { ...ev({ action: "step_started", title: "Bell state" }), step_id: "s1" });
+    b = applyEvent(b, {
+      ...ev({ action: "draw_quantum_circuit", object_id: "c1", qubits: 2, gates: [{ type: "H", targets: [0] }, { type: "CX", targets: [1], control: 0 }] }),
+      step_id: "s1",
+    });
+    render(<BoardView board={b} steps={[{ id: "s1", title: "Bell state", done: false }]} />);
+    await user.click(screen.getByTestId("run-in-builder-c1"));
+    expect(push).toHaveBeenCalledWith("/circuit");
+    const stashed = takeStashedCircuit();
+    expect(stashed).toEqual({
+      qubits: 2,
+      gates: [{ type: "H", targets: [0] }, { type: "CX", targets: [1], control: 0 }],
+      name: "Bell state",
+    });
   });
 });
 

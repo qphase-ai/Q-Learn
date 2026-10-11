@@ -377,3 +377,58 @@ describe("updateGate / duplicate / qubit count", () => {
     useCircuitStore.getState().setShots(1024);
   });
 });
+
+// ---------------------------------------------------------------------------
+// loadFromSpec — AI Classroom -> Circuit Builder handoff
+// ---------------------------------------------------------------------------
+describe("loadFromSpec", () => {
+  it("replaces the circuit, packing gates in order into one undo step", () => {
+    useCircuitStore.getState().placeGate("X", 0, 0); // pre-existing circuit to discard
+    const pastBefore = useCircuitStore.getState().past.length;
+    useCircuitStore.getState().loadFromSpec(
+      {
+        qubits: 2,
+        gates: [
+          { type: "H", targets: [0] },
+          { type: "CX", targets: [1], control: 0 },
+        ],
+      },
+      "Bell state"
+    );
+    const { nodes, qubitCount, circuitName, past } = useCircuitStore.getState();
+    expect(qubitCount).toBe(2);
+    expect(circuitName).toBe("Bell state");
+    expect(nodes).toHaveLength(2);
+    const spec = nodesToCircuitSpec(nodes, qubitCount);
+    expect(spec.gates).toEqual([
+      { type: "H", targets: [0] },
+      { type: "CX", control: 0, targets: [1] },
+    ]);
+    expect(past).toHaveLength(pastBefore + 1); // one undo step for the whole load, not one per gate
+
+    useCircuitStore.getState().undo();
+    expect(useCircuitStore.getState().nodes).toHaveLength(1); // back to the pre-existing X
+  });
+
+  it("clamps qubit count and drops gates the target qubit count can't hold", () => {
+    useCircuitStore.getState().loadFromSpec({
+      qubits: 1,
+      gates: [
+        { type: "H", targets: [0] },
+        { type: "CX", targets: [1], control: 0 }, // needs qubit 1, which doesn't exist
+      ],
+    });
+    const { nodes, qubitCount } = useCircuitStore.getState();
+    expect(qubitCount).toBe(1);
+    expect(nodes).toHaveLength(1);
+    expect((nodes[0].data as { type: string }).type).toBe("H");
+  });
+
+  it("ignores unknown gate types instead of throwing", () => {
+    useCircuitStore.getState().loadFromSpec({
+      qubits: 1,
+      gates: [{ type: "NOT_A_GATE", targets: [0] }, { type: "H", targets: [0] }],
+    });
+    expect(useCircuitStore.getState().nodes).toHaveLength(1);
+  });
+});

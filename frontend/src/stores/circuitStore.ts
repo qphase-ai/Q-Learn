@@ -79,6 +79,16 @@ interface CircuitStore {
   clearCircuit: () => void;
   undo: () => void;
   redo: () => void;
+  /**
+   * Replace the circuit with one built elsewhere (e.g. the AI Classroom
+   * whiteboard), packing gates into columns in the given order. Unknown gate
+   * types and out-of-range targets are skipped rather than rejecting the
+   * whole circuit. One undo step for the whole load.
+   */
+  loadFromSpec: (
+    spec: { qubits: number; gates: { type: string; targets: number[]; control?: number; params?: GateParams }[] },
+    name?: string
+  ) => void;
 
   // Orchestrator
   runSimulation: () => Promise<void>;
@@ -316,6 +326,40 @@ export const useCircuitStore = create<CircuitStore>((set, get) => {
     clearCircuit: () => {
       if (get().nodes.length > 0) commit();
       set({ nodes: [], edges: [], results: null, runState: "idle", error: null });
+    },
+
+    loadFromSpec: (spec, name) => {
+      const qubitCount = Math.min(MAX_QUBITS, Math.max(MIN_QUBITS, Math.round(spec.qubits)));
+      const occupied = new Set<string>();
+      const nodes: Node[] = [];
+      for (const g of spec.gates) {
+        if (!isGateType(g.type)) continue;
+        const target = g.targets[0];
+        if (typeof target !== "number") continue;
+        const data: GateNodeData = {
+          type: g.type,
+          qubit: target,
+          column: 0,
+          ...(isTwoQubitGate(g.type) ? { control: g.control ?? Math.max(0, target - 1) } : {}),
+          ...(g.params ?? defaultParams(g.type) ? { params: { ...(defaultParams(g.type) ?? {}), ...g.params } } : {}),
+        };
+        const rows = gateRows(data);
+        if (!inRange(rows, qubitCount)) continue; // drop gates the target qubit count can't hold
+        const column = nextFreeColumn(occupied, rows, 0);
+        const placed = { ...data, column };
+        gateRows(placed).forEach((q) => occupied.add(`${q}:${column}`));
+        nodes.push(makeNode(placed));
+      }
+      commit();
+      set({
+        qubitCount,
+        nodes,
+        edges: [],
+        results: null,
+        runState: "idle",
+        error: null,
+        ...(name ? { circuitName: name } : {}),
+      });
     },
 
     undo: () => {

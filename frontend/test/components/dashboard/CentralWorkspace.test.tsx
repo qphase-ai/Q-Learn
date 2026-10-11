@@ -82,6 +82,26 @@ describe("CentralWorkspace", () => {
     expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
   });
 
+  it("still gates the embedded circuit tab on a lesson when standaloneSandbox is not set", () => {
+    useLearningStore.setState({ activeLesson: null });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" />);
+    expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
+  });
+
+  it("standaloneSandbox renders the circuit tab without a lesson, with a fallback title", () => {
+    useLearningStore.setState({ activeLesson: null });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="circuit" standaloneSandbox />);
+    expect(screen.queryByText(/select a lesson/i)).toBeNull();
+    expect(screen.getByRole("heading", { name: "Circuit Builder" })).toBeInTheDocument();
+    expect(screen.getByText("CircuitWorkspaceMock")).toBeInTheDocument();
+  });
+
+  it("standaloneSandbox has no effect on tabs other than circuit", () => {
+    useLearningStore.setState({ activeLesson: null });
+    render(<CentralWorkspace onExplainCircuit={onExplainCircuit} lockedTab="lesson" standaloneSandbox />);
+    expect(screen.getByText(/select a lesson/i)).toBeInTheDocument();
+  });
+
   it("renders the derived breadcrumb, lesson title, and concept card", () => {
     render(<CentralWorkspace onExplainCircuit={onExplainCircuit} />);
     expect(screen.getByText("Level 1 › 1.2 Multi-Qubit Gates")).toBeInTheDocument();
