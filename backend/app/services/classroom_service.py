@@ -290,7 +290,7 @@ async def persist_whiteboard_event(
     """Validate, allocate the next sequence number and store one whiteboard action.
 
     Atomic: the conditional UPDATE both allocates `last_event_seq + 1` and proves
-    `run_id` still owns the board (it also extends the lease). No row → the run was
+    `run_id` still owns the board with an unexpired lease (it also extends the lease). No row → the run was
     superseded/interrupted → RunSupersededError and nothing is written.
     Returns (sequence_no, event_id).
     """
@@ -302,7 +302,12 @@ async def persist_whiteboard_event(
         seq = (
             await db.execute(
                 update(ClassroomSession)
-                .where(ClassroomSession.id == session_id, ClassroomSession.active_run_id == run_id)
+                .where(
+                    ClassroomSession.id == session_id,
+                    ClassroomSession.active_run_id == run_id,
+                    # An expired lease is already reported as `failed`: it must not revive itself.
+                    ClassroomSession.run_lease_expires_at > _now(),
+                )
                 .values(
                     last_event_seq=ClassroomSession.last_event_seq + 1,
                     run_lease_expires_at=_lease_deadline(),

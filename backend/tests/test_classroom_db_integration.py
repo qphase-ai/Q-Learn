@@ -277,6 +277,25 @@ async def test_stale_lease_reports_failed_and_does_not_block_a_new_turn(factory)
         assert new and (await svc.get_session_view(db, sid, uid)).status == "running"
 
 
+async def test_expired_lease_run_cannot_persist_or_renew(factory):
+    uid = await make_user(factory)
+    sid = await new_session(factory, uid)
+    async with factory() as db:
+        t, _ = await svc.start_turn(db, uid, sid, "go", uuid.uuid4())
+    seq, _ = await svc.persist_whiteboard_event(sid, t, step("ok"), "s1")  # unexpired run still succeeds
+    assert seq == 1
+    async with factory() as db:
+        await db.execute(text("UPDATE classroom_sessions SET run_lease_expires_at = now() - interval '1 minute' WHERE id = :sid"), {"sid": sid})
+        await db.commit()
+    with pytest.raises(RunSupersededError):
+        await svc.persist_whiteboard_event(sid, t, step("late"), "s2")
+    async with factory() as db:
+        assert await db.scalar(select(func.count()).select_from(WhiteboardEvent).where(WhiteboardEvent.session_id == sid)) == 1
+        row = await db.get(ClassroomSession, sid)
+        assert row.last_event_seq == 1  # no sequence consumed
+        assert (await svc.get_session_view(db, sid, uid)).status == "failed"  # lease not renewed
+
+
 # ---------------------------------------------------------------------------
 # run_turn end to end with a scripted graph
 # ---------------------------------------------------------------------------
