@@ -99,6 +99,17 @@ class Settings(BaseSettings):
     # Load the embedding model at startup instead of on the first tutor turn.
     rag_warmup_embeddings: bool = True
 
+    # Sentry — error monitoring + tracing. Empty DSN disables the SDK entirely
+    # (local dev, tests). See docs/observability.md.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    # Fraction of requests to trace (0.0-1.0). Keep conservative in production;
+    # tune via Railway env var, not by editing this default.
+    sentry_traces_sample_rate: float = 0.05
+    # Profiling piggybacks on traced transactions and adds real overhead — off
+    # by default, opt in per-environment.
+    sentry_profiles_sample_rate: float = 0.0
+
 
 @lru_cache
 def get_settings() -> Settings:

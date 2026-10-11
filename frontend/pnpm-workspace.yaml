@@ -1,3 +1,6 @@
 allowBuilds:
+  # Downloads the sentry-cli binary used for build-time source map upload
+  # (only runs when SENTRY_AUTH_TOKEN is set — see next.config.mjs).
+  '@sentry/cli': true
   esbuild: true
   unrs-resolver: false
