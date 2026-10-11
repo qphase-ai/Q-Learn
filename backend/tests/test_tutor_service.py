@@ -440,6 +440,19 @@ class TestCitedOnlyCitations:
         assert _persisted_assistant(db).content == expected
 
     @pytest.mark.asyncio
+    async def test_math_is_normalised_before_citations_are_counted(self):
+        db = _make_mock_db()
+        _, _, spy_complete = await _run_capturing(
+            db, "q", chunks=_two_chunks(), tokens=("Rule\n\\[ a=b \\quad\\text{[2]} \\]\nDone.",)
+        )
+
+        titles = [c["title"] for c in spy_complete.await_args.args[1]["citations"]]
+        assert titles == ["The Hadamard Gate"]
+        expected = "Rule [1]\n$$\na=b\n$$\nDone."
+        assert spy_complete.await_args.args[1]["content"] == expected
+        assert _persisted_assistant(db).content == expected
+
+    @pytest.mark.asyncio
     async def test_sparse_markers_are_renumbered_to_list_positions(self):
         db = _make_mock_db()
         chunks = _two_chunks() + [
