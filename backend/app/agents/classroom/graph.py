@@ -1,7 +1,7 @@
 """The classroom StateGraph.
 
-    START → load_context → orchestrate ─┬─ (needs_plan) → plan ─┐
-                                        └────────────────────────┴→ teacher
+    START → load_context → orchestrate ─┬─ (needs_plan) → lesson_plan ─┐
+                                        └─────────────────────────────┴→ teacher
     teacher ─┬─ (wants visuals) → circuit_agent → math_agent → validate ─┬─ (retry ≤1) → retry → circuit_agent
              └─ (text only) ─────────────────────────────→ emit ←────────┘ (valid / budget spent)
     emit → END
@@ -40,7 +40,7 @@ async def load_context_node(state, config):
 
 
 def route_after_orchestrate(state) -> str:
-    return "plan" if state.get("needs_plan") else "teacher"
+    return "lesson_plan" if state.get("needs_plan") else "teacher"
 
 
 def route_after_teacher(state) -> str:
@@ -90,7 +90,7 @@ def build_graph(checkpointer=None):
     g = StateGraph(ClassroomState)
     g.add_node("load_context", load_context_node)
     g.add_node("orchestrate", orchestrate_node)
-    g.add_node("plan", plan_node)
+    g.add_node("lesson_plan", plan_node)  # "plan" is a ClassroomState key; node ids share the same namespace
     g.add_node("teacher", teacher_node)
     g.add_node("circuit_agent", circuit_agent_node)
     g.add_node("math_agent", math_agent_node)
@@ -100,8 +100,10 @@ def build_graph(checkpointer=None):
 
     g.add_edge(START, "load_context")
     g.add_edge("load_context", "orchestrate")
-    g.add_conditional_edges("orchestrate", route_after_orchestrate, {"plan": "plan", "teacher": "teacher"})
-    g.add_edge("plan", "teacher")
+    g.add_conditional_edges(
+        "orchestrate", route_after_orchestrate, {"lesson_plan": "lesson_plan", "teacher": "teacher"}
+    )
+    g.add_edge("lesson_plan", "teacher")
     g.add_conditional_edges("teacher", route_after_teacher, {"circuit_agent": "circuit_agent", "emit": "emit"})
     g.add_edge("circuit_agent", "math_agent")
     g.add_edge("math_agent", "validate")

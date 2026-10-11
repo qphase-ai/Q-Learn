@@ -109,7 +109,10 @@ def clean_caption(caption: object) -> str | None:
 
 async def validate_node(state, config=None):
     turn_id = state["turn_id"]
-    update: dict = {}
+    # LangGraph requires every node to write at least one state key; `retries`
+    # is a harmless baseline write when neither branch below applies (e.g. the
+    # circuit/math draft already failed upstream with no draft to validate).
+    update: dict = {"retries": state.get("retries", 0)}
     if state.get("wants_circuit") and state.get("circuit_draft") is not None and not state.get("circuit_errors"):
         payload, errors = await validate_circuit(state["circuit_draft"], turn_id)
         update["circuit_action"] = payload

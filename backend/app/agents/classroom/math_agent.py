@@ -17,12 +17,14 @@ def _errors_block(errors: list[str]) -> str:
 
 
 async def math_agent_node(state, config=None):
+    calls = state.get("llm_calls", 0)
+    # LangGraph requires every node to write at least one state key, so the
+    # no-op paths below write `llm_calls` back unchanged instead of `{}`.
     if not state.get("wants_math"):
-        return {}
+        return {"llm_calls": calls}
     errors = state.get("equation_errors") or []
     if state.get("equation_drafts") and not errors:
-        return {}
-    calls = state.get("llm_calls", 0)
+        return {"llm_calls": calls}
     if calls >= MAX_LLM_CALLS:
         logger.info("classroom_math_skipped_budget", session_id=state.get("session_id"))
         return {"equation_drafts": [], "equation_errors": ["LLM budget exhausted"]}

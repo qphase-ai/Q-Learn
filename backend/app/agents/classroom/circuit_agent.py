@@ -22,12 +22,14 @@ def _errors_block(errors: list[str]) -> str:
 
 
 async def circuit_agent_node(state, config=None):
+    calls = state.get("llm_calls", 0)
+    # LangGraph requires every node to write at least one state key, so the
+    # no-op paths below write `llm_calls` back unchanged instead of `{}`.
     if not state.get("wants_circuit"):
-        return {}
+        return {"llm_calls": calls}
     errors = state.get("circuit_errors") or []
     if state.get("circuit_draft") is not None and not errors:
-        return {}  # already drafted and nothing to fix
-    calls = state.get("llm_calls", 0)
+        return {"llm_calls": calls}  # already drafted and nothing to fix
     if calls >= MAX_LLM_CALLS:
         logger.info("classroom_circuit_skipped_budget", session_id=state.get("session_id"))
         return {"circuit_draft": None, "circuit_errors": ["LLM budget exhausted"]}
