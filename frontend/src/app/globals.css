@@ -176,3 +176,207 @@ body {
     0 0 0 4px hsl(var(--cyber-cyan) / 0.6);
   border-radius: 4px;
 }
+
+/* ------------------------------------------------------------------ */
+/* AI-written Markdown (tutor chat, generated quiz text).              */
+/* Tailwind preflight strips heading/list styles, so they live here.   */
+/* Colours come from the theme variables only, so both themes work.    */
+/* ------------------------------------------------------------------ */
+.ai-markdown {
+  --ai-md-gap: 0.85em;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  color: hsl(var(--foreground));
+}
+.ai-markdown-chat {
+  font-size: 0.875rem;
+  --ai-md-gap: 0.65em;
+  line-height: 1.55;
+}
+.ai-markdown-page {
+  font-size: 1rem;
+}
+.ai-markdown > :first-child {
+  margin-top: 0;
+}
+.ai-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.ai-markdown p {
+  margin: 0 0 var(--ai-md-gap);
+}
+
+.ai-markdown h1,
+.ai-markdown h2,
+.ai-markdown h3,
+.ai-markdown h4,
+.ai-markdown h5,
+.ai-markdown h6 {
+  margin: 1.25em 0 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--foreground));
+}
+.ai-markdown h1 { font-size: 1.6em; }
+.ai-markdown h2 { font-size: 1.4em; }
+.ai-markdown h3 { font-size: 1.2em; }
+.ai-markdown h4 { font-size: 1.05em; }
+.ai-markdown h5,
+.ai-markdown h6 {
+  font-size: 1em;
+  color: hsl(var(--muted-foreground));
+}
+.ai-markdown-chat h1 { font-size: 1.2em; }
+.ai-markdown-chat h2 { font-size: 1.12em; }
+.ai-markdown-chat h3 { font-size: 1.05em; }
+.ai-markdown-chat h4,
+.ai-markdown-chat h5,
+.ai-markdown-chat h6 { font-size: 1em; }
+.ai-markdown-chat h1,
+.ai-markdown-chat h2,
+.ai-markdown-chat h3,
+.ai-markdown-chat h4 {
+  margin: 1em 0 0.4em;
+}
+
+.ai-markdown ul,
+.ai-markdown ol {
+  margin: 0 0 var(--ai-md-gap);
+  padding-left: 1.5em;
+}
+.ai-markdown ul { list-style: disc; }
+.ai-markdown ol { list-style: decimal; }
+.ai-markdown ul ul { list-style: circle; }
+.ai-markdown ul ul ul { list-style: square; }
+.ai-markdown li {
+  margin: 0.25em 0;
+}
+.ai-markdown li > ul,
+.ai-markdown li > ol {
+  margin: 0.25em 0 0;
+}
+.ai-markdown li > p {
+  margin: 0 0 0.35em;
+}
+.ai-markdown li::marker {
+  color: hsl(var(--muted-foreground));
+}
+/* GFM task lists */
+.ai-markdown ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.25em;
+}
+.ai-markdown li.task-list-item input {
+  margin-right: 0.5em;
+  accent-color: hsl(var(--cyber-cyan));
+}
+
+.ai-markdown hr {
+  margin: 1.25em 0;
+  border: 0;
+  border-top: 1px solid hsl(var(--overlay) / 0.15);
+}
+
+.ai-markdown blockquote {
+  margin: 0 0 var(--ai-md-gap);
+  padding: 0.1em 0 0.1em 0.9em;
+  border-left: 3px solid hsl(var(--overlay) / 0.25);
+  color: hsl(var(--muted-foreground));
+}
+.ai-markdown .ai-callout > :first-child { margin-top: 0; }
+.ai-markdown .ai-callout > :last-child { margin-bottom: 0; }
+
+.ai-markdown a {
+  color: hsl(var(--cyber-cyan));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ai-markdown a:hover {
+  text-decoration-thickness: 2px;
+}
+.ai-markdown strong { font-weight: 600; }
+.ai-markdown del { color: hsl(var(--muted-foreground)); }
+
+.ai-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.ai-markdown th,
+.ai-markdown td {
+  padding: 0.4em 0.7em;
+  border: 1px solid hsl(var(--overlay) / 0.15);
+  text-align: left;
+  vertical-align: top;
+}
+.ai-markdown th {
+  font-weight: 600;
+  background-color: hsl(var(--overlay) / 0.08);
+}
+.ai-markdown tbody tr:nth-child(even) {
+  background-color: hsl(var(--overlay) / 0.04);
+}
+
+/* Math */
+.ai-markdown .katex-display {
+  margin: 0.9em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.ai-markdown .katex-display > .katex {
+  max-width: 100%;
+}
+
+/* Code */
+.ai-markdown .ai-inline-code {
+  padding: 0.12em 0.4em;
+  border-radius: 0.3em;
+  background-color: hsl(var(--overlay) / 0.1);
+  color: hsl(var(--electric-purple));
+  font-family: var(--font-code), monospace;
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+.ai-markdown .ai-codeblock pre {
+  margin: 0;
+  background: transparent;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.ai-markdown .ai-codeblock code {
+  font-family: inherit;
+  background: transparent;
+  padding: 0;
+  white-space: pre;
+}
+
+/* Syntax tokens (highlight.js classes emitted by rehype-highlight) */
+.ai-markdown .hljs { color: hsl(var(--foreground)); background: transparent; }
+.ai-markdown .hljs-comment,
+.ai-markdown .hljs-quote { color: hsl(var(--muted-foreground)); font-style: italic; }
+.ai-markdown .hljs-keyword,
+.ai-markdown .hljs-selector-tag,
+.ai-markdown .hljs-doctag { color: hsl(var(--electric-purple)); }
+.ai-markdown .hljs-string,
+.ai-markdown .hljs-regexp,
+.ai-markdown .hljs-addition { color: hsl(var(--neon-green)); }
+.ai-markdown .hljs-number,
+.ai-markdown .hljs-literal,
+.ai-markdown .hljs-symbol,
+.ai-markdown .hljs-bullet { color: hsl(var(--warning-ds)); }
+.ai-markdown .hljs-title,
+.ai-markdown .hljs-function,
+.ai-markdown .hljs-built_in,
+.ai-markdown .hljs-type,
+.ai-markdown .hljs-class .hljs-title { color: hsl(var(--cyber-cyan)); }
+.ai-markdown .hljs-attr,
+.ai-markdown .hljs-attribute,
+.ai-markdown .hljs-variable,
+.ai-markdown .hljs-params,
+.ai-markdown .hljs-property { color: hsl(var(--foreground)); }
+.ai-markdown .hljs-meta,
+.ai-markdown .hljs-name { color: hsl(var(--cyber-cyan)); }
+.ai-markdown .hljs-deletion { color: hsl(var(--error-ds)); }
+.ai-markdown .hljs-emphasis { font-style: italic; }
+.ai-markdown .hljs-strong { font-weight: 700; }

@@ -50,4 +50,49 @@ describe("ChatMessage", () => {
     expect(screen.getByText(/measurement/i)).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
   });
+
+  it("renders a user message as a plain bubble without markdown", () => {
+    const message: TutorMessage = { id: "u1", role: "user", content: "What is **a qubit** and $x^2$?" };
+    const { container } = render(<ChatMessage message={message} />);
+    expect(screen.getByText("What is **a qubit** and $x^2$?")).toBeInTheDocument();
+    expect(container.querySelector("strong")).toBeNull();
+    expect(container.querySelector(".katex")).toBeNull();
+    expect(container.querySelector(".ai-markdown")).toBeNull();
+  });
+
+  it("renders an error message as plain text in an error bubble", () => {
+    const message: TutorMessage = { id: "e1", role: "assistant", content: "Something **failed**", error: true };
+    const { container } = render(<ChatMessage message={message} />);
+    expect(screen.getByText("Something **failed**")).toBeInTheDocument();
+    expect(container.querySelector("strong")).toBeNull();
+    expect(container.querySelector(".text-error")).not.toBeNull();
+  });
+
+  it("renders assistant display math, code and a table together", () => {
+    const message: TutorMessage = {
+      id: "a2",
+      role: "assistant",
+      content:
+        "Result:\n\\[\\frac{1}{\\sqrt{2}}\\]\n\n```python\nqc.h(0)\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |",
+    };
+    const { container } = render(<ChatMessage message={message} />);
+    expect(container.querySelector(".katex-display")).not.toBeNull();
+    expect(container.querySelector("div.ai-codeblock")).not.toBeNull();
+    expect(container.querySelector("table")).not.toBeNull();
+    expect(container.textContent).not.toContain("\\[");
+  });
+
+  it("shows citation badges alongside rendered markdown", async () => {
+    const message: TutorMessage = {
+      ...base,
+      citations: [
+        { title: "Source A", url: null, score: 0.9 },
+        { title: "Source B", url: "https://q.example/b", score: 0.8 },
+      ],
+    };
+    const { container } = render(<ChatMessage message={message} />);
+    expect(await screen.findByText("Source A")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /source b/i })).toBeInTheDocument();
+    expect(container.querySelector(".katex")).not.toBeNull();
+  });
 });
