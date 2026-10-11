@@ -1,6 +1,6 @@
 # Data Flow
 
-Seven key flows through the Q-Learn platform.
+Eight key flows through the Q-Learn platform.
 
 ```mermaid
 sequenceDiagram
@@ -49,3 +49,29 @@ sequenceDiagram
 | 5 | Supabase Realtime → Frontend (subscribe) | Supabase JS SDK WebSocket |
 | 6 | Backend → LLM Provider | HTTPS via ChatLiteLLM — primary model first, fallbacks on failure |
 | 7 | LLM tokens → Frontend | LLM → API → Supabase Realtime → Frontend |
+
+## AI Classroom turn (flow 8)
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend
+    participant API as FastAPI
+    participant DB as PostgreSQL
+    participant RT as Supabase Realtime
+    participant G as Classroom graph (LangGraph)
+
+    FE->>RT: subscribe classroom:{session_id}
+    FE->>API: POST /classroom/sessions/{id}/turns {message, client_message_id}
+    API->>DB: lock session row, insert user message (idempotent), set active_run_id + lease
+    API-->>FE: 202 {turn_id}
+    API->>G: run_turn() background task, thread_id = session_id
+    G->>RT: agent.status, message.delta (batched ~100 ms, not durable)
+    G->>DB: whiteboard action: UPDATE … WHERE active_run_id = run RETURNING last_event_seq, INSERT event, snapshot at boundaries
+    DB-->>G: sequence_no (no row = superseded, run stops)
+    G->>RT: whiteboard.action (sequence_no)
+    G->>DB: assistant message, status completed, final snapshot
+    G->>RT: message.completed
+    FE->>API: GET /classroom/sessions/{id}/state?after_seq=N (reload, gap repair)
+```
+
+Durable events are written to Postgres first and published second, so anything a client sees live can be replayed. A newer turn or `interrupt` moves `active_run_id`, which makes the old run's next event write fail; it stops without publishing. Channels are public Realtime channels keyed by the unguessable session UUID (see `docs/security.md`).

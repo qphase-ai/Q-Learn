@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLearningStore } from "@/stores/learningStore";
 import { useCircuitStore } from "@/stores/circuitStore";
 import { useCircuitShortcuts } from "@/hooks/useCircuitShortcuts";
+import { useCircuitHandoff } from "@/hooks/useCircuitHandoff";
 import {
   findModuleIndexForLesson,
   firstSentence,
@@ -29,10 +30,17 @@ export default function CentralWorkspace({
   onExplainCircuit,
   lockedTab,
   showTabBar = lockedTab === undefined,
+  standaloneSandbox = false,
 }: {
   onExplainCircuit: () => void;
   lockedTab?: CentralTab;
   showTabBar?: boolean;
+  /**
+   * Render the circuit tab without a selected lesson (e.g. a circuit handed
+   * off from the AI Classroom, which isn't tied to any lesson). Only applies
+   * when `lockedTab === "circuit"` — every other tab still requires a lesson.
+   */
+  standaloneSandbox?: boolean;
 }) {
   const activeCourse = useLearningStore((s) => s.activeCourse);
   const activeLesson = useLearningStore((s) => s.activeLesson);
@@ -51,6 +59,10 @@ export default function CentralWorkspace({
   // be surprising.
   useCircuitShortcuts(lockedTab === "circuit");
 
+  // Consume a circuit handed off from the AI Classroom (standalone /circuit only).
+  const handoff = useCircuitHandoff(lockedTab === "circuit");
+  const sandbox = lockedTab === "circuit" && (standaloneSandbox || handoff.standalone);
+
   const modules = activeCourse ? sortedModules(activeCourse) : [];
   const moduleIndex = findModuleIndexForLesson(modules, currentLessonId);
   const activeModule = moduleIndex >= 0 ? modules[moduleIndex] : null;
@@ -59,18 +71,23 @@ export default function CentralWorkspace({
     : -1;
 
   const breadcrumb =
-    activeModule && lessonIndex >= 0
+    !sandbox && activeModule && lessonIndex >= 0
       ? `${levelLabel(moduleIndex)} › ${lessonLabel(moduleIndex, lessonIndex, activeLesson?.title ?? "")}`
       : null;
 
-  const summary = firstSentence(activeLesson?.content);
+  const summary = sandbox ? null : firstSentence(activeLesson?.content);
 
   async function handleRunSimulation() {
     setTab("simulation");
     await runSimulation();
   }
 
-  if (!activeLesson) {
+  if (lockedTab === "circuit" && !handoff.checked && !standaloneSandbox) {
+    // Handoff not looked for yet — neutral placeholder, no "select a lesson" flash.
+    return <main className="flex-1" aria-busy="true" />;
+  }
+
+  if (!activeLesson && !sandbox) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-2 overflow-auto p-6 text-center">
         <p className="text-sm font-medium text-foreground">
@@ -119,7 +136,9 @@ export default function CentralWorkspace({
       </div>
 
       <div>
-        <h1 className="text-xl font-semibold text-foreground">{activeLesson.title}</h1>
+        <h1 className="text-xl font-semibold text-foreground">
+          {!sandbox && activeLesson ? activeLesson.title : "Circuit Builder"}
+        </h1>
         {summary && <p className="mt-1 text-sm text-muted-foreground">{summary}</p>}
       </div>
 
@@ -135,7 +154,7 @@ export default function CentralWorkspace({
         </Tabs>
       )}
 
-      {tab === "lesson" && (
+      {tab === "lesson" && activeLesson && (
         <div className="flex flex-col gap-4">
           {activeLesson.concepts.map((concept) => (
             <ConceptCard key={concept.id} concept={concept} />

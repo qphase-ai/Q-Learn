@@ -1,5 +1,17 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+/** Error thrown by apiFetch; `code`/`status` let callers tell NOT_FOUND from transient failures. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly status?: number
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit & { token?: string } = {}
@@ -17,7 +29,7 @@ export async function apiFetch<T>(
   const json = await res.json();
 
   if (!res.ok || !json.success) {
-    throw new Error(json.error?.message ?? "Request failed");
+    throw new ApiError(json.error?.message ?? "Request failed", json.error?.code, res.status);
   }
 
   return json.data as T;

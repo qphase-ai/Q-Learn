@@ -5,12 +5,29 @@ loader with a fake encoder so tests need no model download or network.
 """
 import asyncio
 import threading
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from structlog.testing import capture_logs
 
 import app.rag.embeddings as embeddings
+
+
+@pytest.fixture(autouse=True)
+def no_real_checkpointer(monkeypatch):
+    """The lifespan tests below exercise the real `app.main.lifespan()` to check
+    embedding warm-up behavior, not checkpointer behavior (which has its own
+    dedicated, isolated tests in test_classroom_checkpointer.py). Without this,
+    `lifespan()` starts a real AsyncPostgresSaver connection as a background
+    task and these tests cancel it mid-open on exit; on a loaded CI runner that
+    has raced against the saver's DDL (`setup()`) badly enough to leave an
+    orphaned lock that every later test then blocks on forever -- the actual
+    cause of two very long CI hangs. Keep the real checkpointer out of these.
+    """
+    import app.main as main
+
+    monkeypatch.setattr(main, "open_checkpointer", AsyncMock(return_value=None))
+    monkeypatch.setattr(main, "close_checkpointer", AsyncMock(return_value=None))
 
 
 class _FakeEncoder:

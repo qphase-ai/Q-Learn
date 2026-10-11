@@ -38,6 +38,15 @@ class ConflictError(QlearnError):
     code = "CONFLICT"
 
 
+class RunSupersededError(ConflictError):
+    """Raised inside a classroom run when its turn was superseded or interrupted.
+
+    The run must stop: its late events are rejected so a newer turn owns the board.
+    """
+
+    code = "RUN_SUPERSEDED"
+
+
 class SandboxExecutionError(QlearnError):
     """Raised when code executed inside the sandbox fails (non-zero exit,
     empty output, or unparseable result). Carries stderr/diagnostics in

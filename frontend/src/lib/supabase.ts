@@ -123,3 +123,26 @@ export function subscribeToTutor(
     void supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Subscribe to an AI Classroom session — channel `classroom:{sessionId}`, one
+ * broadcast event name (`classroom`) carrying a typed envelope. The payload is
+ * delivered untrusted (`unknown`); the store validates it. `onStatus` reports
+ * the channel lifecycle so callers can resync after a reconnect.
+ */
+export function subscribeToClassroom(
+  sessionId: string,
+  handlers: {
+    onEvent: (payload: unknown) => void;
+    onStatus?: (status: "SUBSCRIBED" | "CHANNEL_ERROR" | "TIMED_OUT" | "CLOSED") => void;
+  }
+): () => void {
+  const channel: RealtimeChannel = supabase
+    .channel(`classroom:${sessionId}`)
+    .on("broadcast", { event: "classroom" }, ({ payload }) => handlers.onEvent(payload))
+    .subscribe((status) => handlers.onStatus?.(status as never));
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}

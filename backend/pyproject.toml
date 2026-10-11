@@ -27,6 +27,10 @@ dependencies = [
     "vercel-sandbox>=0.7.0",
     # AI / Agents
     "langgraph>=0.2.0",
+    # Durable agent state (AsyncPostgresSaver) for AI Classroom; needs a direct /
+    # session-mode connection (see CHECKPOINT_DATABASE_URL), not the pgbouncer pool.
+    "langgraph-checkpoint-postgres>=2.0.0",
+    "psycopg[binary,pool]>=3.1.0",
     "langchain-core>=0.2.0",
     # ChatLiteLLM moved out of the sunset langchain-community into its own
     # maintained package; pin community below 0.4 (where it was removed) for

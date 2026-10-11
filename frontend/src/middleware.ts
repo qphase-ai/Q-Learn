@@ -7,6 +7,7 @@ const PROTECTED_ROUTES = [
   "/circuit",
   "/code",
   "/quiz",
+  "/classroom",
   "/progress",
   "/settings",
   "/pricing",

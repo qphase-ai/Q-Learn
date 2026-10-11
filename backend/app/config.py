@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     # Database
     database_url: str  # postgresql+asyncpg://...
 
+    # LangGraph checkpointer (AI Classroom). psycopg needs a direct or session-mode
+    # connection (NOT the :6543 transaction pooler). Plain libpq URL, e.g.
+    # postgresql://user:pass@host:5432/db. Empty = derive from DATABASE_URL when it
+    # is not on the pooler; otherwise the classroom runs without a checkpointer.
+    checkpoint_database_url: str = ""
+
     # Supabase
     supabase_url: str
     supabase_service_key: str
@@ -79,6 +85,13 @@ class Settings(BaseSettings):
 
     # Rate limiting
     rate_limit_per_minute: int = 100
+
+    # AI Classroom — slowapi limits (applied to /api/v1/classroom routes only)
+    classroom_rate_limit_turns: str = "20/minute"
+    classroom_rate_limit_sessions: str = "10/minute"
+    classroom_rate_limit_reads: str = "120/minute"
+    # Seconds a run may go without writing an event before its lease is stale.
+    classroom_run_lease_seconds: int = 120
 
     # Payload CMS (cms/) — shared secret the CMS sends as X-CMS-Secret when it
     # registers published content in content_refs. Empty disables the endpoint.

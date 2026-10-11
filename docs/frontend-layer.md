@@ -74,6 +74,15 @@ Quiz mode activates **focus mode**: ActivityBar dims to 30%, both panels collaps
 
 ---
 
+## AI Classroom (`/classroom`)
+
+Text-first multi-agent classroom with a live typed whiteboard. Route `app/classroom/page.tsx` mounts `LabShell` with the sidebar and tutor panel collapsed; `DashboardActivityBar` has a "Classroom" entry.
+
+- **Realtime**: `subscribeToClassroom(sessionId, {onEvent, onStatus})` joins broadcast channel `classroom:{session_id}`, event `classroom`. Envelope: `{schema_version:1, event_id, session_id, turn_id, sequence_no|null, type, step_id, payload}`; types `agent.status`, `message.delta` (not durable), `message.completed`, `whiteboard.action` (durable, sequenced), `classroom.error`.
+- **Store** (`stores/classroomStore.ts`): creates a session, subscribes, then POSTs the turn (same ordering as `tutorStore`). Ignores duplicate `event_id`/`sequence_no`, buffers out-of-order events and calls `GET /sessions/{id}/state?after_seq=N` on a gap or channel reconnect, ignores events of superseded `turn_id`s (also after Stop), and restores a session (history + snapshot + replay) from `localStorage` id on mount.
+- **Board** (`lib/whiteboard.ts`): hand-written validators (unknown action/gate, qubit range, size caps, no HTML/URLs in text) and the pure reducer `applyEvent(board, event)` mirroring the backend. Invalid payloads are dropped, never rendered.
+- **UI** (`components/classroom/`): `ClassroomWorkspace` (two columns at container width >= 768px via `useElementWidth`, tabs below), `ConversationPane` (reuses `AIResponse`), `Whiteboard` (circuits via `CircuitPreview` with `pack`/`highlighted` props, equations through the KaTeX markdown pipeline, annotations as SVG text), `StepIndicator`, `Composer` (Enter sends, Shift+Enter newline, Escape/Stop button interrupts).
+
 ## Workspace Layouts
 
 | Workspace | Layout |
