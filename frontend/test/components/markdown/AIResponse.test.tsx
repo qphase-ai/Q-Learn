@@ -322,8 +322,23 @@ describe("AIResponse circuit fences", () => {
     ["array instead of object", "[]"],
     ["non-object gates", '{"qubits": 2, "gates": [1]}'],
     ["malformed JSON", '{"qubits": 2,'],
+    ["huge qubit count", '{"qubits": 1000000000, "gates": []}'],
+    ["non-finite qubits", '{"qubits": 1e999, "gates": []}'],
+    ["fractional qubits", '{"qubits": 1.5, "gates": []}'],
+    ["out-of-range target", '{"qubits": 2, "gates": [{"type": "H", "targets": [5]}]}'],
+    ["bad control", '{"qubits": 2, "gates": [{"type": "CX", "targets": [0], "control": -1}]}'],
+    ["gate without type", '{"qubits": 2, "gates": [{"targets": [0]}]}'],
   ])("falls back to a code block for an invalid spec (%s)", (_name, json) => {
     const { container } = render(<AIResponse content={"```circuit\n" + json + "\n```"} />);
     expect(container.querySelector(".ai-codeblock")).not.toBeNull();
+  });
+});
+
+describe("AIResponse valid circuit fences", () => {
+  it("renders a CircuitPreview for a bounded, well-formed spec", () => {
+    const json = '{"qubits": 2, "gates": [{"type": "H", "targets": [0]}, {"type": "CX", "targets": [1], "control": 0}]}';
+    const { container } = render(<AIResponse content={"```circuit\n" + json + "\n```"} />);
+    expect(container.querySelector(".ai-codeblock")).toBeNull();
+    expect(container.querySelector("svg")).not.toBeNull();
   });
 });

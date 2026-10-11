@@ -63,14 +63,32 @@ function detectCallout(children: ReactNode): CalloutKind | null {
   return match ? calloutKind(match[1]) : null;
 }
 
+// Bounds keep a crafted fence from forcing huge SVG allocations in the browser.
+const MAX_PREVIEW_QUBITS = 16;
+const MAX_PREVIEW_GATES = 64;
+
+function isQubitIndex(n: unknown, qubits: number): n is number {
+  return Number.isInteger(n) && (n as number) >= 0 && (n as number) < qubits;
+}
+
 function parseCircuit(raw: string): CircuitSpec | null {
   try {
     const v: unknown = JSON.parse(raw);
     if (typeof v !== "object" || v === null) return null;
     const { qubits, gates } = v as Partial<CircuitSpec>;
-    if (typeof qubits !== "number" || !Array.isArray(gates)) return null;
-    if (gates.some((g) => typeof g !== "object" || g === null)) return null;
-    return v as CircuitSpec;
+    if (!Number.isInteger(qubits) || (qubits as number) < 1 || (qubits as number) > MAX_PREVIEW_QUBITS) {
+      return null;
+    }
+    if (!Array.isArray(gates) || gates.length > MAX_PREVIEW_GATES) return null;
+    const n = qubits as number;
+    const valid = gates.every((g) => {
+      if (typeof g !== "object" || g === null || typeof g.type !== "string") return false;
+      if (g.targets !== undefined && !(Array.isArray(g.targets) && g.targets.length <= n && g.targets.every((t) => isQubitIndex(t, n)))) {
+        return false;
+      }
+      return g.control === undefined || isQubitIndex(g.control, n);
+    });
+    return valid ? (v as CircuitSpec) : null;
   } catch {
     return null;
   }
