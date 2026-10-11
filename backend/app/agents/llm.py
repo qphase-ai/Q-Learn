@@ -1,4 +1,5 @@
 import litellm
+import sentry_sdk
 import structlog
 from langchain_core.messages import BaseMessage
 from langchain_core.runnables import Runnable
@@ -111,6 +112,10 @@ class RouterUsageLogger(CustomLogger):
             _router.record(model, actual or 0)
         _router.sync_from_headers(model, _response_headers(response_obj))
         logger.info("llm_routed", model=model, tokens=actual, capacity=_router.snapshot(model))
+        # Low-cardinality context only — never the prompt/response content.
+        sentry_sdk.add_breadcrumb(
+            category="llm", message="llm_routed", data={"model": model, "tokens": actual}
+        )
 
     def log_failure_event(self, kwargs, response_obj, start_time, end_time):
         meta = _route_meta(kwargs)
@@ -127,7 +132,14 @@ class RouterUsageLogger(CustomLogger):
             _router.mark_rate_limited(model, headers)
         else:
             _router.mark_unavailable(model, ERROR_COOLDOWN_SECONDS)
-        logger.warning("llm_attempt_failed", model=model, error=type(exc).__name__ if exc else None)
+        error_type = type(exc).__name__ if exc else None
+        logger.warning("llm_attempt_failed", model=model, error=error_type)
+        sentry_sdk.add_breadcrumb(
+            category="llm",
+            message="llm_attempt_failed",
+            level="warning",
+            data={"model": model, "failure_category": error_type},
+        )
 
     async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
         self.log_success_event(kwargs, response_obj, start_time, end_time)

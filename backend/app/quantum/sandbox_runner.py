@@ -24,8 +24,10 @@ requires the SDK or Vercel credentials to be present.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
+import sentry_sdk
 import structlog
 
 from app.config import get_settings
@@ -99,15 +101,26 @@ class SandboxRunner:
         elif self.settings.sandbox_image:
             create_kwargs["image"] = self.settings.sandbox_image
 
+        started = time.monotonic()
         async with session():
             async with sandbox.create_sandbox(**create_kwargs) as instance:
                 proc = await instance.run_process(
                     "python", ["-c", code], capture_output=True
                 )
+        duration_ms = round((time.monotonic() - started) * 1000)
 
         # CompletedProcess exposes `returncode` (not `exit_code`).
+        exit_code = int(getattr(proc, "returncode", 0) or 0)
+        logger.info("sandbox_run_complete", exit_code=exit_code, duration_ms=duration_ms)
+        # Status/duration only — never the submitted code or captured output.
+        sentry_sdk.add_breadcrumb(
+            category="sandbox",
+            message="sandbox_run_complete",
+            data={"exit_code": exit_code, "duration_ms": duration_ms},
+        )
+
         return SandboxResult(
             stdout=_as_text(getattr(proc, "stdout", "")),
             stderr=_as_text(getattr(proc, "stderr", "")),
-            exit_code=int(getattr(proc, "returncode", 0) or 0),
+            exit_code=exit_code,
         )

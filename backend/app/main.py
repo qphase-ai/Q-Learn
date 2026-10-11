@@ -7,12 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.config import get_settings
 from app.core.logging import configure_logging
+from app.core.sentry import init_sentry
 from app.exceptions import QlearnError, qlearn_exception_handler
 from app.rag.embeddings import warm_up
 from app.routers import auth, circuits, content_refs, learning, tutor
 
 configure_logging()
 settings = get_settings()
+init_sentry(settings)
 logger = structlog.get_logger(__name__)
 
 
