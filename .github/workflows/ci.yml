@@ -50,6 +50,7 @@ jobs:
 
       - name: Run tests
         working-directory: backend
+        timeout-minutes: 15
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn_test
           SECRET_KEY: test-secret-key-for-ci
@@ -57,6 +58,11 @@ jobs:
           SUPABASE_SERVICE_KEY: placeholder
           SUPABASE_ANON_KEY: placeholder
           SUPABASE_JWT_SECRET: placeholder-jwt-secret
+          # Unbuffered: a prior run produced zero output for 57 minutes before
+          # being cancelled, which made a genuine hang indistinguishable from
+          # a slow-but-progressing run with output stuck in Python's default
+          # block buffering on a non-TTY pipe. This makes that diagnosable.
+          PYTHONUNBUFFERED: "1"
         run: pytest tests/ -v --cov=app --cov-report=term-missing
 
   frontend:
