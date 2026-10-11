@@ -27,6 +27,14 @@ describe("validateWhiteboardAction", () => {
     ["html in title", { action: "step_started", title: "<b>hi</b>" }],
   ])("rejects %s", (_n, payload) => expect(validateWhiteboardAction(payload).ok).toBe(false));
 
+  it("accepts a bare less-than, rejects tags and $ latex, caps tutor_error at 300", () => {
+    expect(validateWhiteboardAction({ action: "draw_annotation", object_id: "a", text: "a < b" }).ok).toBe(true);
+    expect(validateWhiteboardAction({ action: "draw_annotation", object_id: "a", text: "<b>" }).ok).toBe(false);
+    expect(validateWhiteboardAction({ action: "render_equation", object_id: "e", latex: "$x$" }).ok).toBe(false);
+    expect(validateWhiteboardAction({ action: "tutor_error", message: "x".repeat(300) }).ok).toBe(true);
+    expect(validateWhiteboardAction({ action: "tutor_error", message: "x".repeat(301) }).ok).toBe(false);
+  });
+
   it("accepts a plain equation", () =>
     expect(validateWhiteboardAction({ action: "render_equation", object_id: "e", latex: "|+\\rangle=\\tfrac{|0\\rangle+|1\\rangle}{\\sqrt2}" }).ok).toBe(true));
 });

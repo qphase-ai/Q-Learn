@@ -93,7 +93,7 @@ export default function CircuitPreview({ spec, pack = false, highlighted = false
           height={svgHeight - 2}
           rx={6}
           fill="none"
-          stroke="var(--quantum)"
+          className="stroke-cyber-cyan"
           strokeWidth={2}
           strokeDasharray="6 4"
         />

@@ -21,9 +21,9 @@ export function AnnotationNote({ id, note }: { id: string; note: AnnotationObjec
       width="100%"
       style={{ maxWidth: width }}
     >
-      <rect x={1} y={1} width={width - 2} height={height - 2} rx={6} fill="var(--bg-elevated)" stroke="var(--quantum)" strokeWidth={1} />
+      <rect x={1} y={1} width={width - 2} height={height - 2} rx={6} strokeWidth={1} className="fill-elevated stroke-cyber-cyan" />
       {lines.map((line, i) => (
-        <text key={i} x={10} y={20 + i * 16} fontSize={12} fill="var(--text-secondary)" aria-hidden>
+        <text key={i} x={10} y={20 + i * 16} fontSize={12} className="fill-muted-foreground" aria-hidden>
           {line}
         </text>
       ))}

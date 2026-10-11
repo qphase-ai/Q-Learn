@@ -115,6 +115,22 @@ def test_invalid_actions_rejected(payload, why):
         parse_action(payload)
 
 
+def test_dollar_delimited_latex_is_rejected():
+    for latex in ("$x$", "$$x^2$$", r"a + \$5"):
+        with pytest.raises(ValidationError):
+            parse_action({"action": "render_equation", "object_id": "e", "latex": latex})
+
+
+def test_annotation_with_comparison_is_allowed():
+    parse_action({"action": "draw_annotation", "object_id": "n", "text": "a < b and c > d"})
+
+
+def test_tutor_error_accepts_300_chars_and_rejects_more():
+    parse_action({"action": "tutor_error", "message": "m" * 300})
+    with pytest.raises(ValidationError):
+        parse_action({"action": "tutor_error", "message": "m" * 301})
+
+
 def test_latex_with_comparison_is_allowed():
     parse_action({"action": "render_equation", "object_id": "e", "latex": r"a < b \quad c > d"})
 

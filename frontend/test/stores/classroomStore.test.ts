@@ -151,4 +151,69 @@ describe("classroomStore", () => {
     expect(st().error).toMatch(/boom/);
     expect(st().status).toBe("idle");
   });
+
+  it("restore keeps the saved id on a transient error and clears it on NOT_FOUND", async () => {
+    const KEY = "qlearn.classroom.session";
+    window.localStorage.setItem(KEY, SID);
+    vi.mocked(apiFetch).mockRejectedValue(Object.assign(new Error("Service unavailable"), { code: "INTERNAL", status: 503 }));
+    await st().restoreSaved();
+    expect(window.localStorage.getItem(KEY)).toBe(SID);
+    expect(st().error).toMatch(/try again/i);
+    expect(st().sessionId).toBeNull();
+
+    vi.mocked(apiFetch).mockRejectedValue(Object.assign(new Error("Session not found"), { code: "NOT_FOUND", status: 404 }));
+    await st().restoreSaved();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
+    expect(st().sessionId).toBeNull();
+  });
+
+  it("retries recovery with backoff when a gap event arrives while a fetch is in flight", async () => {
+    vi.useFakeTimers();
+    try {
+      const missing = wb(2, circuit("c2"));
+      const stateKey = `/api/v1/classroom/sessions/${SID}/state?after_seq=1`;
+      let calls = 0;
+      let releaseFirst!: () => void;
+      mockApi({
+        [stateKey]: () => {
+          calls += 1;
+          // First response predates the missing event; second contains it.
+          if (calls === 1) return new Promise((r) => { releaseFirst = () => r({ status: "running", snapshot: null, events: [] }); });
+          return { status: "running", snapshot: null, events: [missing] };
+        },
+      });
+      await start();
+      emit(wb(1, circuit("c1")));
+      emit(wb(3, circuit("c3"))); // gap -> fetch #1 in flight
+      await vi.advanceTimersByTimeAsync(0);
+      expect(calls).toBe(1);
+      emit(wb(4, circuit("c4"))); // arrives mid-fetch; recover() returns early
+      releaseFirst();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(st().lastSeq).toBe(1); // stale response did not fill the hole
+      await vi.advanceTimersByTimeAsync(500);
+      expect(calls).toBe(2);
+      expect(st().lastSeq).toBe(4);
+      expect(st().board.order).toEqual(["c1", "c2", "c3", "c4"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not fire a scheduled recovery after reset", async () => {
+    vi.useFakeTimers();
+    try {
+      mockApi({ [`/api/v1/classroom/sessions/${SID}/state?after_seq=1`]: { status: "running", snapshot: null, events: [] } });
+      await start();
+      emit(wb(1, circuit("c1")));
+      emit(wb(3, circuit("c3")));
+      await vi.advanceTimersByTimeAsync(0);
+      const before = vi.mocked(apiFetch).mock.calls.length;
+      st().reset();
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(vi.mocked(apiFetch).mock.calls.length).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

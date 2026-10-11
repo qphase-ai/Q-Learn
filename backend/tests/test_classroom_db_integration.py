@@ -122,6 +122,8 @@ async def test_concurrent_duplicate_turns_create_one_turn(factory):
     uid = await make_user(factory)
     sid = await new_session(factory, uid)
     cmid = uuid.uuid4()
+    async with factory() as db:
+        agent_sid = (await db.get(ClassroomSession, sid)).agent_session_id
 
     async def go():
         async with factory() as db:
@@ -130,7 +132,7 @@ async def test_concurrent_duplicate_turns_create_one_turn(factory):
     results = await asyncio.gather(*[go() for _ in range(5)])
     assert len({t for t, _ in results}) == 1 and sum(1 for _, new in results if new) == 1
     async with factory() as db:
-        assert await db.scalar(select(func.count()).select_from(AgentMessage).where(AgentMessage.client_message_id == cmid)) == 1
+        assert await db.scalar(select(func.count()).select_from(AgentMessage).where(AgentMessage.session_id == agent_sid, AgentMessage.client_message_id == cmid)) == 1
 
 
 async def test_first_message_sets_title(factory):
@@ -155,7 +157,7 @@ async def test_supersede_rejects_the_old_runs_late_events(factory):
     seq_b, event_b = await svc.persist_whiteboard_event(sid, b, step("B"), "s-b")
     assert seq_b == 2 and event_b == await _event_id(factory, sid, 2)
     async with factory() as db:
-        rows = (await db.execute(select(WhiteboardEvent).order_by(WhiteboardEvent.sequence_no))).scalars().all()
+        rows = (await db.execute(select(WhiteboardEvent).where(WhiteboardEvent.session_id == sid).order_by(WhiteboardEvent.sequence_no))).scalars().all()
     assert [(r.sequence_no, r.turn_id) for r in rows] == [(1, a), (2, b)]  # the rejected one left no row, no gap
 
 
@@ -189,7 +191,7 @@ async def test_invalid_action_is_never_stored(factory):
     with pytest.raises(ValidationError):
         await svc.persist_whiteboard_event(sid, t, {**CIRCUIT, "gates": [{"type": "H", "targets": [3]}]}, None)
     async with factory() as db:
-        assert await db.scalar(select(func.count()).select_from(WhiteboardEvent)) == 0
+        assert await db.scalar(select(func.count()).select_from(WhiteboardEvent).where(WhiteboardEvent.session_id == sid)) == 0
         assert (await db.get(ClassroomSession, sid)).last_event_seq == 0  # no sequence consumed
 
 
@@ -214,7 +216,7 @@ async def test_database_enforces_unique_sequence_and_event_id(factory):
     await svc.persist_whiteboard_event(sid, t, step(), None)
     for kwargs in ({"sequence_no": 1, "event_id": "new-id"}, {"sequence_no": 99, "event_id": None}):
         async with factory() as db:
-            ev_id = kwargs["event_id"] or await db.scalar(select(WhiteboardEvent.event_id))
+            ev_id = kwargs["event_id"] or await db.scalar(select(WhiteboardEvent.event_id).where(WhiteboardEvent.session_id == sid))
             db.add(WhiteboardEvent(session_id=sid, sequence_no=kwargs["sequence_no"], event_id=ev_id, event_type="whiteboard.action", payload={"action": "step_completed"}))
             with pytest.raises(IntegrityError):
                 await db.commit()
@@ -232,7 +234,7 @@ async def test_snapshot_plus_replay_equals_full_replay(factory):
     await svc.persist_whiteboard_event(sid, t, {"action": "highlight_object", "object_id": "c1"}, "st")
 
     async with factory() as db:
-        all_rows = (await db.execute(select(WhiteboardEvent).order_by(WhiteboardEvent.sequence_no))).scalars().all()
+        all_rows = (await db.execute(select(WhiteboardEvent).where(WhiteboardEvent.session_id == sid).order_by(WhiteboardEvent.sequence_no))).scalars().all()
         full = replay(None, [svc._row_to_envelope(r) for r in all_rows])
         snap = await db.get(WhiteboardSnapshot, sid)
         assert snap is not None and 0 < snap.last_sequence_no < len(all_rows)  # periodic + step boundary snapshot
@@ -267,7 +269,7 @@ async def test_stale_lease_reports_failed_and_does_not_block_a_new_turn(factory)
     sid = await new_session(factory, uid)
     async with factory() as db:
         await svc.start_turn(db, uid, sid, "go", uuid.uuid4())
-        await db.execute(text("UPDATE classroom_sessions SET run_lease_expires_at = now() - interval '1 minute'"))
+        await db.execute(text("UPDATE classroom_sessions SET run_lease_expires_at = now() - interval '1 minute' WHERE id = :sid"), {"sid": sid})
         await db.commit()
     async with factory() as db:
         assert (await svc.get_session_view(db, sid, uid)).status == "failed"
@@ -314,7 +316,8 @@ async def test_run_turn_persists_and_publishes_in_order(factory, publishers):
     assert state.snapshot is not None and state.snapshot.last_sequence_no == 3  # snapshot at run end
     assert state.snapshot.board_state["objects"]["c1"]["kind"] == "circuit" and state.snapshot.board_state["active_step"] is None
     async with factory() as db:
-        assistant = (await db.execute(select(AgentMessage).where(AgentMessage.role == "assistant"))).scalar_one()
+        agent_sid = (await db.get(ClassroomSession, sid)).agent_session_id
+        assistant = (await db.execute(select(AgentMessage).where(AgentMessage.session_id == agent_sid, AgentMessage.role == "assistant"))).scalar_one()
     assert assistant.agent_name == "teacher" and assistant.turn_id == t
 
 
@@ -338,7 +341,7 @@ async def test_run_turn_superseded_midway_stops_and_writes_nothing_more(factory,
     proceed.set()
     await task
     async with factory() as db:
-        rows = (await db.execute(select(WhiteboardEvent))).scalars().all()
+        rows = (await db.execute(select(WhiteboardEvent).where(WhiteboardEvent.session_id == sid))).scalars().all()
         view = await svc.get_session_view(db, sid, uid)
         assert (await db.get(ClassroomSession, sid)).active_run_id == b
     assert len(rows) == 1 and view.status == "running"
@@ -383,7 +386,7 @@ async def test_run_turn_interrupted_midway_publishes_no_completion(factory, publ
     await task
     publishers["publish_classroom_completed"].assert_not_awaited()
     async with factory() as db:
-        assert await db.scalar(select(func.count()).select_from(WhiteboardEvent)) == 0
+        assert await db.scalar(select(func.count()).select_from(WhiteboardEvent).where(WhiteboardEvent.session_id == sid)) == 0
         assert (await svc.get_session_view(db, sid, uid)).status == "idle"
 
 

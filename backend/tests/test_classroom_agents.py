@@ -289,6 +289,12 @@ async def test_all_equations_invalid_is_retried_then_errors(fake):
     assert llm.calls.count("math") == 2 and "tutor_error" in em.names
 
 
+async def test_dollar_delimited_latex_is_retried_then_accepted(fake):
+    llm = fake({"teach": ["x"], "math": ['{"equations": [{"latex": "$x^2$"}]}', GOOD_MATH]})
+    result, em = await run(build_graph(), "Derive the Hadamard matrix")
+    assert llm.calls.count("math") == 2 and "render_equation" in em.names and "tutor_error" not in em.names
+
+
 async def test_llm_budget_is_never_exceeded(fake):
     llm = fake({"plan": ['{"title": "t", "steps": ["a"]}'], "teach": ["x"], "circuit": [BAD_CIRCUIT], "math": [GOOD_MATH]})
     result, em = await run(build_graph(), "Show the circuit and the equation for a Bell state step by step")

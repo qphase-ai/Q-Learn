@@ -18,7 +18,9 @@ import type {
 
 const BASE = "/api/v1/classroom";
 const STORAGE_KEY = "qlearn.classroom.session";
-const MAX_MESSAGE_CHARS = 4000;
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_RECOVER_ATTEMPTS = 5;
+const RECOVER_BACKOFF_MS = 500;
 
 interface ClassroomStore {
   sessionId: string | null;
@@ -54,6 +56,10 @@ let pending = new Map<number, ClassroomEvent>();
 let awaitingTurn = false;
 let recovering = false;
 let hasBeenLive = false;
+let recoverAttempts = 0;
+let recoverTimer: ReturnType<typeof setTimeout> | null = null;
+/** Bumped on every reset so in-flight recoveries cannot schedule retries for a dead session. */
+let bookkeepingEpoch = 0;
 
 function clearBookkeeping() {
   unsubscribe?.();
@@ -64,6 +70,10 @@ function clearBookkeeping() {
   awaitingTurn = false;
   recovering = false;
   hasBeenLive = false;
+  recoverAttempts = 0;
+  if (recoverTimer) clearTimeout(recoverTimer);
+  recoverTimer = null;
+  bookkeepingEpoch += 1;
 }
 
 function persistSession(id: string | null) {
@@ -271,6 +281,7 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => {
       const { sessionId } = get();
       if (!sessionId || recovering) return;
       recovering = true;
+      const epoch = bookkeepingEpoch;
       try {
         const res = await apiFetch<ClassroomStateResponse>(
           `${BASE}/sessions/${sessionId}/state?after_seq=${get().lastSeq}`,
@@ -287,7 +298,22 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => {
       } catch (err) {
         console.warn("classroom state recovery failed", err);
       } finally {
-        recovering = false;
+        if (epoch === bookkeepingEpoch) {
+          recovering = false;
+          if (get().sessionId === sessionId) {
+            if (pending.size === 0) {
+              recoverAttempts = 0;
+            } else if (recoverAttempts < MAX_RECOVER_ATTEMPTS) {
+              // A gap event arrived mid-fetch, or the response predated it: retry, bounded.
+              recoverAttempts += 1;
+              if (recoverTimer) clearTimeout(recoverTimer);
+              recoverTimer = setTimeout(() => {
+                recoverTimer = null;
+                if (epoch === bookkeepingEpoch && get().sessionId === sessionId) void get().recover();
+              }, RECOVER_BACKOFF_MS * recoverAttempts);
+            }
+          }
+        }
       }
     },
 
@@ -384,12 +410,18 @@ export const useClassroomStore = create<ClassroomStore>((set, get) => {
         set({ restoring: false });
       } catch (err) {
         if (get().sessionId !== sessionId) return;
-        // Session gone or not ours: start clean rather than looping on a dead id.
+        // Start clean; whether the saved id survives depends on the failure kind.
+        const notFound = (err as { code?: unknown } | null)?.code === "NOT_FOUND";
         clearBookkeeping();
-        persistSession(null);
+        // Only forget the saved id when the server says it doesn't exist; a network
+        // blip/5xx/429/expired token must not lose the student's classroom.
+        if (notFound) persistSession(null);
+        const detail = err instanceof Error ? err.message : "";
         set({
           ...INITIAL,
-          error: err instanceof Error ? `Couldn't restore your classroom: ${err.message}` : "Couldn't restore your classroom",
+          error: notFound
+            ? `Couldn't restore your classroom: ${detail}`
+            : `Couldn't restore your classroom${detail ? `: ${detail}` : ""}. Please try again.`,
         });
       }
     },

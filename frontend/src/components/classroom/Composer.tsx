@@ -44,7 +44,7 @@ export default function Composer({ running, onSend, onStop, disabled = false }: 
       <textarea
         id="classroom-composer"
         rows={2}
-        maxLength={4000}
+        maxLength={2000}
         value={draft}
         disabled={disabled}
         onChange={(e) => setDraft(e.target.value)}

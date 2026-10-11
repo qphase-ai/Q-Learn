@@ -64,7 +64,7 @@ erDiagram
 | `whiteboard_events` | Durable ordered whiteboard actions | session_id FK, sequence_no, event_id, schema_version, event_type, step_id, turn_id, payload JSONB; UNIQUE(session_id, sequence_no) and UNIQUE(session_id, event_id) |
 | `whiteboard_snapshots` | Materialised board state | session_id PK/FK, version, board_state JSONB, last_sequence_no |
 | `knowledge_documents` | Source documents | title, source_url, source_type, version |
-| `document_chunks` | Chunked content | document_id FK, content, metadata, chunk_index |
+| `document_chunks` | Chunked content | document_id FK, content, chunk_index, content_tsv (generated) |
 | `knowledge_embeddings` | Vector embeddings | chunk_id FK, embedding vector(384), model |
 
 `knowledge_embeddings.embedding` uses `pgvector.sqlalchemy.Vector(384)` with an HNSW (cosine) index (`document_chunks.content_tsv` has a GIN index for the full-text arm; see `docs/rag-pipeline.md`). `document_chunks` has no `metadata` column.

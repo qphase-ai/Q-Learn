@@ -54,7 +54,7 @@ _HTML_ENTITY_RE = re.compile(r"&#?\w+;")
 _URL_RE = re.compile(r"(?:https?|ftp|file|data|javascript|vbscript)\s*:|www\.|//\w+\.\w+", re.IGNORECASE)
 _LATEX_FORBIDDEN_RE = re.compile(
     r"\\(?:href|url|includegraphics|html\w*|style|class|input|include|write|def|edef|gdef|newcommand|"
-    r"renewcommand|catcode|csname|immediate|openin|openout|read)\b",
+    r"renewcommand|catcode|csname|immediate|openin|openout|read)\b|\$",
     re.IGNORECASE,
 )
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
@@ -175,7 +175,7 @@ class RenderEquation(_HasObjectId):
         if not v:
             raise ValueError("latex is empty")
         if _LATEX_FORBIDDEN_RE.search(v):
-            raise ValueError("latex uses a forbidden command")
+            raise ValueError("latex uses a forbidden command or $ delimiter")
         return v
 
 

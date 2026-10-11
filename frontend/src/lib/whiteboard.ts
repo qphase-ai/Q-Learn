@@ -17,10 +17,11 @@ export const MAX_GATES = 64;
 export const MAX_LATEX = 500;
 export const MAX_ANNOTATION = 200;
 export const MAX_TITLE = 200;
+export const MAX_ERROR = 300;
 const MAX_ID = 64;
 
 const OBJECT_ID_RE = /^[A-Za-z0-9_.:-]{1,64}$/;
-const HTML_RE = /<\s*\/?\s*[a-zA-Z!?]|&(?:#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/;
+const HTML_RE = /<\/?[a-zA-Z!?]|&(?:#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/;
 const URL_RE = /(?:[a-zA-Z][a-zA-Z0-9+.-]*:\/\/|\bwww\.|\bjavascript:|\bdata:|\bmailto:)/i;
 const LATEX_FORBIDDEN_RE = /\\(?:href|url|includegraphics|input|include|write|def|newcommand|html[A-Za-z]*)\b|\$/;
 
@@ -141,7 +142,7 @@ export function validateWhiteboardAction(raw: unknown): Validation<WhiteboardAct
     case "step_completed":
       return { ok: true, value: { action: "step_completed" } };
     case "tutor_error": {
-      const message = validatePlainText(raw.message, MAX_ANNOTATION, "message");
+      const message = validatePlainText(raw.message, MAX_ERROR, "message");
       return message.ok ? { ok: true, value: { action: "tutor_error", message: message.value } } : message;
     }
     default:
