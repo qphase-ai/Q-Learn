@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Lightbulb, Play } from "lucide-react";
 import { toast } from "sonner";
@@ -131,10 +132,34 @@ export function BoardView({ board, steps = [] }: { board: BoardState; steps?: Cl
 export default function Whiteboard({ className }: { className?: string }) {
   const board = useClassroomStore((s) => s.board);
   const steps = useClassroomStore((s) => s.steps);
+
+  const logRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+
+  const handleScroll = () => {
+    const el = logRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  };
+
+  useLayoutEffect(() => {
+    const el = logRef.current;
+    if (!el || !stickToBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [board, steps]);
+
   return (
     <section aria-label="Whiteboard" className={cn("flex min-h-0 flex-col bg-background", className)}>
       <StepIndicator className="border-b border-overlay/10 p-3 empty:hidden" />
-      <div className="flex-1 overflow-y-auto" tabIndex={0} aria-live="polite" aria-relevant="additions">
+      <div
+        ref={logRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto"
+        tabIndex={0}
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         <BoardView board={board} steps={steps} />
       </div>
     </section>

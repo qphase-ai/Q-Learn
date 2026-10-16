@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import AIResponse from "@/components/markdown/AIResponse";
 import { cn } from "@/lib/utils";
 import { useClassroomStore } from "@/stores/classroomStore";
@@ -20,9 +21,27 @@ export default function ConversationPane({ className }: { className?: string }) 
   const interrupt = useClassroomStore((s) => s.interrupt);
   const running = status === "running";
 
+  const logRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+
+  const handleScroll = () => {
+    const el = logRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  };
+
+  useLayoutEffect(() => {
+    const el = logRef.current;
+    if (!el || !stickToBottomRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, running, agentStatus, error, restoring]);
+
   return (
     <section aria-label="Conversation" className={cn("flex min-h-0 flex-col bg-surface", className)}>
       <div
+        ref={logRef}
+        onScroll={handleScroll}
         role="log"
         aria-live="polite"
         aria-relevant="additions text"
