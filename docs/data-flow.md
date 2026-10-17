@@ -5,7 +5,7 @@ Eight key flows through the Q-Learn platform.
 ```mermaid
 sequenceDiagram
     participant FE as Frontend (Vercel)
-    participant API as FastAPI (Railway)
+    participant API as FastAPI (InstaCloud)
     participant VM as Vercel Sandbox microVM
     participant DB as Supabase PostgreSQL
     participant RT as Supabase Realtime

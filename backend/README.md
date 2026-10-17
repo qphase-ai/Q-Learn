@@ -252,16 +252,16 @@ Full reference: `../docs/infrastructure.md`
 
 ## Deployment
 
-The FastAPI service runs in a Docker container and is deployed to **Railway** (Free → paid). Architecture is portable — move to Fly.io or any VPS without redesigning Q-Learn.
+The FastAPI service runs in a Docker container and is deployed to **InstaCloud** as the always-on compute service `api` (project `q-learn`). Architecture is portable — move to another container host without redesigning Q-Learn. Deploy steps: [`docs/infrastructure.md`](../docs/infrastructure.md#backend-hosting-instacloud).
 
-**Live API:** `https://q-learn-api-production.up.railway.app` — health: `/health` · docs: `/docs`
+**Live API:** `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` — health: `/health` · docs: `/docs`
 The frontend reaches it via `NEXT_PUBLIC_API_URL`.
 
 Production services:
 
 | Service | Platform |
 |---------|----------|
-| FastAPI API | Railway |
+| FastAPI API | InstaCloud |
 | PostgreSQL + pgvector + Auth + Realtime | Supabase Cloud |
 | Frontend | Vercel |
 | Quantum + Student code execution | Vercel Sandbox (Hobby) |

@@ -9,7 +9,7 @@
 | Service | Platform | Purpose |
 |---------|----------|---------|
 | **Supabase** | Supabase Cloud | Auth, PostgreSQL + pgvector, Storage, Realtime pub/sub |
-| **FastAPI** | Railway (Free → paid) | API gateway, AI agents, RAG; publishes to Supabase Realtime |
+| **FastAPI** | InstaCloud (compute service `api`) | API gateway, AI agents, RAG; publishes to Supabase Realtime |
 | **Frontend** | Vercel | Deploy & host Next.js application |
 | **Vercel Sandbox** | Vercel (Hobby plan) | Isolated microVM for student code **and** quantum circuit simulation |
 | **CI/CD** | GitHub Actions | Automated test + deploy pipeline |
@@ -18,32 +18,37 @@
 
 | Service | URL |
 |---------|-----|
-| **API (Railway, production)** | `https://q-learn-api-production.up.railway.app` |
-| **API health check** | `https://q-learn-api-production.up.railway.app/health` |
-| **API docs (Swagger)** | `https://q-learn-api-production.up.railway.app/docs` |
+| **API (InstaCloud, production)** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` |
+| **API health check** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health` |
+| **API docs (Swagger)** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/docs` |
 
-Frontend must point at this via `NEXT_PUBLIC_API_URL` in Vercel.
+Frontend must point at this via `NEXT_PUBLIC_API_URL` in Vercel (production + preview). It is inlined at build time, so redeploy the frontend after changing it.
 
-#### Troubleshooting: `DNS_PROBE_POSSIBLE` / "This site can't be reached"
+### Backend hosting (InstaCloud)
 
-Some ISP/router DNS resolvers fail to resolve `*.up.railway.app`, so the URL won't load in the browser **even though the API is healthy**. This is a local DNS issue, not a deployment problem. Verify the server is actually up (bypassing local DNS):
+The API runs as the `api` compute service in the InstaCloud project `q-learn` (branch `main`, region `us-east`, always-on, port `8000`), built from `backend/Dockerfile`. It has no InstaCloud database: `DATABASE_URL` points at Supabase, and every backend variable is stored as an InstaCloud project secret. The repo is linked through `.insta/project.json`.
 
 ```bash
-# Local resolver fails, but a public resolver works:
-nslookup q-learn-api-production.up.railway.app 1.1.1.1     # → 69.46.46.x
-
-# Server responds fine when you skip the broken resolver:
-curl --resolve q-learn-api-production.up.railway.app:443:69.46.46.101 \
-  https://q-learn-api-production.up.railway.app/health       # → {"status":"ok",...}
+insta status                                  # login + linked project
+insta secrets list                            # names only; values never printed
+insta secrets set NAME                        # value on stdin; restart/redeploy to apply
+insta compute status api
+insta compute logs api --limit 100            # runtime logs
+insta compute logs api --deploy               # deploy/build events
 ```
 
-**Fix (quickest):** enable Secure DNS in your browser — Brave/Chrome → `Settings → Privacy & security → Use secure DNS → With: Cloudflare (1.1.1.1)`, then reload.
+**Deploying.** Deploy from a clean export of committed code, never the working tree: `backend/` has no `.dockerignore`, so a direct `insta deploy backend` would bake local `.env*` files into the image.
 
-**Fix (system-wide, Windows, elevated PowerShell):**
-```powershell
-Set-DnsClientServerAddress -InterfaceAlias "Wi-Fi" -ServerAddresses 1.1.1.1,8.8.8.8
-Clear-DnsClientCache
+```bash
+rm -rf /tmp/qlearn-deploy && mkdir -p /tmp/qlearn-deploy
+git archive HEAD backend | tar -x -C /tmp/qlearn-deploy
+insta deploy /tmp/qlearn-deploy/backend --group api --port 8000
+curl -s https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health   # → {"status":"ok",...}
 ```
+
+The container runs `alembic upgrade head` before uvicorn starts (see `backend/Dockerfile`), so pending migrations are applied to Supabase on every deploy. A failing migration therefore keeps the new machine from becoming healthy; check `insta compute logs api`.
+
+**Railway (legacy).** The previous host, Railway `q-learn-api` (`https://q-learn-api-production.up.railway.app`), stays up during the soak period after the 2026-10-17 cutover and is then decommissioned. `backend/railway.json` is kept until then.
 
 ---
 
@@ -109,13 +114,13 @@ Supabase exposes two connection endpoints. Use the right one for the job:
 
 | Use | Endpoint | Port | Example host |
 |-----|----------|------|--------------|
-| **App runtime** (Railway) | Transaction pooler (IPv4) | `6543` | `aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>` |
+| **App runtime** (InstaCloud) | Transaction pooler (IPv4) | `6543` | `aws-0-<region>.pooler.supabase.com`, user `postgres.<ref>` |
 | **Migrations** | Direct connection | `5432` | `db.<ref>.supabase.co`, user `postgres` |
 
 - Prefix must be `postgresql+asyncpg://` (this backend uses the asyncpg driver).
 - `database.py` auto-detects port `6543` and disables asyncpg prepared statements + server-side pooling (required for pgbouncer transaction mode).
 - Direct (`5432`) is IPv6-only unless the IPv4 add-on is enabled — if unreachable, run migrations through the **session-mode** pooler (port `5432` on the pooler host).
-- Production URLs are kept in `backend/.env.production` (gitignored) and set as Railway env vars. Local dev keeps `DATABASE_URL` on Docker Postgres.
+- Production URLs are kept in `backend/.env.production` (gitignored) and set as InstaCloud project secrets (`insta secrets set`). Local dev keeps `DATABASE_URL` on Docker Postgres.
 
 ### Row Level Security
 
@@ -127,11 +132,11 @@ RLS is **enabled on all `public` tables** (no policies). The backend connects wi
 
 - **Supabase** manages Auth, PostgreSQL + pgvector, Storage, and Realtime (WebSocket pub/sub)
 - **Vercel** hosts the Next.js frontend
-- **Docker container** runs the FastAPI backend on Railway (Free → paid as load requires)
+- **Docker container** runs the FastAPI backend on InstaCloud (always-on compute service `api`)
 - **Vercel Sandbox** handles all isolated execution — student code and quantum circuit simulation
 - **Real-time events** flow via Supabase Realtime channels — no FastAPI WebSocket endpoints
-- **Horizontal scaling**: FastAPI is stateless (JWT auth, `AsyncPostgresSaver` for agent state) — add Railway replicas freely
+- **Horizontal scaling**: FastAPI is stateless (JWT auth, `AsyncPostgresSaver` for agent state) — add InstaCloud replicas with `insta compute scale <n> api` (paid plans)
 - **Monitoring**: Prometheus + Grafana stack
 - **CI/CD**: GitHub Actions automated pipeline
 
-> **Architecture is portable.** FastAPI runs in a Docker container and can move to Railway, Fly.io, or any VPS without redesigning Q-Learn.
+> **Architecture is portable.** FastAPI runs in a Docker container and can move to InstaCloud, Railway, Fly.io, or any VPS without redesigning Q-Learn.

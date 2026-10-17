@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Q-Learn is an adaptive multi-agent AI platform for quantum computing education. Three-tier architecture: **Presentation (Vercel/Next.js) → Application (Railway/FastAPI) → Data & Infrastructure (Supabase + Vercel Sandbox)**.
+Q-Learn is an adaptive multi-agent AI platform for quantum computing education. Three-tier architecture: **Presentation (Vercel/Next.js) → Application (InstaCloud/FastAPI) → Data & Infrastructure (Supabase + Vercel Sandbox)**.
 
 Full architecture: `Architecture.md` · Full product spec: `Project.md` · Dev phases and rules: `Development.md` · Module docs: `docs/`
 

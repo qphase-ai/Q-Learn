@@ -12,7 +12,7 @@ Q-Learn is an **adaptive quantum computing education platform** with a multi-age
 LEARN → BUILD → SIMULATE → OBSERVE → EXPLAIN → PRACTICE → EVALUATE → ADAPT
 ```
 
-Three-tier architecture: **Next.js (Vercel) → FastAPI (Railway) → Supabase + Vercel Sandbox**
+Three-tier architecture: **Next.js (Vercel) → FastAPI (InstaCloud) → Supabase + Vercel Sandbox**
 
 ---
 

@@ -5,9 +5,9 @@
 This document is the living frontend reference for Q-Learn. It covers the IDE shell architecture, design system, workspace layouts, component structure, and state management.
 
 **Framework:** Next.js 14+ (App Router) · React 18+ · TypeScript · Tailwind CSS  
-**Deployment:** Vercel hosts the Next.js frontend and provides Sandbox for isolated student code execution. API calls go to FastAPI on Railway. Auth is managed by Supabase.
+**Deployment:** Vercel hosts the Next.js frontend and provides Sandbox for isolated student code execution. API calls go to FastAPI on InstaCloud. Auth is managed by Supabase.
 
-> **Architecture is portable.** The backend runs on Railway, Fly.io, any VPS, or cloud provider without redesigning the frontend.
+> **Architecture is portable.** The backend runs on InstaCloud, Railway, Fly.io, any VPS, or cloud provider without redesigning the frontend.
 
 ---
 

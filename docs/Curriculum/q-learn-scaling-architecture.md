@@ -16,7 +16,7 @@ This document evaluates the block-based CMS (`cirrculum-store-architecture.md`) 
 - **Qiskit execution**: `AsyncSandbox.fork()` per circuit run, on **Vercel Sandbox's Hobby plan** — an unquantified but real concurrency ceiling, with no application-level semaphore/queue in front of it.
 - **AI/LLM**: `ModelRouter` in `app/agents/llm.py` uses a free-tier-only pool (~225-265 RPM total across ~10 models) tracked via an **in-process** `threading.Lock` + `deque` — correct only for a single API replica.
 - **Realtime**: Supabase Realtime pub/sub, already used for circuit-result delivery (a pattern that naturally extends to a future execution queue).
-- **Deployment**: Railway (API, claimed stateless/horizontally-scalable — architecturally plausible but load-untested), Vercel (frontend + sandbox), Supabase (DB) — no plan-tier limits quantified anywhere.
+- **Deployment**: InstaCloud (API; Railway until 2026-10-17; claimed stateless/horizontally-scalable — architecturally plausible but load-untested), Vercel (frontend + sandbox), Supabase (DB) — no plan-tier limits quantified anywhere.
 
 ## Industry Pattern Comparison (LeetCode / GeeksforGeeks-style decoupled architecture)
 
@@ -124,7 +124,7 @@ flowchart TD
 
 1. **Vercel Sandbox Hobby-plan concurrency cap** — external hard cap, zero backpressure today. Highest-confidence first failure.
 2. **Free-tier LLM RPM exhaustion** at peak concurrent tutor sessions — the ~225-265 RPM budget is uncomfortably tight against the ~150-375 concurrent-session estimate even before double-counting.
-3. **Multi-replica RPM-counter bug** — the in-process counter breaks correctness the moment Railway scales past 1 replica (the natural fix for load triggers this bug).
+3. **Multi-replica RPM-counter bug** — the in-process counter breaks correctness the moment the API scales past 1 replica (the natural fix for load triggers this bug).
 4. **Supabase PgBouncer connection ceiling** — depends on unknown plan tier; could bind sooner than expected.
 5. **Unenforced rate limiting** — amplifies 1-3, easier to trigger than organic load would cause.
 6. **Inline LLM/sandbox execution holding API workers** — a tail-latency bottleneck that builds gradually with concurrency.
@@ -140,7 +140,7 @@ flowchart TD
 - Look up the actual Vercel Sandbox Hobby-plan concurrency limit (dashboard/docs check).
 - Add an application-level semaphore/queue in front of `AsyncSandbox.fork()`, sized below that limit, so overload becomes graceful backpressure instead of opaque failures.
   - **Capacity reality check.** Vercel's Hobby plan allows on the order of ~10 concurrent sandboxes — one to two orders of magnitude below the ~50–150 peak concurrent executions this document assumes. The semaphore/queue makes overload *graceful* (jobs wait rather than fail) but does **not** create capacity. Reaching the peak-load target therefore **requires a Vercel plan upgrade** (Pro/Enterprise sandbox concurrency), or the peak assumption must be re-scoped. Until then, model the expected **queue wait** against the ~10s execution P95: at N concurrent slots and an offered load above N, wait time grows with (offered − N)/N × P95, which becomes user-visible well before the assumed peak. Quantify this in Phase 1 and treat the plan tier as a gating cost decision, not a Phase 3 optimization.
-- Confirm the Supabase plan tier's pooler connection ceiling against current + planned Railway replica count.
+- Confirm the Supabase plan tier's pooler connection ceiling against current + planned API replica count.
 
 ### Phase 1 — Instrument before deciding anything else
 - Add latency/error instrumentation: API P95 by route, RAG stage latencies (retrieval/rerank/generation separately), sandbox queue-wait + execution time, LLM RPM consumption by provider.
@@ -148,7 +148,7 @@ flowchart TD
 - Target SLOs to validate against: API P95 ≤300ms (non-LLM/exec routes), tutor turn P95 ≤4-6s (time-to-first-token ≤1-2s if streaming), circuit execution P95 ≤10s (well under the 30s hard timeout), uptime target 99.5%.
 
 ### Phase 2 — Build proactively (cheap now, expensive to retrofit)
-- Move the `ModelRouter` RPM counter to shared state (Redis or equivalent) **before** running a second Railway replica — a hard prerequisite, not a reaction.
+- Move the `ModelRouter` RPM counter to shared state (Redis or equivalent) **before** running a second API replica — a hard prerequisite, not a reaction.
 - Design on-demand ISR revalidation into the CMS build from day one — retrofitting invalidation after authors adopt broken timing is disruptive. Under Payload this is a `afterChange` hook calling the student app's revalidation endpoint, keyed per lesson, plus content-hash-based media URLs.
 - Design the flat-schema → Payload migration as phased/incremental (stand the CMS up alongside the live tables, backfill, cut over behind a flag, deprecate the old path only after validation) — never a big-bang cutover on live data, per this project's "don't rewrite working code without reason" rule. The live content volume (4 lessons) makes this a script rather than a project; the *care* is in the cutover, not the transform.
 - Decouple learner state from content rows **before** migrating content: `student_progress.lesson_id` and `quiz_questions.lesson_id` are currently hard FKs into `lessons`, which cannot follow content into the `payload` schema. The accepted design routes them through a backend-owned `content_refs` boundary table rather than cross-schema FKs or bare opaque IDs. This is a hard prerequisite, not a parallel task.
