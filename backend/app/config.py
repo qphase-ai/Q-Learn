@@ -117,7 +117,7 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     sentry_environment: str = "development"
     # Fraction of requests to trace (0.0-1.0). Keep conservative in production;
-    # tune via Railway env var, not by editing this default.
+    # tune via the host env var (InstaCloud secret), not by editing this default.
     sentry_traces_sample_rate: float = 0.05
     # Profiling piggybacks on traced transactions and adds real overhead — off
     # by default, opt in per-environment.

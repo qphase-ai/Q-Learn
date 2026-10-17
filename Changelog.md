@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed — Railway decommissioned (2026-10-18)
+
+- The Railway `q-learn-api` service was deleted after the cutover. All user traffic had moved to InstaCloud: Railway's last authenticated request was on 2026-10-16. `backend/railway.json` is removed, and `docs/infrastructure.md` records the decommission. Code comments that named Railway now refer to the host generically.
+
+### Changed — Classroom checkpointer enabled in production
+
+- `CHECKPOINT_DATABASE_URL` is now set on InstaCloud to the Supabase session pooler (port `5432`), so the AI Classroom LangGraph checkpointer starts (`classroom_checkpointer_ready`) and classroom sessions survive restarts and redeploys.
+
 ### Added — Backend CI deploy to InstaCloud
 
 - **`deploy-backend` CI job**: every push to `main` deploys `backend/` to InstaCloud compute `api` once the backend tests pass. The job then polls `/health` and fails the run, with recent logs, if it doesn't return 200. Deploys run one at a time and are never cancelled mid-flight. Requires the `INSTA_API_KEY` repository secret, a project-scoped token (see `docs/infrastructure.md#ci-deploy`).

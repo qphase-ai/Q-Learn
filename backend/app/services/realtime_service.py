@@ -3,7 +3,7 @@
 FastAPI publishes broadcast events to Supabase Realtime channels; the frontend
 subscribes via the Supabase JS SDK (see `frontend/src/lib/supabase.ts`). There
 are no WebSocket endpoints on the API — this keeps the API stateless and lets
-events fan out across Railway replicas via Supabase as the shared broker.
+events fan out across API replicas via Supabase as the shared broker.
 
 Channel / event contract (kept in sync with the frontend subscriber):
 - `circuit:{circuit_id}`  event `result`    payload = execution result dict
