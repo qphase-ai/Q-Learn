@@ -4,9 +4,9 @@
 
 This document describes the backend architecture, API design, service layer, database schema, authentication, quantum execution layer, RAG pipeline, and infrastructure for Q-Learn. The backend is built with Python 3.11+, FastAPI, SQLAlchemy 2.x, and Alembic.
 
-**Production Infrastructure:** Supabase (Auth, PostgreSQL + pgvector, Storage, Realtime) + Railway (FastAPI backend, Free tier) + Vercel (frontend + Sandbox for isolated student code execution)
+**Production Infrastructure:** Supabase (Auth, PostgreSQL + pgvector, Storage, Realtime) + InstaCloud (FastAPI backend, always-on compute) + Vercel (frontend + Sandbox for isolated student code execution)
 
-> **Architecture is portable.** FastAPI/worker services run in Docker containers and can be deployed to Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If Railway becomes insufficient, move the service — not the architecture.
+> **Architecture is portable.** FastAPI/worker services run in Docker containers and can be deployed to InstaCloud, Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If InstaCloud becomes insufficient, move the service — not the architecture.
 
 ---
 
@@ -50,7 +50,7 @@ flowchart TD
         Instructor["Instructor /\nAdmin"]
     end
 
-    subgraph APPLICATION["⚙️ APPLICATION LAYER — Railway (FastAPI + Python)"]
+    subgraph APPLICATION["⚙️ APPLICATION LAYER — InstaCloud (FastAPI + Python)"]
         direction TB
         GW["API Gateway\nAuth • Rate Limit • Validation • Routing • Logging"]
 
@@ -1488,14 +1488,14 @@ volumes:
 
 ### Production Deployment
 
-**Supabase** manages Auth, PostgreSQL + pgvector, Storage, and Realtime in production. **Railway** hosts the FastAPI backend (Free tier for development; upgrade to paid for production). **Vercel** hosts the Next.js frontend and provides Sandbox for all compute-heavy execution.
+**Supabase** manages Auth, PostgreSQL + pgvector, Storage, and Realtime in production. **InstaCloud** hosts the FastAPI backend (always-on compute service `api`). **Vercel** hosts the Next.js frontend and provides Sandbox for all compute-heavy execution.
 
-> **Architecture is portable.** The FastAPI service runs in a Docker container and can be deployed to Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If Railway becomes insufficient, move the service — not the architecture.
+> **Architecture is portable.** The FastAPI service runs in a Docker container and can be deployed to InstaCloud, Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If InstaCloud becomes insufficient, move the service — not the architecture.
 
 | Service | Platform | Purpose |
 |---------|----------|---------|
 | **Supabase** | Supabase Cloud | Auth, PostgreSQL + pgvector, Storage, Realtime (WebSockets) |
-| **FastAPI** | Railway (Free → paid) | API, AI agents, RAG; publishes events to Supabase Realtime |
+| **FastAPI** | InstaCloud | API, AI agents, RAG; publishes events to Supabase Realtime |
 | **Frontend** | Vercel | Deploy & host Next.js application |
 | **Vercel Sandbox** | Vercel (Hobby plan) | Isolated microVM for student code AND quantum circuit simulation |
 | **CI/CD** | GitHub Actions | Automated pipeline |

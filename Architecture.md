@@ -2,7 +2,7 @@
 
 ## Overview
 
-Q-Learn is an AI-powered adaptive learning platform for quantum computing. Three-tier architecture: Presentation (Vercel/Next.js) → Application (Railway/FastAPI) → Data & Infrastructure (Supabase + Vercel Sandbox + LLM).
+Q-Learn is an AI-powered adaptive learning platform for quantum computing. Three-tier architecture: Presentation (Vercel/Next.js) → Application (InstaCloud/FastAPI) → Data & Infrastructure (Supabase + Vercel Sandbox + LLM).
 
 **Visual diagrams:**
 - [`assets/architecture-high-level.svg`](assets/architecture-high-level.svg) — platform topology
@@ -55,7 +55,7 @@ flowchart TD
         Instructor["Instructor /\nAdmin"]
     end
 
-    subgraph APPLICATION["⚙️ APPLICATION LAYER — Railway (FastAPI + Python)"]
+    subgraph APPLICATION["⚙️ APPLICATION LAYER — InstaCloud (FastAPI + Python)"]
         direction TB
         GW["API Gateway\nVerify Supabase JWT • Rate Limit • Validation • Routing • Logging"]
 

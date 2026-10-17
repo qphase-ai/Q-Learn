@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Backend hosting moved from Railway to InstaCloud (2026-10-17)
+
+- **API host**: the FastAPI backend now runs on InstaCloud as the always-on compute service `api` (project `q-learn`, branch `main`, `us-east`, port `8000`), built from the unchanged `backend/Dockerfile`. Live URL: `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` (`/health`, `/docs`).
+- **No data migration**: the database stays on Supabase. The 23 Railway service variables were copied to InstaCloud project secrets and verified by hash; Railway built-ins (`RAILWAY_*`, `PORT`) were dropped.
+- **Frontend**: Vercel `NEXT_PUBLIC_API_URL` (production + preview) now points at the InstaCloud URL, and production was redeployed to pick it up.
+- **Repo**: `.insta/project.json` links the repo to the InstaCloud project; `.gitignore` covers InstaCloud's local session and audit files.
+- **Docs**: README, `CLAUDE.md`, `AGENTS.md`, `Architecture.md`, `Project.md`, `Development.md`, `backend/README.md`, `backend/design.md`, `frontend/design.md` and `docs/` now name InstaCloud as the API host. `docs/infrastructure.md` has a new deploy and operations runbook, and the Railway-specific DNS troubleshooting note is gone.
+- **Railway**: `q-learn-api` stays up during a soak period and will then be decommissioned. `backend/railway.json` is kept until then.
+
 ### Added — AI Classroom backend (text-first slice)
 
 - **`/api/v1/classroom`**: `POST /sessions`, `POST /sessions/{id}/turns` (202, idempotent on `client_message_id`), `POST /sessions/{id}/interrupt`, `GET /sessions/{id}`, `GET /sessions/{id}/state?after_seq=N`. Per-user slowapi limits on these routes only.

@@ -42,7 +42,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/qlearn
 ```
 
 > The shared **production** DB URLs (Supabase pooler / direct) live in
-> `backend/.env.production` and are set as Railway env vars — you don't need them
+> `backend/.env.production` and are set as InstaCloud project secrets — you don't need them
 > for local work. See [infrastructure.md](infrastructure.md).
 
 ## 3. Start the stack

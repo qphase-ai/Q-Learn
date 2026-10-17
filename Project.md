@@ -154,7 +154,7 @@ flowchart TD
         Instructor["Instructor /\nAdmin"]
     end
 
-    subgraph APPLICATION["⚙️ APPLICATION LAYER — Railway (FastAPI + Python)"]
+    subgraph APPLICATION["⚙️ APPLICATION LAYER — InstaCloud (FastAPI + Python)"]
         direction TB
         GW["API Gateway\nAuth • Rate Limit • Validation • Routing • Logging"]
 
@@ -243,7 +243,7 @@ Six primary layers:
 ```mermaid
 sequenceDiagram
     participant FE as Frontend (Vercel)
-    participant API as FastAPI (Railway)
+    participant API as FastAPI (InstaCloud)
     participant VM as Vercel Sandbox microVM
     participant DB as Supabase PostgreSQL
     participant RT as Supabase Realtime
@@ -936,7 +936,7 @@ Avoid turning Q-Learn into:
 
 ### Getting Started
 
-**Production Stack:** Supabase + FastAPI (Railway) + Vercel (frontend + Sandbox)
+**Production Stack:** Supabase + FastAPI (InstaCloud) + Vercel (frontend + Sandbox)
 
 **Prerequisites:**
 - Supabase account (project created)
@@ -969,12 +969,12 @@ docker compose up --build
 | Service | Platform |
 |---------|----------|
 | Frontend (Next.js) | Vercel |
-| Backend (FastAPI) | Railway (Free tier) |
+| Backend (FastAPI) | InstaCloud |
 | Database + Auth | Supabase |
 | Student Code Execution | Vercel Sandbox (Hobby plan) |
 | CI/CD | GitHub Actions |
 
-> **Architecture is portable.** FastAPI/worker services run in Docker containers and can be deployed to Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If Railway becomes insufficient, move the service — not the architecture.
+> **Architecture is portable.** FastAPI/worker services run in Docker containers and can be deployed to InstaCloud, Railway, Fly.io, any VPS, or cloud provider without redesigning Q-Learn. If InstaCloud becomes insufficient, move the service — not the architecture.
 
 ### Database Schema
 Supabase manages the database layer. Core entities are stored in PostgreSQL with pgvector for embeddings:

@@ -35,12 +35,12 @@ response content.
 
 ## Environment variables
 
-### Backend (`backend/.env`, Railway)
+### Backend (`backend/.env`, InstaCloud)
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `SENTRY_DSN` | *(empty)* | Empty disables the SDK entirely |
-| `SENTRY_ENVIRONMENT` | `development` | Set to `staging`/`production` per Railway environment |
+| `SENTRY_ENVIRONMENT` | `development` | Set to `staging`/`production` per deployment environment |
 | `SENTRY_TRACES_SAMPLE_RATE` | `0.05` | Fraction of requests traced — raise cautiously, watch Sentry quota |
 | `SENTRY_PROFILES_SAMPLE_RATE` | `0.0` | Profiling rides on traced transactions; real overhead, opt in deliberately |
 
@@ -57,7 +57,7 @@ response content.
 
 ### Manual steps required
 
-- **Railway (backend service):** set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, and a deliberate `SENTRY_TRACES_SAMPLE_RATE` under the service's Variables tab.
+- **InstaCloud (backend service `api`):** set `SENTRY_DSN`, `SENTRY_ENVIRONMENT=production`, and a deliberate `SENTRY_TRACES_SAMPLE_RATE` with `insta secrets set <NAME>`.
 - **Vercel (frontend project):** set `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT=production`, and `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT` (as a **Secret**, Production + Preview) so source maps upload on each Vercel build.
 - **Sentry dashboard:** confirm the two projects' alert rules/routing match your on-call setup — this integration does not configure alerting.
 

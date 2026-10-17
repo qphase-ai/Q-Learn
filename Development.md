@@ -203,7 +203,7 @@ This is a **startup product** (originally a final-year engineering project, now 
 
 ## Getting Started
 
-**Production Stack:** Supabase + FastAPI (Railway) + Vercel (frontend + Sandbox)
+**Production Stack:** Supabase + FastAPI (InstaCloud) + Vercel (frontend + Sandbox)
 
 > Full infrastructure detail, environment variables, and deployment instructions: [`docs/infrastructure.md`](docs/infrastructure.md)
 
@@ -240,12 +240,12 @@ See [`docs/infrastructure.md`](docs/infrastructure.md) for the full production d
 | Service | Platform | Purpose |
 |---------|----------|---------|
 | Frontend (Next.js) | Vercel | Deploy & host frontend |
-| Backend (FastAPI) | Railway (Free → paid) | API, AI agents, RAG, quantum execution |
+| Backend (FastAPI) | InstaCloud | API, AI agents, RAG, quantum execution |
 | Database + Auth | Supabase | PostgreSQL + pgvector, Storage, Realtime |
 | Code + Quantum Execution | Vercel Sandbox (Hobby plan) | Isolated microVM — student code and Qiskit Aer |
 | CI/CD | GitHub Actions | Automated pipeline |
 
-> **Architecture is portable.** The FastAPI service runs in a Docker container and can move to Railway, Fly.io, or any VPS without redesigning Q-Learn.
+> **Architecture is portable.** The FastAPI service runs in a Docker container and can move to InstaCloud, Railway, Fly.io, or any VPS without redesigning Q-Learn.
 
 ### Database Schema
 

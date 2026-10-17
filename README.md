@@ -33,14 +33,14 @@ The system connects: **MATHEMATICS ↔ QUANTUM STATE ↔ CIRCUIT ↔ CODE ↔ SI
 | Database | Supabase (PostgreSQL + pgvector + Auth + Realtime) |
 | Execution | Vercel Sandbox — isolated microVM for student code and Qiskit |
 | Payments | Razorpay (freemium + Pro subscriptions) |
-| Hosting | Vercel (frontend) · Railway (FastAPI) · Supabase Cloud |
+| Hosting | Vercel (frontend) · InstaCloud (FastAPI) · Supabase Cloud |
 | CI/CD | GitHub Actions |
 
 ---
 
 ## Architecture
 
-Three-tier: **Presentation (Vercel)** → **Application (Railway/FastAPI)** → **Data & Infrastructure (Supabase + Vercel Sandbox)**
+Three-tier: **Presentation (Vercel)** → **Application (InstaCloud/FastAPI)** → **Data & Infrastructure (Supabase + Vercel Sandbox)**
 
 Key design decisions:
 - **No WebSocket endpoints on FastAPI** — real-time events flow via Supabase Realtime pub/sub; FastAPI publishes, frontend subscribes via Supabase JS SDK
@@ -101,13 +101,11 @@ New to the team? See [`docs/onboarding.md`](docs/onboarding.md) for the shared-S
 
 | Service | URL |
 |---------|-----|
-| API (Railway, production) | `https://q-learn-api-production.up.railway.app` |
-| Health check | `https://q-learn-api-production.up.railway.app/health` |
-| API docs (Swagger) | `https://q-learn-api-production.up.railway.app/docs` |
+| API (InstaCloud, production) | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` |
+| Health check | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health` |
+| API docs (Swagger) | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/docs` |
 
-Frontend points at the API via `NEXT_PUBLIC_API_URL`.
-
-> **URL won't load? (`DNS_PROBE_POSSIBLE` / "This site can't be reached")** — some ISP/router DNS resolvers fail on `*.up.railway.app` even though the API is healthy. Enable Secure DNS in your browser (Brave/Chrome → *Settings → Privacy & security → Use secure DNS → Cloudflare 1.1.1.1*) and reload. Full steps + verification commands: [`docs/infrastructure.md`](docs/infrastructure.md#troubleshooting-dns_probe_possible--this-site-cant-be-reached).
+Frontend points at the API via `NEXT_PUBLIC_API_URL`. Deploy and operations runbook: [`docs/infrastructure.md`](docs/infrastructure.md#backend-hosting-instacloud).
 
 ---
 
