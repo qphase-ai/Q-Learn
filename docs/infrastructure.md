@@ -48,6 +48,25 @@ curl -s https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/hea
 
 The container runs `alembic upgrade head` before uvicorn starts (see `backend/Dockerfile`), so pending migrations are applied to Supabase on every deploy. A failing migration therefore keeps the new machine from becoming healthy; check `insta compute logs api`.
 
+#### CI deploy
+
+The `deploy-backend` job in `.github/workflows/ci.yml` deploys `backend/` to `api` on branch `main` on every push to `main`, after the `backend` test job passes. It then polls `/health` and fails the run, printing the last 100 log lines, if the endpoint doesn't return 200. Deploys are queued, never cancelled mid-flight. Pull requests don't deploy.
+
+The job needs one repository secret, `INSTA_API_KEY`: an InstaCloud token scoped to this project. A human has to create it, because agents can't mint tokens. Pipe it straight into GitHub so the plaintext is never displayed:
+
+```bash
+insta tokens create github-ci --project ed2f5dfe-9171-4268-9e94-3dcb6ea0ddbf --expires 1y \
+  | gh secret set INSTA_API_KEY --repo qphase-ai/Q-Learn
+```
+
+The token expires after a year. Re-run the command to rotate it, and revoke the old one with `insta tokens revoke <id>`.
+
+#### Branch environments
+
+An InstaCloud branch (`insta branch create <name>`, max 10 per project) is an isolated copy of the project's services, with its own `api` URL. It starts out serving main's current image. **For Q-Learn a branch does not isolate data:** the database lives on Supabase, not in InstaCloud, so a branch inherits `DATABASE_URL` pointing at the **production** database. The container also runs `alembic upgrade head` on boot, so deploying a branch that adds a migration would migrate production.
+
+Before deploying any code to a branch, give it its own database: add an InstaCloud Postgres on that branch (it ships the `vector` extension), or use a separate Supabase project. Then override `DATABASE_URL` for that branch only with `insta secrets set DATABASE_URL --branch <name>`. The URL must use the `postgresql+asyncpg://` prefix. Only then run `insta deploy backend --branch <name> --group api --port 8000`. Delete the branch with `insta branch delete <name>` when the work is merged; branch data never merges back.
+
 **Railway (legacy).** The previous host, Railway `q-learn-api` (`https://q-learn-api-production.up.railway.app`), stays up during the soak period after the 2026-10-17 cutover and is then decommissioned. `backend/railway.json` is kept until then.
 
 ---
