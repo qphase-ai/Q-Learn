@@ -6,7 +6,7 @@ def configure_logging() -> None:
 
     The default formatter (rich, show_locals=True) dumps every frame's locals, which
     for LLM calls includes the provider's Authorization header — i.e. API keys end
-    up in production logs — and floods the log stream past Railway's rate limit.
+    up in production logs — and floods the log stream past the log host's rate limit.
     """
     processors = structlog.get_config()["processors"]
     renderer = structlog.dev.ConsoleRenderer(exception_formatter=structlog.dev.plain_traceback)

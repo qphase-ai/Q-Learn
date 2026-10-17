@@ -67,7 +67,7 @@ An InstaCloud branch (`insta branch create <name>`, max 10 per project) is an is
 
 Before deploying any code to a branch, give it its own database: add an InstaCloud Postgres on that branch (it ships the `vector` extension), or use a separate Supabase project. Then override `DATABASE_URL` for that branch only with `insta secrets set DATABASE_URL --branch <name>`. The URL must use the `postgresql+asyncpg://` prefix. Only then run `insta deploy backend --branch <name> --group api --port 8000`. Delete the branch with `insta branch delete <name>` when the work is merged; branch data never merges back.
 
-**Railway (legacy).** The previous host, Railway `q-learn-api` (`https://q-learn-api-production.up.railway.app`), stays up during the soak period after the 2026-10-17 cutover and is then decommissioned. `backend/railway.json` is kept until then.
+**Railway (decommissioned).** The previous host, Railway `q-learn-api`, served the API until the 2026-10-17 cutover. Its service was deleted on 2026-10-18, and `backend/railway.json` was removed.
 
 ---
 
@@ -110,7 +110,7 @@ All configuration via environment variables. See `backend/.env.example` for the 
 | `SUPABASE_JWT_SECRET` | Project JWT secret — backend verifies Supabase Auth access tokens (HS256) |
 | `SECRET_KEY` | App secret (misc. signing) |
 | `DATABASE_URL` | PostgreSQL connection string (`postgresql+asyncpg://...`) — see the two-URL model below |
-| `CHECKPOINT_DATABASE_URL` | Direct or session-mode `postgresql://…` URL (port 5432, not the `:6543` pooler) for the AI Classroom LangGraph checkpointer. Optional: falls back to `DATABASE_URL` when that is not on the pooler, otherwise the classroom runs without resumability |
+| `CHECKPOINT_DATABASE_URL` | Direct or session-mode `postgresql://…` URL (port 5432, not the `:6543` pooler) for the AI Classroom LangGraph checkpointer. Optional: falls back to `DATABASE_URL` when that is not on the pooler, otherwise the classroom runs without resumability. Production (InstaCloud) uses the Supabase **session** pooler: the same host as `DATABASE_URL`, on port `5432` |
 | `LLM_PRIMARY_MODEL` | LiteLLM model string — default `gpt-4o-mini` |
 | `LLM_FALLBACK_MODELS` | JSON list of fallback model strings — e.g. `["anthropic/claude-haiku-4-5-20251001","gemini/gemini-3.8-flash"]` |
 | `LLM_TEMPERATURE` | Default `0.7` |
