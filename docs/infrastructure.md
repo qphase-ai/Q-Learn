@@ -18,15 +18,15 @@
 
 | Service | URL |
 |---------|-----|
-| **API (InstaCloud, production)** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` |
-| **API health check** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health` |
-| **API docs (Swagger)** | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/docs` |
+| **API (InstaCloud, production)** | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com` |
+| **API health check** | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com/health` |
+| **API docs (Swagger)** | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com/docs` |
 
 Frontend must point at this via `NEXT_PUBLIC_API_URL` in Vercel (production + preview). It is inlined at build time, so redeploy the frontend after changing it.
 
 ### Backend hosting (InstaCloud)
 
-The API runs as the `api` compute service in the InstaCloud project `q-learn` (branch `main`, region `us-east`, always-on, port `8000`), built from `backend/Dockerfile`. It has no InstaCloud database: `DATABASE_URL` points at Supabase, and every backend variable is stored as an InstaCloud project secret. The repo is linked through `.insta/project.json`.
+The API runs as the `api` compute service in the InstaCloud project `q-learn` (branch `main`, region `ap-southeast` (Singapore, next to the Supabase database in `ap-southeast-1`), always-on, port `8000`), built from `backend/Dockerfile`. It has no InstaCloud database: `DATABASE_URL` points at Supabase, and every backend variable is stored as an InstaCloud project secret. The repo is linked through `.insta/project.json`.
 
 ```bash
 insta status                                  # login + linked project
@@ -43,7 +43,7 @@ insta compute logs api --deploy               # deploy/build events
 rm -rf /tmp/qlearn-deploy && mkdir -p /tmp/qlearn-deploy
 git archive HEAD backend | tar -x -C /tmp/qlearn-deploy
 insta deploy /tmp/qlearn-deploy/backend --group api --port 8000
-curl -s https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health   # → {"status":"ok",...}
+curl -s https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com/health   # → {"status":"ok",...}
 ```
 
 The container runs `alembic upgrade head` before uvicorn starts (see `backend/Dockerfile`), so pending migrations are applied to Supabase on every deploy. A failing migration therefore keeps the new machine from becoming healthy; check `insta compute logs api`.

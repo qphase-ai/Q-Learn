@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — API moved to InstaCloud Singapore (`ap-southeast`)
+
+- The API was running in `us-east` while the Supabase database is in `ap-southeast-1`, so every query crossed the Pacific. The `api` compute service now runs in `ap-southeast`, and its new URL is `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com`. The CI deploy target, Vercel `NEXT_PUBLIC_API_URL` and the docs point at it. The old us-east service (renamed `api-useast`) is removed.
+
 ### Removed — Railway decommissioned (2026-10-18)
 
 - The Railway `q-learn-api` service was deleted after the cutover. All user traffic had moved to InstaCloud: Railway's last authenticated request was on 2026-10-16. `backend/railway.json` is removed, and `docs/infrastructure.md` records the decommission. Code comments that named Railway now refer to the host generically.
