@@ -81,7 +81,7 @@ jobs:
       INSTA_PROJECT_ID: ed2f5dfe-9171-4268-9e94-3dcb6ea0ddbf
       INSTA_ORG_ID: 8aa588d9-e4ad-4ddb-95d6-bb4f27ce5533
       INSTA_BRANCH: main
-      API_URL: https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com
+      API_URL: https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com
 
     steps:
       - uses: actions/checkout@v4

@@ -101,9 +101,9 @@ New to the team? See [`docs/onboarding.md`](docs/onboarding.md) for the shared-S
 
 | Service | URL |
 |---------|-----|
-| API (InstaCloud, production) | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` |
-| Health check | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/health` |
-| API docs (Swagger) | `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com/docs` |
+| API (InstaCloud, production) | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com` |
+| Health check | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com/health` |
+| API docs (Swagger) | `https://prod-main-api-de88c5-207as5mthww.compute.instacloud-edge.com/docs` |
 
 Frontend points at the API via `NEXT_PUBLIC_API_URL`. Deploy and operations runbook: [`docs/infrastructure.md`](docs/infrastructure.md#backend-hosting-instacloud).
 
