@@ -65,6 +65,68 @@ jobs:
           PYTHONUNBUFFERED: "1"
         run: pytest tests/ -v --cov=app --cov-report=term-missing
 
+  deploy-backend:
+    name: Deploy backend (InstaCloud)
+    # Only a push to main ships, and only after the backend tests pass.
+    needs: backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Never run two deploys of the same service at once; queue instead of cancelling,
+    # so a deploy that has started always finishes.
+    concurrency:
+      group: deploy-backend-instacloud
+      cancel-in-progress: false
+    env:
+      INSTA_PROJECT_ID: ed2f5dfe-9171-4268-9e94-3dcb6ea0ddbf
+      INSTA_ORG_ID: 8aa588d9-e4ad-4ddb-95d6-bb4f27ce5533
+      INSTA_BRANCH: main
+      API_URL: https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install insta CLI
+        run: |
+          npm install -g insta@0.1.25
+          insta --version
+
+      - name: Log in to InstaCloud
+        env:
+          INSTA_API_KEY: ${{ secrets.INSTA_API_KEY }}
+        run: |
+          if [ -z "$INSTA_API_KEY" ]; then
+            echo "::error::INSTA_API_KEY secret is not set (see docs/infrastructure.md#ci-deploy)"
+            exit 1
+          fi
+          insta login --api-key "$INSTA_API_KEY"
+          insta status
+
+      # The checkout holds only committed files, so no local .env* reaches the image.
+      # The container runs `alembic upgrade head` on boot, so this also applies
+      # pending migrations to the production (Supabase) database.
+      - name: Deploy backend
+        run: insta deploy backend --branch main --group api --port 8000
+
+      - name: Verify /health
+        run: |
+          for i in $(seq 1 40); do
+            code=$(curl -s -m 15 -o /dev/null -w '%{http_code}' "$API_URL/health" || true)
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then
+              curl -s "$API_URL/health"; echo
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "::error::$API_URL/health did not return 200 after the deploy"
+          insta compute logs api --branch main --limit 100 || true
+          exit 1
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

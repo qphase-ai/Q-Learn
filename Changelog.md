@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Backend CI deploy to InstaCloud
+
+- **`deploy-backend` CI job**: every push to `main` deploys `backend/` to InstaCloud compute `api` once the backend tests pass. The job then polls `/health` and fails the run, with recent logs, if it doesn't return 200. Deploys run one at a time and are never cancelled mid-flight. Requires the `INSTA_API_KEY` repository secret, a project-scoped token (see `docs/infrastructure.md#ci-deploy`).
+- **Docs**: `docs/infrastructure.md` explains how to use InstaCloud branch environments safely. A branch inherits the production Supabase `DATABASE_URL`, so it needs its own database before any code is deployed to it.
+
 ### Changed — Backend hosting moved from Railway to InstaCloud (2026-10-17)
 
 - **API host**: the FastAPI backend now runs on InstaCloud as the always-on compute service `api` (project `q-learn`, branch `main`, `us-east`, port `8000`), built from the unchanged `backend/Dockerfile`. Live URL: `https://prod-main-api-e7ab8e-008pmc86yhk.compute.instacloud-edge.com` (`/health`, `/docs`).
